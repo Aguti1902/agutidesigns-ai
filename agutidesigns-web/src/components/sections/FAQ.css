@@ -1,0 +1,101 @@
+/* ── FAQ Section ── */
+.faq {
+  background: var(--color-dark);
+  position: relative;
+}
+
+.faq::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(var(--color-primary-rgb), 0.2), transparent);
+}
+
+/* ── Header ── */
+.faq__header {
+  text-align: center;
+  margin-bottom: var(--space-12);
+}
+
+.faq__title {
+  font-family: var(--font-display);
+  font-size: clamp(var(--text-3xl), 4vw, var(--text-5xl));
+  font-weight: 700;
+  line-height: 1.2;
+  margin-top: var(--space-4);
+  margin-bottom: var(--space-4);
+}
+
+.faq__subtitle {
+  font-size: var(--text-lg);
+  color: var(--color-gray-400);
+  line-height: 1.7;
+}
+
+/* ── List ── */
+.faq__list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+/* ── Item ── */
+.faq__item {
+  background: var(--color-gray-900);
+  border: 1px solid var(--color-gray-800);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  transition: all var(--transition-fast);
+}
+
+.faq__item--open {
+  border-color: rgba(var(--color-primary-rgb), 0.3);
+}
+
+.faq__question {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding: var(--space-5) var(--space-6);
+  background: none;
+  border: none;
+  color: var(--color-white);
+  font-family: var(--font-mono);
+  font-size: var(--text-base);
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+  transition: color var(--transition-fast);
+}
+
+.faq__question:hover {
+  color: var(--color-primary);
+}
+
+.faq__chevron {
+  flex-shrink: 0;
+  color: var(--color-gray-400);
+  transition: transform var(--transition-base);
+}
+
+.faq__chevron--open {
+  transform: rotate(180deg);
+  color: var(--color-primary);
+}
+
+/* ── Answer ── */
+.faq__answer-wrapper {
+  overflow: hidden;
+}
+
+.faq__answer {
+  padding: 0 var(--space-6) var(--space-5);
+  font-size: var(--text-base);
+  color: var(--color-gray-400);
+  line-height: 1.7;
+}

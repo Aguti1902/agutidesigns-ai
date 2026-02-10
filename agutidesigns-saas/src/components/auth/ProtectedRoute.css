@@ -1,0 +1,37 @@
+/* ===========================================
+   ProtectedRoute - Loading Spinner
+   =========================================== */
+
+.protected-route-loading {
+  --color-bg: #0f1117;
+  --color-text: #e4e4e7;
+  --color-muted: #71717a;
+  --color-green: #25D366;
+  --font-sans: 'IBM Plex Sans', sans-serif;
+
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  background: var(--color-bg);
+  color: var(--color-muted);
+  font-family: var(--font-sans);
+  font-size: 0.9375rem;
+}
+
+.protected-route-spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid rgba(42, 45, 58, 0.8);
+  border-top-color: var(--color-green);
+  border-radius: 50%;
+  animation: protected-route-spin 0.8s linear infinite;
+}
+
+@keyframes protected-route-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

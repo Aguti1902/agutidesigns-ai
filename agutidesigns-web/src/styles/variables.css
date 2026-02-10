@@ -1,0 +1,101 @@
+/* =============================================
+   AGUTIDESIGNS - Design Tokens & Variables
+   Based on Agutidesigns Brandbook v1.0
+   ============================================= */
+
+:root {
+  /* ── Colores Principales ── */
+  --color-primary: #E5FC63;          /* GUTI GREEN (accent principal) */
+  --color-primary-rgb: 229, 252, 99;
+  --color-black: #1B1B1B;            /* Negro */
+  --color-white: #FEFAF5;            /* Blanco cálido */
+  --color-dark: #111111;             /* Fondo oscuro profundo */
+
+  /* ── Colores Secundarios ── */
+  --color-accent-1: #CFFF3F;         /* Accent 1 */
+  --color-accent-2: #EC6746;         /* Accent 2 - Coral */
+  --color-error: #F1250E;            /* Error */
+  --color-check: #009A62;            /* Check / Éxito */
+
+  /* ── Grises ── */
+  --color-gray-100: #F5F5F0;
+  --color-gray-200: #E8E8E3;
+  --color-gray-300: #D1D1CC;
+  --color-gray-400: #9A9A95;
+  --color-gray-500: #6B6B66;
+  --color-gray-600: #4A4A46;
+  --color-gray-700: #333330;
+  --color-gray-800: #222220;
+  --color-gray-900: #1A1A18;
+
+  /* ── Tipografías ── */
+  --font-display: 'IBM Plex Mono', monospace;  /* Display / Títulos */
+  --font-body: 'IBM Plex Sans', sans-serif;    /* Cuerpo / Contenido */
+  --font-mono: 'IBM Plex Mono', monospace;     /* Código / Detalles */
+
+  /* ── Tamaños tipográficos ── */
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.25rem;
+  --text-2xl: 1.5rem;
+  --text-3xl: 1.875rem;
+  --text-4xl: 2.25rem;
+  --text-5xl: 3rem;
+  --text-6xl: 3.75rem;
+  --text-7xl: 4.5rem;
+  --text-8xl: 6rem;
+
+  /* ── Espaciado ── */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.25rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-10: 2.5rem;
+  --space-12: 3rem;
+  --space-16: 4rem;
+  --space-20: 5rem;
+  --space-24: 6rem;
+  --space-32: 8rem;
+
+  /* ── Border Radius ── */
+  --radius-sm: 0.375rem;
+  --radius-md: 0.75rem;
+  --radius-lg: 1rem;
+  --radius-xl: 1.5rem;
+  --radius-2xl: 2rem;
+  --radius-full: 9999px;
+  --radius-blob: 30% 70% 70% 30% / 30% 30% 70% 70%;
+
+  /* ── Sombras ── */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.15);
+  --shadow-xl: 0 20px 50px rgba(0, 0, 0, 0.2);
+  --shadow-glow: 0 0 30px rgba(229, 252, 99, 0.3);
+  --shadow-glow-strong: 0 0 60px rgba(229, 252, 99, 0.5);
+
+  /* ── Transiciones ── */
+  --transition-fast: 150ms ease;
+  --transition-base: 300ms ease;
+  --transition-slow: 500ms ease;
+  --transition-spring: 500ms cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  /* ── Z-index ── */
+  --z-base: 1;
+  --z-dropdown: 10;
+  --z-sticky: 50;
+  --z-overlay: 100;
+  --z-modal: 200;
+  --z-chat: 300;
+  --z-toast: 400;
+
+  /* ── Container ── */
+  --container-max: 1280px;
+  --container-narrow: 960px;
+  --container-wide: 1440px;
+}

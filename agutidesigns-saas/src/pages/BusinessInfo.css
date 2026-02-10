@@ -1,0 +1,156 @@
+/* ===========================================
+   BusinessInfo
+   =========================================== */
+
+.business-info {
+  --bg: #0f1117;
+  --card: #1c1f2a;
+  --border: #2a2d3a;
+  --text: #e4e4e7;
+  --muted: #71717a;
+  --green: #25D366;
+
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 2rem 1rem 4rem;
+  font-family: 'IBM Plex Sans', system-ui, sans-serif;
+}
+
+.business-info__header {
+  margin-bottom: 2rem;
+}
+
+.business-info__title {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 1.75rem;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 0.5rem;
+}
+
+.business-info__subtitle {
+  font-size: 0.9375rem;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.business-info__form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.business-info__card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1.5rem 1.75rem;
+}
+
+.business-info__card-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 1.25rem;
+}
+
+.business-info__card-title svg {
+  color: var(--muted);
+  flex-shrink: 0;
+}
+
+.business-info__grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.business-info__field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.business-info__field--full {
+  grid-column: 1 / -1;
+}
+
+.business-info__field label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.business-info__field input,
+.business-info__field textarea {
+  padding: 0.75rem 1rem;
+  font-size: 0.9375rem;
+  color: var(--text);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.business-info__field input::placeholder,
+.business-info__field textarea::placeholder {
+  color: var(--muted);
+}
+
+.business-info__field input:focus,
+.business-info__field textarea:focus {
+  outline: none;
+  border-color: var(--green);
+  box-shadow: 0 0 0 3px rgba(37, 211, 102, 0.15);
+}
+
+.business-info__field textarea {
+  min-height: 100px;
+  resize: vertical;
+}
+
+.business-info__actions {
+  padding-top: 0.5rem;
+}
+
+.business-info__btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  color: #fff;
+  background: var(--green);
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.15s;
+}
+
+.business-info__btn:hover:not(:disabled) {
+  background: #2ee56e;
+}
+
+.business-info__btn:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+.business-info__btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+@media (max-width: 600px) {
+  .business-info__grid {
+    grid-template-columns: 1fr;
+  }
+}

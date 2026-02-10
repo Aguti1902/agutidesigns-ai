@@ -1,0 +1,256 @@
+/* ===========================================
+   Billing
+   =========================================== */
+
+.billing {
+  --bg: #0f1117;
+  --card: #1c1f2a;
+  --border: #2a2d3a;
+  --text: #e4e4e7;
+  --muted: #71717a;
+  --green: #25D366;
+
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 2rem 1rem 4rem;
+  font-family: 'IBM Plex Sans', system-ui, sans-serif;
+}
+
+.billing__header {
+  margin-bottom: 2rem;
+}
+
+.billing__title {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 1.75rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.billing__current {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1.5rem 1.75rem;
+  margin-bottom: 2rem;
+}
+
+.billing__current-badge {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.9375rem;
+  font-weight: 600;
+}
+
+.billing__current-badge--trial {
+  color: var(--text);
+}
+
+.billing__current-badge--active {
+  color: var(--green);
+}
+
+.billing__trial-progress {
+  margin-top: 1rem;
+}
+
+.billing__trial-progress-bar {
+  height: 8px;
+  background: var(--border);
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 0.5rem;
+}
+
+.billing__trial-progress-fill {
+  height: 100%;
+  background: var(--green);
+  border-radius: 4px;
+}
+
+.billing__trial-days {
+  font-size: 0.8125rem;
+  color: var(--muted);
+}
+
+.billing__plans {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+@media (max-width: 640px) {
+  .billing__plans {
+    grid-template-columns: 1fr;
+  }
+}
+
+.billing__plan-card {
+  position: relative;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1.5rem 1.75rem;
+  display: flex;
+  flex-direction: column;
+  transition: border-color 0.2s;
+}
+
+.billing__plan-card:hover {
+  border-color: rgba(37, 211, 102, 0.4);
+}
+
+.billing__plan-card--popular {
+  border-color: rgba(37, 211, 102, 0.3);
+}
+
+.billing__plan-badge {
+  position: absolute;
+  top: -1px;
+  right: 1rem;
+  padding: 0.25rem 0.75rem;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  background: var(--green);
+  color: #fff;
+  border-radius: 0 0 6px 6px;
+}
+
+.billing__plan-header {
+  margin-bottom: 1.25rem;
+}
+
+.billing__plan-icon {
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(37, 211, 102, 0.12);
+  color: var(--green);
+  border-radius: 10px;
+  margin-bottom: 1rem;
+}
+
+.billing__plan-name {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 0.25rem;
+}
+
+.billing__plan-price {
+  display: flex;
+  align-items: baseline;
+}
+
+.billing__plan-amount {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.billing__plan-period {
+  font-size: 0.875rem;
+  color: var(--muted);
+  margin-left: 0.25rem;
+}
+
+.billing__plan-features {
+  list-style: none;
+  margin-bottom: 1.5rem;
+  flex: 1;
+}
+
+.billing__plan-features li {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9375rem;
+  color: var(--text);
+  margin-bottom: 0.5rem;
+}
+
+.billing__plan-features li svg {
+  color: var(--green);
+  flex-shrink: 0;
+}
+
+.billing__plan-btn {
+  padding: 0.75rem 1.5rem;
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  color: #fff;
+  background: var(--green);
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.15s;
+}
+
+.billing__plan-btn:hover:not(:disabled) {
+  background: #2ee56e;
+}
+
+.billing__plan-btn:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+.billing__plan-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.billing__payment-note {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem 1.25rem;
+  background: rgba(37, 211, 102, 0.08);
+  border: 1px solid rgba(37, 211, 102, 0.2);
+  border-radius: 8px;
+  margin-bottom: 2rem;
+}
+
+.billing__payment-note svg {
+  color: var(--green);
+  flex-shrink: 0;
+}
+
+.billing__payment-note p {
+  font-size: 0.875rem;
+  color: var(--text);
+}
+
+.billing__history {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1.5rem 1.75rem;
+}
+
+.billing__history-title {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--muted);
+  margin-bottom: 1rem;
+}
+
+.billing__history-placeholder {
+  padding: 2rem;
+  text-align: center;
+  background: var(--bg);
+  border: 1px dashed var(--border);
+  border-radius: 8px;
+}
+
+.billing__history-placeholder p {
+  font-size: 0.875rem;
+  color: var(--muted);
+}

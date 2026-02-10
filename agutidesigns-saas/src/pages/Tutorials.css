@@ -1,0 +1,155 @@
+/* ===========================================
+   Tutorials
+   =========================================== */
+
+.tutorials {
+  --bg: #0f1117;
+  --card: #1c1f2a;
+  --border: #2a2d3a;
+  --text: #e4e4e7;
+  --muted: #71717a;
+  --green: #25D366;
+
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 2rem 1rem 4rem;
+  font-family: 'IBM Plex Sans', system-ui, sans-serif;
+}
+
+.tutorials__header {
+  margin-bottom: 2rem;
+}
+
+.tutorials__title {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 1.75rem;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 0.5rem;
+}
+
+.tutorials__subtitle {
+  font-size: 0.9375rem;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.tutorials__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1rem;
+}
+
+.tutorials__card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+  transition: border-color 0.2s;
+}
+
+.tutorials__card:hover {
+  border-color: rgba(37, 211, 102, 0.3);
+}
+
+.tutorials__card-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.25rem 1.5rem;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.tutorials__card-header:hover {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.tutorials__card-icon {
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(37, 211, 102, 0.12);
+  color: var(--green);
+  border-radius: 10px;
+  flex-shrink: 0;
+}
+
+.tutorials__card-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.tutorials__card-title {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 0.25rem;
+}
+
+.tutorials__card-duration {
+  font-size: 0.8125rem;
+  color: var(--muted);
+}
+
+.tutorials__card-expand {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  background: none;
+  border: none;
+  color: var(--muted);
+  cursor: pointer;
+  border-radius: 8px;
+  transition: color 0.2s, background 0.2s;
+}
+
+.tutorials__card-expand:hover {
+  color: var(--green);
+  background: rgba(37, 211, 102, 0.1);
+}
+
+.tutorials__card-content {
+  padding: 0 1.5rem 1.5rem;
+  border-top: 1px solid var(--border);
+}
+
+.tutorials__card-content p {
+  font-size: 0.875rem;
+  color: var(--muted);
+  line-height: 1.6;
+  margin-bottom: 1rem;
+  padding-top: 1rem;
+}
+
+.tutorials__card-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--green);
+  background: rgba(37, 211, 102, 0.12);
+  border: 1px solid rgba(37, 211, 102, 0.3);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s;
+}
+
+.tutorials__card-btn:hover {
+  background: rgba(37, 211, 102, 0.2);
+  border-color: var(--green);
+}
+
+@media (max-width: 640px) {
+  .tutorials__grid {
+    grid-template-columns: 1fr;
+  }
+}

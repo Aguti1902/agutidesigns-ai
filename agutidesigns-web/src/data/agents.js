@@ -1,0 +1,146 @@
+/* =============================================
+   AGUTIDESIGNS - Catálogo de Agentes IA
+   Datos compartidos entre AgentsShowcase y AgentWidgets
+   ============================================= */
+
+export const agents = [
+  {
+    id: 'chatbot-atencion',
+    name: 'Chatbot Atención al Cliente',
+    shortName: 'Atención al Cliente',
+    description: 'Responde preguntas de tus clientes 24/7 con el tono de tu marca. Resuelve dudas, informa sobre servicios y mejora la satisfacción.',
+    price: 29,
+    icon: 'MessageCircle',
+    demoType: 'mini-chat',
+    category: 'Comunicación',
+    demoMessages: [
+      { role: 'user', content: '¿Cuál es vuestro horario de atención?' },
+      { role: 'assistant', content: '¡Hola! 👋 Nuestro horario es de lunes a viernes de 9:00 a 20:00 y sábados de 10:00 a 14:00. Pero gracias a mí, puedes resolver tus dudas a cualquier hora 😊 ¿En qué puedo ayudarte?' },
+      { role: 'user', content: '¿Hacéis envíos a Canarias?' },
+      { role: 'assistant', content: '¡Sí! Hacemos envíos a toda España, incluidas Canarias y Baleares. El plazo para Canarias es de 5-7 días laborables. ¿Te ayudo con algo más?' },
+    ],
+  },
+  {
+    id: 'cualificador-leads',
+    name: 'Agente Cualificador de Leads',
+    shortName: 'Cualificador de Leads',
+    description: 'Identifica y puntúa visitantes interesados. Hace las preguntas correctas, recoge datos de contacto y clasifica leads automáticamente.',
+    price: 39,
+    icon: 'UserCheck',
+    demoType: 'mini-chat',
+    category: 'Ventas',
+    demoMessages: [
+      { role: 'assistant', content: '¡Hola! Veo que estás interesado en nuestros servicios. ¿Puedo hacerte unas preguntas rápidas para recomendarte la mejor opción? 😊' },
+      { role: 'user', content: 'Claro, adelante' },
+      { role: 'assistant', content: 'Genial. ¿Qué tipo de negocio tienes?' },
+      { role: 'user', content: 'Tengo una clínica dental' },
+      { role: 'assistant', content: '¡Perfecto! Las clínicas dentales son uno de nuestros sectores favoritos. ¿Cuántos pacientes nuevos quieres captar al mes aproximadamente? Y tu nombre para la propuesta, ¿cuál sería?' },
+    ],
+  },
+  {
+    id: 'agente-presupuestos',
+    name: 'Agente de Presupuestos',
+    shortName: 'Presupuestos IA',
+    description: 'Genera presupuestos automáticos basados en las necesidades del cliente. Analiza requisitos y calcula precios al instante.',
+    price: 49,
+    icon: 'Calculator',
+    demoType: 'modal',
+    category: 'Ventas',
+    demoMessages: [
+      { role: 'assistant', content: '¡Hola! Voy a generar un presupuesto personalizado para ti. Necesito unos datos...' },
+      { role: 'user', content: 'Necesito una web con tienda online y blog' },
+      { role: 'assistant', content: '**Presupuesto estimado:**\n\n- Tienda online (hasta 50 productos): 1.200€\n- Blog integrado: 300€\n- SEO básico: 200€\n\n**Total estimado: 1.700€**\n\n¿Quieres que te contacte un especialista para afinar los detalles?' },
+    ],
+  },
+  {
+    id: 'agente-reservas',
+    name: 'Agente de Reservas y Citas',
+    shortName: 'Reservas y Citas',
+    description: 'Gestiona tu agenda automáticamente. Programa citas, envía recordatorios y maneja cancelaciones sin intervención humana.',
+    price: 39,
+    icon: 'CalendarCheck',
+    demoType: 'modal',
+    category: 'Gestión',
+    demoMessages: [
+      { role: 'user', content: 'Quiero pedir cita para el viernes' },
+      { role: 'assistant', content: '¡Perfecto! Para el viernes tengo estas horas disponibles:\n\n🕐 10:00 - 10:30\n🕐 12:00 - 12:30\n🕐 16:00 - 16:30\n🕐 18:00 - 18:30\n\n¿Cuál te viene mejor?' },
+      { role: 'user', content: 'Las 12:00 estaría bien' },
+      { role: 'assistant', content: '✅ **Cita confirmada:**\n📅 Viernes a las 12:00\n⏱ Duración: 30 minutos\n\nTe enviaré un recordatorio el jueves por la tarde. ¿Necesitas algo más?' },
+    ],
+  },
+  {
+    id: 'agente-email',
+    name: 'Agente de Email Marketing',
+    shortName: 'Email Marketing',
+    description: 'Secuencias automáticas personalizadas: bienvenida, seguimiento, nurturing. Cada email adaptado al comportamiento del cliente.',
+    price: 29,
+    icon: 'Mail',
+    demoType: 'simulation',
+    category: 'Marketing',
+    simulationSteps: [
+      { type: 'trigger', label: 'Nuevo lead registrado', time: '0s' },
+      { type: 'email', label: 'Email de bienvenida personalizado', time: 'Inmediato' },
+      { type: 'wait', label: 'Espera 2 días', time: '48h' },
+      { type: 'email', label: 'Email con caso de éxito relevante', time: 'Día 3' },
+      { type: 'condition', label: '¿Abrió el email?', time: 'Día 4' },
+      { type: 'email', label: 'Email con oferta personalizada', time: 'Día 5' },
+    ],
+  },
+  {
+    id: 'agente-faq',
+    name: 'Agente FAQ Inteligente',
+    shortName: 'FAQ Inteligente',
+    description: 'Base de conocimiento IA que responde las dudas más frecuentes. Se entrena con tu info y mejora continuamente.',
+    price: 19,
+    icon: 'HelpCircle',
+    demoType: 'mini-chat',
+    category: 'Soporte',
+    demoMessages: [
+      { role: 'user', content: '¿Aceptáis devoluciones?' },
+      { role: 'assistant', content: 'Sí, tenemos política de devolución de 30 días. El producto debe estar en su estado original. Te proporcionamos una etiqueta de envío gratuita. ¿Quieres iniciar una devolución?' },
+      { role: 'user', content: '¿Cuánto tarda el reembolso?' },
+      { role: 'assistant', content: 'El reembolso se procesa en 3-5 días hábiles una vez recibamos el producto. Si pagaste con tarjeta, puede tardar 1-2 días más en reflejarse en tu cuenta. ¿Hay algo más que pueda resolver?' },
+    ],
+  },
+  {
+    id: 'agente-seguimiento',
+    name: 'Agente de Seguimiento',
+    shortName: 'Seguimiento',
+    description: 'Follow-up automático a leads que no han respondido. Reactivación inteligente con mensajes personalizados y timing óptimo.',
+    price: 29,
+    icon: 'RefreshCw',
+    demoType: 'simulation',
+    category: 'Ventas',
+    simulationSteps: [
+      { type: 'trigger', label: 'Lead no responde en 48h', time: '0h' },
+      { type: 'email', label: '"¿Pudiste revisar la propuesta?"', time: '48h' },
+      { type: 'wait', label: 'Espera 3 días', time: '5 días' },
+      { type: 'email', label: '"¿Necesitas más info? Estamos aquí"', time: '5 días' },
+      { type: 'condition', label: '¿Responde?', time: '7 días' },
+      { type: 'email', label: '"Última oportunidad — descuento 10%"', time: '10 días' },
+    ],
+  },
+  {
+    id: 'agente-resenas',
+    name: 'Agente de Reseñas',
+    shortName: 'Reseñas',
+    description: 'Solicita reseñas a clientes satisfechos y gestiona la reputación online. Aumenta tu puntuación en Google automáticamente.',
+    price: 19,
+    icon: 'Star',
+    demoType: 'simulation',
+    category: 'Marketing',
+    simulationSteps: [
+      { type: 'trigger', label: 'Servicio completado', time: '0h' },
+      { type: 'wait', label: 'Espera 24h (tiempo óptimo)', time: '24h' },
+      { type: 'email', label: '"¿Qué tal tu experiencia? Déjanos tu opinión"', time: '24h' },
+      { type: 'condition', label: '¿Reseña positiva?', time: '48h' },
+      { type: 'email', label: '"¡Gracias! ¿Puedes compartirla en Google?"', time: '48h' },
+      { type: 'trigger', label: 'Link directo a Google Reviews', time: '48h' },
+    ],
+  },
+];
+
+export const getAgentById = (id) => agents.find(a => a.id === id);
+export const getAgentsByCategory = (category) => agents.filter(a => a.category === category);
+export const getTotalAgentsPrice = (selectedIds) =>
+  agents.filter(a => selectedIds.includes(a.id)).reduce((sum, a) => sum + a.price, 0);

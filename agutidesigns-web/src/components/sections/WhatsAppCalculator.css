@@ -1,0 +1,346 @@
+/* ── WhatsApp Calculator Section ── */
+.wacalc {
+  background: var(--color-dark);
+  position: relative;
+  overflow: hidden;
+}
+
+.wacalc__wrapper {
+  background: var(--color-gray-900);
+  border: 1px solid var(--color-gray-800);
+  border-radius: var(--radius-2xl);
+  padding: var(--space-8);
+  max-width: 960px;
+  margin: 0 auto;
+}
+
+/* ── Header ── */
+.wacalc__header {
+  display: flex;
+  gap: var(--space-4);
+  align-items: center;
+  margin-bottom: var(--space-6);
+}
+
+.wacalc__header-icon {
+  width: 48px;
+  height: 48px;
+  min-width: 48px;
+  border-radius: var(--radius-lg);
+  background: rgba(37, 211, 102, 0.1);
+  color: #25D366;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.wacalc__title {
+  font-family: var(--font-display);
+  font-size: clamp(var(--text-xl), 3vw, var(--text-3xl));
+  font-weight: 700;
+  line-height: 1.2;
+  margin-bottom: var(--space-1);
+}
+
+.wacalc__subtitle {
+  font-size: var(--text-sm);
+  color: var(--color-gray-400);
+  line-height: 1.6;
+  max-width: 500px;
+}
+
+/* ── Content Grid — equal height columns ── */
+.wacalc__content {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: var(--space-5);
+  align-items: stretch;
+}
+
+/* ── Calculator (Left) ── */
+.wacalc__calculator {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.wacalc__calc-title {
+  font-family: var(--font-mono);
+  font-size: var(--text-base);
+  font-weight: 700;
+  color: var(--color-white);
+}
+
+.wacalc__calc-desc {
+  font-size: var(--text-xs);
+  color: var(--color-gray-400);
+  margin-top: calc(-1 * var(--space-2));
+}
+
+/* ── Tier Buttons ── */
+.wacalc__tiers {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-2);
+}
+
+.wacalc__tier {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  padding: var(--space-3) var(--space-2);
+  background: var(--color-gray-800);
+  border: 2px solid var(--color-gray-700);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.wacalc__tier:hover {
+  border-color: var(--color-gray-500);
+}
+
+.wacalc__tier--active {
+  border-color: #25D366;
+  background: rgba(37, 211, 102, 0.06);
+}
+
+.wacalc__tier-messages {
+  font-family: var(--font-display);
+  font-size: var(--text-lg);
+  font-weight: 800;
+  color: var(--color-white);
+  line-height: 1;
+}
+
+.wacalc__tier--active .wacalc__tier-messages {
+  color: #25D366;
+}
+
+.wacalc__tier-unit {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: var(--color-gray-500);
+}
+
+.wacalc__tier-label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--color-gray-400);
+  margin-top: 2px;
+}
+
+.wacalc__tier--active .wacalc__tier-label {
+  color: #25D366;
+}
+
+/* ── Slider ── */
+.wacalc__slider-wrapper {
+  padding: 0 var(--space-1);
+}
+
+.wacalc__slider {
+  width: 100%;
+  height: 4px;
+  -webkit-appearance: none;
+  appearance: none;
+  background: var(--color-gray-700);
+  border-radius: var(--radius-full);
+  outline: none;
+  cursor: pointer;
+}
+
+.wacalc__slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #25D366;
+  border: 3px solid var(--color-gray-900);
+  box-shadow: 0 0 8px rgba(37, 211, 102, 0.4);
+  cursor: pointer;
+}
+
+.wacalc__slider::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #25D366;
+  border: 3px solid var(--color-gray-900);
+  box-shadow: 0 0 8px rgba(37, 211, 102, 0.4);
+  cursor: pointer;
+}
+
+.wacalc__slider-labels {
+  display: flex;
+  justify-content: space-between;
+  margin-top: var(--space-1);
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: var(--color-gray-500);
+}
+
+/* ── Result ── */
+.wacalc__result {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-3) var(--space-4);
+  background: var(--color-black);
+  border: 1px solid var(--color-gray-700);
+  border-radius: var(--radius-md);
+}
+
+.wacalc__result-label {
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  font-weight: 700;
+  color: var(--color-white);
+  display: block;
+}
+
+.wacalc__result-desc {
+  font-size: var(--text-xs);
+  color: var(--color-gray-400);
+}
+
+.wacalc__result-price {
+  display: flex;
+  align-items: baseline;
+  gap: 2px;
+}
+
+.wacalc__result-consult {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  font-weight: 700;
+  color: #25D366;
+  background: rgba(37, 211, 102, 0.08);
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-full);
+  border: 1px solid rgba(37, 211, 102, 0.2);
+}
+
+/* ── Added State ── */
+.wacalc__added {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-3);
+  background: rgba(37, 211, 102, 0.06);
+  border: 1px solid rgba(37, 211, 102, 0.25);
+  border-radius: var(--radius-md);
+}
+
+.wacalc__added-info {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-xs);
+  color: #25D366;
+}
+
+.wacalc__added-info strong {
+  color: var(--color-white);
+}
+
+.wacalc__added-remove {
+  background: none;
+  border: 1px solid var(--color-gray-600);
+  color: var(--color-gray-400);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  padding: 3px var(--space-3);
+  border-radius: var(--radius-full);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.wacalc__added-remove:hover {
+  border-color: var(--color-error);
+  color: var(--color-error);
+}
+
+/* ── Features (Right) — stretches to match left ── */
+.wacalc__features {
+  padding: var(--space-5);
+  background: var(--color-black);
+  border: 1px solid var(--color-gray-800);
+  border-radius: var(--radius-lg);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.wacalc__features-title {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  font-weight: 700;
+  color: var(--color-white);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: var(--space-4);
+}
+
+.wacalc__features-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
+}
+
+.wacalc__features-list li {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  font-size: var(--text-sm);
+  color: var(--color-gray-300);
+  line-height: 1.4;
+}
+
+.wacalc__features-check {
+  color: #25D366;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.wacalc__features-note {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  background: var(--color-gray-900);
+  border-radius: var(--radius-sm);
+  font-size: 11px;
+  color: var(--color-gray-500);
+  line-height: 1.4;
+}
+
+/* ── Responsive ── */
+@media (max-width: 768px) {
+  .wacalc__wrapper {
+    padding: var(--space-5);
+  }
+
+  .wacalc__header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .wacalc__content {
+    grid-template-columns: 1fr;
+  }
+
+  .wacalc__tiers {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .wacalc__result {
+    flex-direction: column;
+    text-align: center;
+    gap: var(--space-2);
+  }
+}

@@ -1,0 +1,87 @@
+/* ── CustomBridge Section ── */
+.bridge {
+  background: var(--color-dark);
+  position: relative;
+  overflow: hidden;
+  padding: var(--space-16) 0;
+}
+
+.bridge__glow {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 600px;
+  height: 300px;
+  background: radial-gradient(
+    ellipse,
+    rgba(var(--color-primary-rgb), 0.08) 0%,
+    transparent 70%
+  );
+  pointer-events: none;
+}
+
+.bridge__card {
+  text-align: center;
+  max-width: 700px;
+  margin: 0 auto;
+  padding: var(--space-12) var(--space-8);
+  background: linear-gradient(
+    135deg,
+    rgba(var(--color-primary-rgb), 0.04) 0%,
+    rgba(var(--color-primary-rgb), 0.01) 100%
+  );
+  border: 1px solid rgba(var(--color-primary-rgb), 0.15);
+  border-radius: var(--radius-2xl);
+  position: relative;
+}
+
+.bridge__icon {
+  width: 64px;
+  height: 64px;
+  border-radius: var(--radius-xl);
+  background: rgba(var(--color-primary-rgb), 0.1);
+  color: var(--color-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto var(--space-6);
+}
+
+.bridge__title {
+  font-family: var(--font-display);
+  font-size: clamp(var(--text-2xl), 3.5vw, var(--text-4xl));
+  font-weight: 700;
+  line-height: 1.2;
+  color: var(--color-white);
+  margin-bottom: var(--space-4);
+}
+
+.bridge__subtitle {
+  font-size: var(--text-lg);
+  color: var(--color-gray-400);
+  line-height: 1.7;
+  margin-bottom: var(--space-8);
+  max-width: 550px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.bridge__subtitle strong {
+  color: var(--color-primary);
+}
+
+.bridge__hint {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--color-gray-500);
+  margin-top: var(--space-4);
+  letter-spacing: 0.02em;
+}
+
+/* ── Responsive ── */
+@media (max-width: 768px) {
+  .bridge__card {
+    padding: var(--space-8) var(--space-5);
+  }
+}

@@ -1,0 +1,119 @@
+/* ══════════════════════════════════
+   Shared Dashboard Page Styles
+   ══════════════════════════════════ */
+
+.page__header { margin-bottom: 2rem; }
+.page__header h1 { font-family: var(--font-display); font-size: 1.75rem; font-weight: 700; margin-bottom: 0.25rem; }
+.page__header p { color: #777; font-size: 0.9rem; }
+.page__section-title { font-family: var(--font-mono); font-size: 0.85rem; font-weight: 700; color: #888; text-transform: uppercase; letter-spacing: 0.08em; margin: 2rem 0 1rem; }
+
+/* ── Cards ── */
+.card { background: #111; border: 1px solid #1e1e1e; border-radius: var(--radius-xl); padding: 1.75rem; }
+
+/* ── Stats Grid ── */
+.stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.75rem; }
+.stat-card { background: #111; border: 1px solid #1e1e1e; border-radius: var(--radius-lg); padding: 1.25rem; display: flex; align-items: center; gap: 1rem; }
+.stat-card__icon { width: 40px; height: 40px; border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; }
+.stat-card__value { display: block; font-family: var(--font-display); font-size: 1.4rem; font-weight: 800; }
+.stat-card__label { font-size: 0.75rem; color: #666; font-family: var(--font-mono); }
+
+/* ── Actions Grid ── */
+.actions-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.75rem; }
+.action-card { display: flex; align-items: center; justify-content: space-between; padding: 1rem 1.25rem; background: #111; border: 1px solid #1e1e1e; border-radius: var(--radius-lg); transition: all 0.15s; text-decoration: none; color: inherit; }
+.action-card:hover { border-color: var(--color-primary); }
+.action-card__label { display: block; font-family: var(--font-mono); font-size: 0.85rem; font-weight: 700; }
+.action-card__desc { display: block; font-size: 0.75rem; color: #666; }
+.action-card svg { color: #555; }
+
+/* ── Form ── */
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+.form-field { margin-bottom: 0; }
+.form-field--full { grid-column: 1 / -1; }
+.form-field label { display: flex; align-items: center; gap: 0.3rem; font-family: var(--font-mono); font-size: 0.8rem; font-weight: 600; color: #999; margin-bottom: 0.4rem; }
+.form-field .required { color: var(--color-error); }
+.form-field input, .form-field textarea { width: 100%; padding: 0.65rem 0.9rem; background: #0a0a0a; border: 1px solid #222; border-radius: var(--radius-md); color: white; font-size: 0.9rem; font-family: var(--font-body); outline: none; transition: border-color 0.15s; }
+.form-field input:focus, .form-field textarea:focus { border-color: var(--color-primary); }
+.form-field input::placeholder, .form-field textarea::placeholder { color: #444; }
+.form-field textarea { resize: vertical; min-height: 80px; }
+.form-actions { margin-top: 1.5rem; display: flex; gap: 0.75rem; }
+
+/* ── Buttons ── */
+.btn { display: inline-flex; align-items: center; gap: 0.4rem; font-family: var(--font-mono); font-weight: 700; font-size: 0.8rem; border-radius: var(--radius-full); cursor: pointer; transition: all 0.15s; border: none; padding: 0.6rem 1.25rem; }
+.btn--primary { background: var(--color-primary); color: var(--color-black); }
+.btn--primary:hover { box-shadow: 0 0 15px rgba(var(--color-primary-rgb), 0.3); }
+.btn--outline { background: none; border: 1px solid #333; color: #888; }
+.btn--outline:hover { border-color: var(--color-primary); color: var(--color-primary); }
+.btn--sm { padding: 0.4rem 0.9rem; font-size: 0.72rem; }
+
+/* ── Chips ── */
+.chips { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+.chip { padding: 0.4rem 0.9rem; background: #151515; border: 1px solid #2a2a2a; border-radius: var(--radius-full); color: #888; font-family: var(--font-mono); font-size: 0.75rem; cursor: pointer; transition: all 0.15s; }
+.chip:hover { border-color: #555; }
+.chip--active { background: rgba(var(--color-primary-rgb), 0.1); border-color: var(--color-primary); color: var(--color-primary); }
+
+/* ── Prompt Result ── */
+.prompt-result { margin-top: 1.5rem; padding: 1.25rem; background: #0a0a0a; border: 1px solid rgba(var(--color-primary-rgb), 0.2); border-radius: var(--radius-lg); }
+.prompt-result__header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; }
+.prompt-result__header h3 { display: flex; align-items: center; gap: 0.4rem; font-family: var(--font-mono); font-size: 0.85rem; color: var(--color-primary); }
+.prompt-result__actions { display: flex; gap: 0.5rem; }
+.prompt-result__code { font-family: var(--font-mono); font-size: 0.78rem; color: #aaa; line-height: 1.7; white-space: pre-wrap; word-break: break-word; background: #080808; padding: 1rem; border-radius: var(--radius-md); border: 1px solid #1a1a1a; max-height: 300px; overflow-y: auto; }
+
+/* ── QR Section ── */
+.qr-section { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; align-items: center; }
+.qr-section__steps h3 { font-family: var(--font-display); font-size: 1.1rem; margin-bottom: 1rem; }
+.qr-section__steps ol { list-style: none; counter-reset: qr-steps; display: flex; flex-direction: column; gap: 0.75rem; }
+.qr-section__steps li { display: flex; align-items: center; gap: 0.6rem; font-size: 0.85rem; color: #aaa; }
+.qr-placeholder { width: 220px; height: 220px; background: #151515; border: 2px dashed #333; border-radius: var(--radius-lg); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.5rem; margin: 0 auto 1rem; color: #555; }
+.qr-placeholder p { font-family: var(--font-mono); font-size: 0.8rem; font-weight: 600; }
+.qr-placeholder span { font-size: 0.65rem; color: #444; text-align: center; max-width: 160px; }
+
+.connected-state { text-align: center; padding: 2rem; }
+.connected-state__icon { width: 64px; height: 64px; border-radius: 50%; background: rgba(var(--color-primary-rgb), 0.1); color: var(--color-primary); display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem; }
+.connected-state h3 { font-family: var(--font-display); font-size: 1.25rem; margin-bottom: 0.5rem; }
+.connected-state p { color: #777; font-size: 0.9rem; margin-bottom: 1rem; }
+.connected-state__info { display: flex; align-items: center; justify-content: center; gap: 0.5rem; font-family: var(--font-mono); font-size: 0.8rem; color: var(--color-primary); margin-bottom: 1rem; }
+.connected-state__dot { width: 8px; height: 8px; background: var(--color-primary); border-radius: 50%; }
+
+/* ── Tutorials ── */
+.tutorials-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; }
+.tutorial-card { background: #111; border: 1px solid #1e1e1e; border-radius: var(--radius-lg); padding: 1.5rem; }
+.tutorial-card__header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; }
+.tutorial-card__icon { width: 40px; height: 40px; border-radius: var(--radius-md); background: rgba(var(--color-primary-rgb), 0.1); color: var(--color-primary); display: flex; align-items: center; justify-content: center; }
+.tutorial-card__duration { font-family: var(--font-mono); font-size: 0.7rem; color: #666; background: #1a1a1a; padding: 0.2rem 0.6rem; border-radius: var(--radius-full); }
+.tutorial-card h3 { font-family: var(--font-mono); font-size: 0.9rem; font-weight: 700; margin-bottom: 0.4rem; }
+.tutorial-card p { font-size: 0.8rem; color: #777; margin-bottom: 1rem; line-height: 1.5; }
+.tutorial-card__steps { padding-left: 1.25rem; display: flex; flex-direction: column; gap: 0.4rem; }
+.tutorial-card__steps li { font-size: 0.8rem; color: #999; line-height: 1.5; }
+
+/* ── Billing ── */
+.billing-status { display: flex; align-items: center; gap: 1rem; padding: 1.25rem 1.5rem; border-radius: var(--radius-lg); margin-bottom: 1.5rem; }
+.billing-status--trial { background: rgba(var(--color-primary-rgb), 0.06); border: 1px solid rgba(var(--color-primary-rgb), 0.15); }
+.billing-status--active { background: rgba(var(--color-primary-rgb), 0.06); border: 1px solid rgba(var(--color-primary-rgb), 0.15); }
+.billing-status--expired { background: rgba(241,37,14,0.06); border: 1px solid rgba(241,37,14,0.15); }
+.billing-status__icon { width: 40px; height: 40px; border-radius: var(--radius-full); display: flex; align-items: center; justify-content: center; }
+.billing-status--trial .billing-status__icon { background: rgba(var(--color-primary-rgb), 0.15); color: var(--color-primary); }
+.billing-status--active .billing-status__icon { background: rgba(var(--color-primary-rgb), 0.15); color: var(--color-primary); }
+.billing-status--expired .billing-status__icon { background: rgba(241,37,14,0.1); color: var(--color-error); }
+.billing-status h3 { font-family: var(--font-mono); font-size: 0.85rem; font-weight: 700; }
+.billing-status p { font-size: 0.8rem; color: #777; margin-top: 0.15rem; }
+
+.plans-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
+.plan-card { position: relative; background: #111; border: 1px solid #1e1e1e; border-radius: var(--radius-xl); padding: 1.75rem; display: flex; flex-direction: column; }
+.plan-card--popular { border-color: var(--color-primary); }
+.plan-card__badge { position: absolute; top: -10px; left: 50%; transform: translateX(-50%); background: var(--color-primary); color: var(--color-black); font-family: var(--font-mono); font-size: 0.65rem; font-weight: 700; padding: 0.15rem 0.75rem; border-radius: var(--radius-full); white-space: nowrap; }
+.plan-card h3 { font-family: var(--font-display); font-size: 1.1rem; margin-bottom: 0.75rem; }
+.plan-card__price { margin-bottom: 1.25rem; padding-bottom: 1.25rem; border-bottom: 1px solid #222; }
+.plan-card__price span { font-family: var(--font-display); font-size: 2.25rem; font-weight: 800; color: var(--color-primary); }
+.plan-card ul { list-style: none; flex: 1; display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 1.5rem; }
+.plan-card li { display: flex; align-items: center; gap: 0.5rem; font-size: 0.8rem; color: #aaa; }
+.plan-card li svg { color: var(--color-primary); flex-shrink: 0; }
+
+/* ── Responsive ── */
+@media (max-width: 768px) {
+  .stats-grid { grid-template-columns: repeat(2, 1fr); }
+  .actions-grid { grid-template-columns: 1fr; }
+  .form-grid { grid-template-columns: 1fr; }
+  .qr-section { grid-template-columns: 1fr; }
+  .tutorials-grid { grid-template-columns: 1fr; }
+  .plans-grid { grid-template-columns: 1fr; }
+}

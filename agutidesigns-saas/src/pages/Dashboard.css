@@ -1,0 +1,223 @@
+/* ===========================================
+   Dashboard Page
+   =========================================== */
+
+.dashboard-page {
+  --color-green: #25d366;
+  --color-bg: #0f1117;
+  --color-card: #1c1f2a;
+  --color-border: #2a2d3a;
+  --color-text: #e4e4e7;
+  --color-muted: #71717a;
+}
+
+.dashboard-header {
+  margin-bottom: var(--space-8);
+}
+
+.dashboard-title {
+  font-size: 1.75rem;
+  font-weight: 600;
+  color: var(--color-text);
+  margin-bottom: var(--space-2);
+}
+
+.dashboard-subtitle {
+  font-size: 1rem;
+  color: var(--color-muted);
+}
+
+/* -------------------------------------------
+   Stats grid
+   ------------------------------------------- */
+.dashboard-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--space-4);
+  margin-bottom: var(--space-8);
+}
+
+@media (max-width: 1024px) {
+  .dashboard-stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 480px) {
+  .dashboard-stats {
+    grid-template-columns: 1fr;
+  }
+}
+
+.stat-card {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-4);
+  padding: var(--space-5);
+  background: var(--color-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  transition: border-color var(--transition-fast);
+}
+
+.stat-card:hover {
+  border-color: var(--color-muted);
+}
+
+.stat-card-icon {
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(37, 211, 102, 0.12);
+  color: var(--color-green);
+  border-radius: var(--radius-md);
+}
+
+.stat-card-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.stat-card-value {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--color-text);
+  font-family: var(--font-mono);
+}
+
+.stat-card-label {
+  font-size: 0.875rem;
+  color: var(--color-muted);
+}
+
+.stat-card-trend {
+  font-size: 0.75rem;
+  color: var(--color-green);
+  font-weight: 500;
+  margin-top: var(--space-1);
+}
+
+/* -------------------------------------------
+   Sections
+   ------------------------------------------- */
+.dashboard-section {
+  margin-bottom: var(--space-8);
+}
+
+.dashboard-section:last-child {
+  margin-bottom: 0;
+}
+
+.dashboard-section-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--color-text);
+  margin-bottom: var(--space-4);
+}
+
+/* -------------------------------------------
+   Agent status
+   ------------------------------------------- */
+.agent-status {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-4);
+  font-size: 0.9375rem;
+  font-weight: 500;
+  border-radius: var(--radius-md);
+  background: var(--color-card);
+  border: 1px solid var(--color-border);
+}
+
+.agent-status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: var(--radius-full);
+  flex-shrink: 0;
+}
+
+.agent-status--active .agent-status-dot {
+  background: var(--color-green);
+  box-shadow: 0 0 8px rgba(37, 211, 102, 0.5);
+}
+
+.agent-status--inactive .agent-status-dot {
+  background: var(--color-muted);
+}
+
+.agent-status--inactive {
+  color: var(--color-muted);
+}
+
+/* -------------------------------------------
+   Conversation list
+   ------------------------------------------- */
+.conversation-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.conversation-item {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-4);
+  padding: var(--space-4);
+  background: var(--color-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  transition: border-color var(--transition-fast);
+}
+
+.conversation-item:hover {
+  border-color: var(--color-muted);
+}
+
+.conversation-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-full);
+  background: rgba(37, 211, 102, 0.2);
+  color: var(--color-green);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 0.9375rem;
+  flex-shrink: 0;
+}
+
+.conversation-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.conversation-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  margin-bottom: var(--space-1);
+}
+
+.conversation-name {
+  font-weight: 500;
+  color: var(--color-text);
+}
+
+.conversation-time {
+  font-size: 0.75rem;
+  color: var(--color-muted);
+}
+
+.conversation-preview {
+  font-size: 0.875rem;
+  color: var(--color-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
