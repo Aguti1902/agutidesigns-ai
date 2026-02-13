@@ -1,17 +1,19 @@
 import { useState } from 'react';
 import { CreditCard, Zap, Check, AlertTriangle, ArrowRight, Plus, MessageCircle, Smartphone, Package, Loader2, ExternalLink } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
+import { supabase } from '../lib/supabase';
 import './DashboardPages.css';
 
-const API_URL = import.meta.env.VITE_API_URL || '';
-const ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
+// URL de Edge Functions: prioridad VITE_API_URL, si no existe se construye desde Supabase URL
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || '';
+const API_URL = import.meta.env.VITE_API_URL || (SUPABASE_URL ? `${SUPABASE_URL.replace(/\/$/, '')}/functions/v1` : '');
 
 const PLANS = [
   {
     id: 'starter',
     name: 'Starter',
     price: '29',
-    priceId: 'price_1T0PJrC3QI1Amukvx91hMZHq',
+    priceId: 'price_1T0RlfC3QI1AmukvNi6TCABc',
     agents: '1 número de WhatsApp',
     messages: '500 mensajes/mes',
     features: ['1 agente IA (1 número WhatsApp)', '500 mensajes/mes incluidos', '1 prompt personalizado', 'Datos de negocio', 'Soporte por email', 'Dashboard básico'],
@@ -20,7 +22,7 @@ const PLANS = [
     id: 'pro',
     name: 'Pro',
     price: '79',
-    priceId: 'price_1T0PJrC3QI1Amukvy1zWDKae',
+    priceId: 'price_1T0RlgC3QI1Amukv4Pq4kpBh',
     popular: true,
     agents: '3 números de WhatsApp',
     messages: '5.000 mensajes/mes',
@@ -30,7 +32,7 @@ const PLANS = [
     id: 'business',
     name: 'Business',
     price: '199',
-    priceId: 'price_1T0PJsC3QI1Amukvfl8lWDXO',
+    priceId: 'price_1T0RliC3QI1AmukvBqxU8Qnu',
     agents: 'Números ilimitados',
     messages: '20.000 mensajes/mes',
     features: ['Agentes ilimitados (WhatsApp ilimitados)', '20.000 mensajes/mes incluidos', 'Prompt independiente por agente', 'Datos de negocio por agente', 'Soporte 24/7', 'Dashboard completo', 'API personalizada', 'Marca blanca'],
@@ -38,11 +40,11 @@ const PLANS = [
 ];
 
 const MSG_PACKS = [
-  { id: 'pack-500', messages: 500, price: 9, priceId: 'price_1T0PJBC3QI1AmukvvJ7nDgIv' },
-  { id: 'pack-1000', messages: 1000, price: 15, priceId: 'price_1T0PJCC3QI1AmukvC2dY4I6e' },
-  { id: 'pack-2500', messages: 2500, price: 29, priceId: 'price_1T0PJCC3QI1AmukvzFy5U3ar' },
-  { id: 'pack-5000', messages: 5000, price: 49, priceId: 'price_1T0PJDC3QI1AmukvebqfCiFt' },
-  { id: 'pack-10000', messages: 10000, price: 79, priceId: 'price_1T0PJEC3QI1Amukv6ZLNNZhG' },
+  { id: 'pack-500', messages: 500, price: 9, priceId: 'price_1T0RliC3QI1Amukvz8BJx96a' },
+  { id: 'pack-1000', messages: 1000, price: 15, priceId: 'price_1T0RljC3QI1AmukvfBI04iTh' },
+  { id: 'pack-2500', messages: 2500, price: 29, priceId: 'price_1T0RlkC3QI1AmukvaMakldlD' },
+  { id: 'pack-5000', messages: 5000, price: 49, priceId: 'price_1T0RllC3QI1Amukvpm1oLS0r' },
+  { id: 'pack-10000', messages: 10000, price: 79, priceId: 'price_1T0RlmC3QI1Amukv5Ha2LNhR' },
 ];
 
 const fmt = (n) => n.toLocaleString('es-ES');
@@ -58,12 +60,26 @@ export default function Billing() {
     ? Math.max(0, Math.ceil((new Date(profile.trial_ends_at) - new Date()) / 86400000))
     : 0;
 
+  async function getAuthHeaders() {
+    const { data: { session } } = await supabase.auth.getSession();
+    const token = session?.access_token;
+    return {
+      'Content-Type': 'application/json',
+      ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+    };
+  }
+
   async function handleSubscribe(plan) {
+    if (!API_URL) {
+      alert('Error: No está configurada la URL de la API (VITE_API_URL o VITE_SUPABASE_URL). Revisa las variables de entorno.');
+      return;
+    }
     setLoadingPlan(plan.id);
     try {
+      const headers = await getAuthHeaders();
       const res = await fetch(`${API_URL}/stripe-checkout`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${ANON_KEY}` },
+        headers,
         body: JSON.stringify({
           priceId: plan.priceId,
           userId: user.id,
@@ -73,14 +89,15 @@ export default function Billing() {
           cancelUrl: `${window.location.origin}/app/billing?cancelled=true`,
         }),
       });
-      const data = await res.json();
-      if (data.url) {
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && data.url) {
         window.location.href = data.url;
       } else {
-        alert('Error: ' + (data.error || 'No se pudo crear la sesión de pago'));
+        const msg = data.error || (res.status === 404 ? 'Función stripe-checkout no encontrada. Despliega la Edge Function en Supabase.' : res.status === 500 ? 'Error en el servidor. Revisa que STRIPE_SECRET_KEY esté en Supabase.' : `Error ${res.status}`);
+        alert('Error: ' + msg);
       }
     } catch (err) {
-      alert('Error: ' + err.message);
+      alert('Error: ' + (err.message || 'No se pudo conectar. Comprueba la URL de la API.'));
     } finally {
       setLoadingPlan(null);
     }
@@ -90,12 +107,16 @@ export default function Billing() {
     if (!selectedPack) return;
     const pack = MSG_PACKS.find(p => p.id === selectedPack);
     if (!pack) return;
-
+    if (!API_URL) {
+      alert('Error: No está configurada la URL de la API. Revisa VITE_API_URL o VITE_SUPABASE_URL.');
+      return;
+    }
     setLoadingPack(true);
     try {
+      const headers = await getAuthHeaders();
       const res = await fetch(`${API_URL}/stripe-checkout`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${ANON_KEY}` },
+        headers,
         body: JSON.stringify({
           priceId: pack.priceId,
           userId: user.id,
@@ -105,11 +126,11 @@ export default function Billing() {
           cancelUrl: `${window.location.origin}/app/billing`,
         }),
       });
-      const data = await res.json();
-      if (data.url) window.location.href = data.url;
-      else alert('Error: ' + (data.error || 'No se pudo crear la sesión'));
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && data.url) window.location.href = data.url;
+      else alert('Error: ' + (data.error || (res.status === 404 ? 'Función no encontrada.' : `Error ${res.status}`)));
     } catch (err) {
-      alert('Error: ' + err.message);
+      alert('Error: ' + (err.message || 'No se pudo conectar.'));
     } finally {
       setLoadingPack(false);
     }
@@ -117,20 +138,26 @@ export default function Billing() {
 
   async function handleManageSubscription() {
     if (!profile?.stripe_customer_id) return;
+    if (!API_URL) {
+      alert('Error: No está configurada la URL de la API.');
+      return;
+    }
     setLoadingPortal(true);
     try {
+      const headers = await getAuthHeaders();
       const res = await fetch(`${API_URL}/stripe-portal`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${ANON_KEY}` },
+        headers,
         body: JSON.stringify({
           customerId: profile.stripe_customer_id,
           returnUrl: `${window.location.origin}/app/billing`,
         }),
       });
-      const data = await res.json();
-      if (data.url) window.location.href = data.url;
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && data.url) window.location.href = data.url;
+      else alert('Error: ' + (data.error || `Error ${res.status}`));
     } catch (err) {
-      alert('Error: ' + err.message);
+      alert('Error: ' + (err.message || 'No se pudo conectar.'));
     } finally {
       setLoadingPortal(false);
     }
