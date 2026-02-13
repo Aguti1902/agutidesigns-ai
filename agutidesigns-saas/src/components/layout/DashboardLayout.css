@@ -1,4 +1,44 @@
-.dash { display: flex; min-height: 100vh; }
+.dash { display: flex; flex-direction: column; min-height: 100vh; }
+.dash__body { display: flex; flex: 1; }
+
+/* ── Trial Banner ── */
+.trial-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.5rem 1.5rem;
+  background: linear-gradient(90deg, rgba(245,158,11,0.1), rgba(245,158,11,0.05));
+  border-bottom: 1px solid rgba(245,158,11,0.2);
+  flex-shrink: 0;
+}
+
+.trial-banner__left {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: #F59E0B;
+}
+
+.trial-banner__left strong { color: white; }
+
+.trial-banner__btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.3rem 0.8rem;
+  background: #F59E0B;
+  color: var(--color-black);
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  font-weight: 700;
+  border-radius: var(--radius-full);
+  text-decoration: none;
+  transition: all 0.15s;
+}
+
+.trial-banner__btn:hover { box-shadow: 0 0 12px rgba(245,158,11,0.3); }
 
 /* ── Sidebar ── */
 .dash__sidebar {
@@ -11,35 +51,38 @@
   padding: 1.25rem;
   position: sticky;
   top: 0;
-  height: 100vh;
+  height: calc(100vh - 37px);
   flex-shrink: 0;
 }
+
+.trial-banner ~ .dash__body .dash__sidebar { height: calc(100vh - 37px); }
 
 .dash__logo {
   display: flex;
   align-items: center;
   gap: 0.6rem;
-  color: var(--color-primary);
-  font-family: var(--font-mono);
-  font-weight: 700;
-  font-size: 0.95rem;
-  margin-bottom: 1rem;
-  padding: 0.5rem 0;
+  margin-bottom: 1.25rem;
+  padding: 0.5rem 0.75rem;
 }
 
-.dash__trial {
-  display: flex;
+.dash__logo-img {
+  height: 32px;
+  width: auto;
+  display: block;
+}
+
+.dash__logo-badge {
+  display: inline-flex;
   align-items: center;
-  gap: 0.4rem;
-  padding: 0.4rem 0.75rem;
-  background: rgba(var(--color-primary-rgb), 0.08);
-  border: 1px solid rgba(var(--color-primary-rgb), 0.2);
-  border-radius: var(--radius-full);
+  justify-content: center;
+  padding: 0.2rem 0.5rem;
+  background: var(--color-primary);
+  color: var(--color-black);
   font-family: var(--font-mono);
-  font-size: 0.7rem;
-  font-weight: 600;
-  color: var(--color-primary);
-  margin-bottom: 1.25rem;
+  font-size: 0.65rem;
+  font-weight: 800;
+  border-radius: var(--radius-sm);
+  letter-spacing: 0.05em;
 }
 
 /* ── Nav ── */
@@ -126,12 +169,92 @@
 /* ── Content ── */
 .dash__content {
   flex: 1;
-  padding: 2rem;
+  padding: 2rem 3rem;
   overflow-y: auto;
-  max-width: 960px;
 }
+
+/* ── Expired Screen ── */
+.expired {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-black);
+  padding: 2rem;
+}
+
+.expired__card {
+  text-align: center;
+  max-width: 500px;
+  background: #111;
+  border: 1px solid rgba(245,158,11,0.2);
+  border-radius: var(--radius-xl);
+  padding: 3rem 2.5rem;
+}
+
+.expired__icon {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: rgba(245,158,11,0.08);
+  color: #F59E0B;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 1.5rem;
+}
+
+.expired h1 {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-bottom: 0.75rem;
+}
+
+.expired p {
+  color: #888;
+  font-size: 0.9rem;
+  line-height: 1.7;
+  margin-bottom: 2rem;
+}
+
+.expired__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.9rem 2rem;
+  background: var(--color-primary);
+  color: var(--color-black);
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: 0.9rem;
+  border-radius: var(--radius-full);
+  text-decoration: none;
+  transition: all 0.2s;
+  margin-bottom: 1rem;
+}
+
+.expired__btn:hover { box-shadow: 0 0 20px rgba(var(--color-primary-rgb), 0.3); }
+
+.expired__logout {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  margin: 0 auto;
+  background: none;
+  border: none;
+  color: #555;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  cursor: pointer;
+}
+
+.expired__logout:hover { color: #999; }
 
 @media (max-width: 768px) {
   .dash__sidebar { display: none; }
   .dash__content { padding: 1rem; }
+  .trial-banner { flex-direction: column; gap: 0.5rem; text-align: center; padding: 0.75rem; }
 }

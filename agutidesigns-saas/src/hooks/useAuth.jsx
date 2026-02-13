@@ -30,6 +30,26 @@ export function AuthProvider({ children }) {
     setLoading(false);
   }
 
+  async function checkPhoneAvailable(phone) {
+    const normalized = phone.replace(/\s/g, '');
+    const { data } = await supabase
+      .from('used_trial_phones')
+      .select('phone')
+      .eq('phone', normalized)
+      .single();
+    return !data; // true if available
+  }
+
+  async function registerTrialPhone(phone, userId) {
+    const normalized = phone.replace(/\s/g, '');
+    const { data, error } = await supabase.rpc('register_trial_phone', {
+      p_phone: normalized,
+      p_user_id: userId,
+    });
+    if (error) throw error;
+    return data; // true if registered, false if already exists
+  }
+
   async function signUp(email, password, fullName) {
     const { data, error } = await supabase.auth.signUp({
       email, password,
@@ -71,7 +91,7 @@ export function AuthProvider({ children }) {
   return (
     <AuthContext.Provider value={{
       user, profile, loading, signUp, signIn, signOut, updateProfile, fetchProfile,
-      isTrialActive, isSubscribed, hasAccess
+      checkPhoneAvailable, registerTrialPhone, isTrialActive, isSubscribed, hasAccess
     }}>
       {children}
     </AuthContext.Provider>

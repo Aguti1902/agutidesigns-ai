@@ -1,16 +1,17 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { MessageCircle, Mail, Lock, User, ArrowRight, Eye, EyeOff, Zap } from 'lucide-react';
+import { MessageCircle, Mail, Lock, User, ArrowRight, Eye, EyeOff, Zap, CheckCircle, Phone } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import './AuthPage.css';
 
 export default function AuthPage() {
-  const { signIn, signUp } = useAuth();
+  const { signIn, signUp, checkPhoneAvailable, registerTrialPhone } = useAuth();
   const [mode, setMode] = useState('login');
-  const [form, setForm] = useState({ name: '', email: '', password: '' });
+  const [form, setForm] = useState({ name: '', email: '', password: '', phone: '' });
   const [showPw, setShowPw] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [emailSent, setEmailSent] = useState(false);
 
   const update = (f, v) => setForm(p => ({ ...p, [f]: v }));
 
@@ -21,7 +22,22 @@ export default function AuthPage() {
     try {
       if (mode === 'register') {
         if (!form.name) throw new Error('Introduce tu nombre');
-        await signUp(form.email, form.password, form.name);
+        if (!form.phone || form.phone.replace(/\s/g, '').length < 9) throw new Error('Introduce un número de teléfono válido');
+
+        // Check if phone already used for a trial
+        const phoneAvailable = await checkPhoneAvailable(form.phone);
+        if (!phoneAvailable) {
+          throw new Error('Este número de teléfono ya ha sido utilizado para una prueba gratuita. Si necesitas ayuda, contacta con soporte.');
+        }
+
+        const data = await signUp(form.email, form.password, form.name);
+
+        // Register the phone for the trial
+        if (data?.user?.id) {
+          await registerTrialPhone(form.phone, data.user.id);
+        }
+
+        setEmailSent(true);
       } else {
         await signIn(form.email, form.password);
       }
@@ -32,13 +48,73 @@ export default function AuthPage() {
     }
   };
 
+  // ── Email verification waiting screen ──
+  if (emailSent) {
+    return (
+      <div className="auth">
+        <div className="auth__left">
+          <div className="auth__left-content">
+            <div className="auth__logo">
+              <img src="/images/Logoverde.png" alt="Agutidesigns" className="auth__logo-img" />
+              <span className="auth__logo-badge">IA</span>
+            </div>
+            <h1>Tu agente de WhatsApp IA</h1>
+            <p>Crea un asistente inteligente que atiende a tus clientes 24/7. Sin código, en minutos.</p>
+          </div>
+        </div>
+        <div className="auth__right">
+          <motion.div
+            className="auth__verify"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+          >
+            <div className="auth__verify-icon">
+              <Mail size={32} />
+            </div>
+            <h2>Revisa tu email</h2>
+            <p className="auth__verify-text">
+              Hemos enviado un enlace de verificación a
+            </p>
+            <p className="auth__verify-email">{form.email}</p>
+            <p className="auth__verify-hint">
+              Haz clic en el enlace del email para activar tu cuenta. Puede tardar unos segundos en llegar.
+            </p>
+            <div className="auth__verify-tips">
+              <span>¿No lo encuentras?</span>
+              <ul>
+                <li>Revisa la carpeta de spam</li>
+                <li>Asegúrate de que el email es correcto</li>
+              </ul>
+            </div>
+            <button
+              className="auth__verify-btn"
+              onClick={() => { setEmailSent(false); setMode('login'); }}
+            >
+              Ya he verificado, iniciar sesión <ArrowRight size={14} />
+            </button>
+            <button
+              className="auth__verify-resend"
+              onClick={async () => {
+                try {
+                  await signUp(form.email, form.password, form.name);
+                } catch {}
+              }}
+            >
+              Reenviar email
+            </button>
+          </motion.div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="auth">
       <div className="auth__left">
         <div className="auth__left-content">
           <div className="auth__logo">
-            <MessageCircle size={28} />
-            <span>Agutidesigns</span>
+            <img src="/images/Logoverde.png" alt="Agutidesigns" className="auth__logo-img" />
+            <span className="auth__logo-badge">IA</span>
           </div>
           <h1>Tu agente de WhatsApp IA</h1>
           <p>Crea un asistente inteligente que atiende a tus clientes 24/7. Sin código, en minutos.</p>
@@ -63,10 +139,17 @@ export default function AuthPage() {
           </p>
 
           {mode === 'register' && (
-            <div className="auth__field">
-              <label><User size={14} /> Nombre</label>
-              <input type="text" placeholder="Tu nombre" value={form.name} onChange={e => update('name', e.target.value)} />
-            </div>
+            <>
+              <div className="auth__field">
+                <label><User size={14} /> Nombre</label>
+                <input type="text" placeholder="Tu nombre" value={form.name} onChange={e => update('name', e.target.value)} />
+              </div>
+              <div className="auth__field">
+                <label><Phone size={14} /> Teléfono / WhatsApp</label>
+                <input type="tel" placeholder="+34 600 000 000" value={form.phone} onChange={e => update('phone', e.target.value)} />
+                <span className="auth__field-hint">Este número se usará para vincular tu agente IA</span>
+              </div>
+            </>
           )}
 
           <div className="auth__field">
