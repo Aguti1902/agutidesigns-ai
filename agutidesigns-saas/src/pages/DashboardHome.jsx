@@ -1,24 +1,75 @@
-import { MessageCircle, Users, BarChart3, Zap, ArrowRight } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { MessageCircle, Users, BarChart3, Zap, ArrowRight, TrendingUp, Wifi, WifiOff } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
+import { useAgents } from '../hooks/useAgents';
+import { supabase } from '../lib/supabase';
 import './DashboardPages.css';
 
-const stats = [
-  { label: 'Mensajes hoy', value: '0', icon: <MessageCircle size={18} />, color: '#25D366' },
-  { label: 'Leads captados', value: '0', icon: <Users size={18} />, color: '#E5FC63' },
-  { label: 'Conversaciones', value: '0', icon: <BarChart3 size={18} />, color: '#EC6746' },
-  { label: 'Agente', value: 'Inactivo', icon: <Zap size={18} />, color: '#666' },
-];
-
 const quickActions = [
-  { label: 'Conectar WhatsApp', to: '/app/whatsapp', desc: 'Vincula tu número' },
+  { label: 'Conectar WhatsApp', to: '/app/whatsapp', desc: 'Vincula tu número y ve conversaciones' },
   { label: 'Datos del negocio', to: '/app/negocio', desc: 'Contexto para la IA' },
   { label: 'Configurar prompt', to: '/app/agente', desc: 'Personaliza tu agente' },
-  { label: 'Ver tutoriales', to: '/app/tutoriales', desc: 'Aprende a usarlo' },
+  { label: 'Ver mensajes', to: '/app/mensajes', desc: 'Uso y packs de mensajes' },
 ];
 
 export default function DashboardHome() {
   const { profile } = useAuth();
+  const { activeAgent, agents } = useAgents();
+  const [stats, setStats] = useState({ messagesToday: 0, leads: 0, activeConvos: 0 });
+
+  useEffect(() => {
+    if (!activeAgent) return;
+    async function loadStats() {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      const [msgsRes, leadsRes, activesRes] = await Promise.all([
+        supabase
+          .from('messages')
+          .select('id', { count: 'exact', head: true })
+          .gte('created_at', today.toISOString())
+          .in('conversation_id',
+            (await supabase.from('conversations').select('id').eq('agent_id', activeAgent.id)).data?.map(c => c.id) || []
+          ),
+        supabase
+          .from('conversations')
+          .select('id', { count: 'exact', head: true })
+          .eq('agent_id', activeAgent.id)
+          .eq('is_lead', true),
+        supabase
+          .from('conversations')
+          .select('id', { count: 'exact', head: true })
+          .eq('agent_id', activeAgent.id)
+          .eq('status', 'active'),
+      ]);
+
+      setStats({
+        messagesToday: msgsRes.count || 0,
+        leads: leadsRes.count || 0,
+        activeConvos: activesRes.count || 0,
+      });
+    }
+    loadStats();
+
+    const channel = supabase
+      .channel('dashboard-stats')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, () => loadStats())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'conversations' }, () => loadStats())
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [activeAgent?.id]);
+
+  const isConnected = activeAgent?.whatsapp_connected === true;
+  const totalMessages = agents.reduce((sum, a) => sum + (a.total_messages || 0), 0);
+
+  const statsData = [
+    { label: 'Mensajes hoy', value: stats.messagesToday.toString(), icon: <MessageCircle size={18} />, color: '#25D366' },
+    { label: 'Leads captados', value: stats.leads.toString(), icon: <Users size={18} />, color: '#E5FC63' },
+    { label: 'Convos activas', value: stats.activeConvos.toString(), icon: <BarChart3 size={18} />, color: '#EC6746' },
+    { label: 'Agente', value: isConnected ? 'Activo' : 'Inactivo', icon: isConnected ? <Wifi size={18} /> : <WifiOff size={18} />, color: isConnected ? '#25D366' : '#666' },
+  ];
 
   return (
     <div className="page">
@@ -29,7 +80,7 @@ export default function DashboardHome() {
 
       {/* Stats */}
       <div className="stats-grid">
-        {stats.map((s, i) => (
+        {statsData.map((s, i) => (
           <div key={i} className="stat-card">
             <div className="stat-card__icon" style={{ color: s.color, background: `${s.color}15` }}>{s.icon}</div>
             <div>
@@ -39,6 +90,26 @@ export default function DashboardHome() {
           </div>
         ))}
       </div>
+
+      {/* Message usage mini */}
+      {profile && (
+        <div className="card" style={{ marginTop: '1rem', padding: '1.25rem' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+            <span style={{ fontSize: '0.82rem', color: '#999' }}><TrendingUp size={14} style={{ verticalAlign: 'middle' }} /> Uso de mensajes</span>
+            <Link to="/app/mensajes" style={{ fontSize: '0.75rem', color: 'var(--color-primary)', textDecoration: 'none' }}>Ver detalle →</Link>
+          </div>
+          <div style={{ background: '#1a1a1a', borderRadius: '6px', height: '8px', overflow: 'hidden' }}>
+            <div style={{
+              height: '100%', borderRadius: '6px', transition: 'width 0.5s',
+              width: `${Math.min(100, (totalMessages / (profile.message_limit || 500)) * 100)}%`,
+              background: (totalMessages / (profile.message_limit || 500)) > 0.95 ? '#ef4444' : (totalMessages / (profile.message_limit || 500)) > 0.8 ? '#f59e0b' : '#25D366',
+            }} />
+          </div>
+          <p style={{ fontSize: '0.72rem', color: '#666', marginTop: '0.3rem' }}>
+            {totalMessages.toLocaleString('es-ES')} de {(profile.message_limit || 500).toLocaleString('es-ES')} mensajes usados
+          </p>
+        </div>
+      )}
 
       {/* Quick Actions */}
       <h3 className="page__section-title">Acciones rápidas</h3>

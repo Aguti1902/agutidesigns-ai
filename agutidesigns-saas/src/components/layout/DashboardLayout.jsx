@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { NavLink, Outlet, useNavigate, Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, MessageCircle, Building, Brain, BookOpen, CreditCard, LogOut, Zap, HelpCircle, Clock, AlertTriangle, ArrowRight, Lock } from 'lucide-react';
+import { LayoutDashboard, MessageCircle, Building, Brain, BookOpen, CreditCard, LogOut, Zap, HelpCircle, Clock, AlertTriangle, ArrowRight, Lock, BarChart3 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import AgentSelector from '../dashboard/AgentSelector';
 import './DashboardLayout.css';
@@ -12,6 +12,7 @@ const navItems = [
   { to: '/app/agente', icon: <Brain size={18} />, label: 'Prompt IA' },
   { to: '/app/tutoriales', icon: <BookOpen size={18} />, label: 'Tutoriales' },
   { to: '/app/billing', icon: <CreditCard size={18} />, label: 'Suscripción' },
+  { to: '/app/mensajes', icon: <BarChart3 size={18} />, label: 'Mensajes' },
   { to: '/app/soporte', icon: <HelpCircle size={18} />, label: 'Soporte' },
 ];
 
@@ -51,11 +52,14 @@ export default function DashboardLayout() {
     navigate('/');
   };
 
-  // Allow billing page even when expired
+  // Permitir billing, checkout y mensajes cuando la suscripción ha expirado
   const isBillingPage = location.pathname.includes('/billing');
+  const isCheckoutPage = location.pathname.includes('/checkout');
+  const isMessagesPage = location.pathname.includes('/mensajes');
+  const allowWhenExpired = isBillingPage || isCheckoutPage || isMessagesPage;
 
-  // ── Expired: block everything except billing ──
-  if (!hasAccess && profile && !isBillingPage) {
+  // ── Expired: bloquear todo excepto billing, checkout y mensajes ──
+  if (!hasAccess && profile && !allowWhenExpired) {
     return (
       <div className="expired">
         <div className="expired__card">

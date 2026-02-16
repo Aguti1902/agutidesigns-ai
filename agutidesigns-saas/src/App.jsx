@@ -11,6 +11,8 @@ import BusinessInfo from './pages/BusinessInfo';
 import PromptBuilder from './pages/PromptBuilder';
 import Tutorials from './pages/Tutorials';
 import Billing from './pages/Billing';
+import Checkout from './pages/Checkout';
+import Messages from './pages/Messages';
 import Support from './pages/Support';
 
 function ProtectedRoute({ children }) {
@@ -51,6 +53,8 @@ export default function App() {
         <Route path="agente" element={<PromptBuilder />} />
         <Route path="tutoriales" element={<Tutorials />} />
         <Route path="billing" element={<Billing />} />
+        <Route path="checkout" element={<Checkout />} />
+        <Route path="mensajes" element={<Messages />} />
         <Route path="soporte" element={<Support />} />
       </Route>
       

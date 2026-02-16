@@ -1,0 +1,219 @@
+/* ══════════════════════════════════
+   Messages - Página de uso de mensajes
+   Dark mode: #111 bg, #1e1e1e borders, green primary
+   Estilo coherente con DashboardPages.css
+   ══════════════════════════════════ */
+
+.messages-section {
+  margin-bottom: 2rem;
+}
+
+/* ── Tarjeta de uso ── */
+.messages-usage-card {
+  background: #111;
+  border: 1px solid #1e1e1e;
+  border-radius: var(--radius-xl);
+  padding: 1.5rem 1.75rem;
+}
+
+.messages-usage__info {
+  margin-bottom: 1rem;
+}
+
+.messages-usage__text {
+  font-family: var(--font-mono);
+  font-size: 0.9rem;
+  color: #aaa;
+}
+
+.messages-usage__text strong {
+  color: var(--color-primary);
+}
+
+.messages-usage__bar {
+  height: 10px;
+  background: #1a1a1a;
+  border-radius: 99px;
+  overflow: hidden;
+}
+
+.messages-usage__fill {
+  height: 100%;
+  border-radius: 99px;
+  transition: width 0.4s ease, background-color 0.3s;
+}
+
+/* ── Alertas ── */
+.messages-alert {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 1rem 1.25rem;
+  border-radius: var(--radius-lg);
+  margin-top: 1rem;
+}
+
+.messages-alert svg {
+  flex-shrink: 0;
+  margin-top: 0.1rem;
+}
+
+.messages-alert strong {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  margin-bottom: 0.2rem;
+}
+
+.messages-alert p {
+  font-size: 0.8rem;
+  color: #888;
+  margin: 0;
+}
+
+.messages-alert--warning {
+  background: rgba(245, 158, 11, 0.08);
+  border: 1px solid rgba(245, 158, 11, 0.2);
+}
+
+.messages-alert--warning strong {
+  color: var(--color-warning);
+}
+
+.messages-alert--critical {
+  background: rgba(241, 37, 14, 0.08);
+  border: 1px solid rgba(241, 37, 14, 0.2);
+}
+
+.messages-alert--critical strong {
+  color: var(--color-error);
+}
+
+/* ── Grid de packs ── */
+.messages-packs-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.messages-pack-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 1.25rem 1rem;
+  background: #111;
+  border: 2px solid #1e1e1e;
+  border-radius: var(--radius-lg);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.messages-pack-card:hover {
+  border-color: #333;
+}
+
+.messages-pack-card--selected {
+  border-color: var(--color-primary);
+  background: rgba(var(--color-primary-rgb), 0.06);
+}
+
+.messages-pack-card__name {
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #aaa;
+}
+
+.messages-pack-card--selected .messages-pack-card__name {
+  color: var(--color-primary);
+}
+
+.messages-pack-card__count {
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: white;
+}
+
+.messages-pack-card--selected .messages-pack-card__count {
+  color: var(--color-primary);
+}
+
+.messages-pack-card__price {
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--color-primary);
+  margin-top: 0.25rem;
+}
+
+.messages-packs__action {
+  margin-top: 0.5rem;
+}
+
+/* ── Historial ── */
+.messages-history {
+  background: #111;
+  border: 1px solid #1e1e1e;
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+}
+
+.messages-history__table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.messages-history__table th,
+.messages-history__table td {
+  padding: 1rem 1.25rem;
+  text-align: left;
+  border-bottom: 1px solid #1a1a1a;
+}
+
+.messages-history__table th {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #555;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.messages-history__table td {
+  font-size: 0.9rem;
+  color: #aaa;
+}
+
+.messages-history__table tr:last-child td {
+  border-bottom: none;
+}
+
+.messages-history__table tbody tr:hover td {
+  color: #ccc;
+}
+
+/* ── Responsive ── */
+@media (max-width: 768px) {
+  .messages-packs-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .messages-usage-card {
+    padding: 1.25rem;
+  }
+
+  .messages-history__table th,
+  .messages-history__table td {
+    padding: 0.75rem 1rem;
+    font-size: 0.85rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .messages-packs-grid {
+    grid-template-columns: 1fr;
+  }
+}

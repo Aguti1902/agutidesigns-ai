@@ -1,0 +1,253 @@
+/* ══════════════════════════════════
+   Checkout - Página completa de pago
+   Dark mode: #111 bg, #1e1e1e borders, green primary
+   ══════════════════════════════════ */
+
+.checkout-page {
+  min-height: 100%;
+  background: #111;
+  padding: 1.5rem;
+}
+
+.checkout-page__grid {
+  display: grid;
+  grid-template-columns: 40% 1fr;
+  gap: 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
+  align-items: start;
+}
+
+/* ── Columna izquierda ── */
+.checkout-page__left {
+  position: sticky;
+  top: 1.5rem;
+}
+
+.checkout-page__back {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: none;
+  border: none;
+  color: #666;
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  cursor: pointer;
+  margin-bottom: 1.5rem;
+  padding: 0;
+  transition: color 0.15s;
+}
+
+.checkout-page__back:hover {
+  color: var(--color-primary);
+}
+
+.checkout-page__summary {
+  background: #0a0a0a;
+  border: 1px solid #1e1e1e;
+  border-radius: var(--radius-xl);
+  padding: 1.75rem;
+}
+
+.checkout-page__title {
+  font-family: var(--font-display);
+  font-size: 1.75rem;
+  font-weight: 800;
+  color: white;
+  margin-bottom: 0.5rem;
+}
+
+.checkout-page__price {
+  margin-bottom: 1.5rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid #1e1e1e;
+}
+
+.checkout-page__price span:first-child {
+  font-family: var(--font-display);
+  font-size: 2.5rem;
+  font-weight: 800;
+  color: var(--color-primary);
+}
+
+.checkout-page__period {
+  font-size: 1rem;
+  color: #666;
+  font-weight: 500;
+  margin-left: 0.25rem;
+}
+
+.checkout-page__features {
+  list-style: none;
+  margin-bottom: 1.5rem;
+}
+
+.checkout-page__features li {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  color: #aaa;
+  margin-bottom: 0.5rem;
+}
+
+.checkout-page__features li svg {
+  color: var(--color-primary);
+  flex-shrink: 0;
+}
+
+.checkout-page__badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.checkout-page__badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.72rem;
+  font-family: var(--font-mono);
+  color: #666;
+  background: #111;
+  border: 1px solid #1e1e1e;
+  padding: 0.3rem 0.65rem;
+  border-radius: var(--radius-full);
+}
+
+.checkout-page__badge svg {
+  color: var(--color-primary);
+}
+
+.checkout-page__note {
+  font-size: 0.75rem;
+  color: #555;
+  margin-bottom: 1.5rem;
+  line-height: 1.5;
+}
+
+/* ── FAQ ── */
+.checkout-page__faq {
+  padding-top: 1.25rem;
+  border-top: 1px solid #1e1e1e;
+}
+
+.checkout-page__faq h3 {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #888;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 0.75rem;
+}
+
+.checkout-page__faq-item {
+  padding: 0.75rem 0;
+  border-bottom: 1px solid #151515;
+}
+
+.checkout-page__faq-item:last-child {
+  border-bottom: none;
+}
+
+.checkout-page__faq-item strong {
+  display: block;
+  font-size: 0.82rem;
+  color: #ccc;
+  margin-bottom: 0.25rem;
+}
+
+.checkout-page__faq-item p {
+  font-size: 0.78rem;
+  color: #666;
+  line-height: 1.5;
+}
+
+/* ── Columna derecha (Stripe) ── */
+.checkout-page__right {
+  min-height: 500px;
+}
+
+.checkout-page__stripe {
+  background: #0a0a0a;
+  border: 1px solid #1e1e1e;
+  border-radius: var(--radius-xl);
+  padding: 1.5rem;
+  min-height: 500px;
+}
+
+/* Stripe iframe hereda estilos; asegurar que el contenedor tenga espacio */
+.checkout-page__stripe iframe {
+  border: none !important;
+  min-height: 450px;
+}
+
+/* ── Error state ── */
+.checkout-page__error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  padding: 3rem 2rem;
+  text-align: center;
+  color: var(--color-error);
+}
+
+.checkout-page__error p {
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+/* ── Responsive: móvil ── */
+@media (max-width: 900px) {
+  .checkout-page__grid {
+    grid-template-columns: 1fr;
+    /* Columna derecha (checkout) primero en móvil para que sea visible */
+    grid-template-areas: 'right' 'left';
+  }
+
+  .checkout-page__right {
+    grid-area: right;
+    order: 1;
+  }
+
+  .checkout-page__left {
+    grid-area: left;
+    order: 2;
+    position: static;
+  }
+
+  .checkout-page__stripe {
+    min-height: 450px;
+  }
+}
+
+@media (max-width: 600px) {
+  .checkout-page {
+    padding: 1rem;
+  }
+
+  .checkout-page__summary {
+    padding: 1.25rem;
+  }
+
+  .checkout-page__title {
+    font-size: 1.4rem;
+  }
+
+  .checkout-page__price span:first-child {
+    font-size: 2rem;
+  }
+
+  .checkout-page__stripe {
+    padding: 1rem;
+    min-height: 400px;
+  }
+}

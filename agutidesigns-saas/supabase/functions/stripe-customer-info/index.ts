@@ -1,0 +1,93 @@
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'Authorization, Content-Type',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+}
+
+serve(async (req) => {
+  if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
+
+  try {
+    const STRIPE_KEY = Deno.env.get('STRIPE_SECRET_KEY') || ''
+    if (!STRIPE_KEY || !STRIPE_KEY.startsWith('sk_')) {
+      return new Response(
+        JSON.stringify({ error: 'Stripe no configurado' }),
+        { status: 500, headers: { 'Content-Type': 'application/json', ...corsHeaders } }
+      )
+    }
+
+    const { customerId } = await req.json().catch(() => ({}))
+    if (!customerId) {
+      return new Response(
+        JSON.stringify({ error: 'customerId requerido' }),
+        { status: 400, headers: { 'Content-Type': 'application/json', ...corsHeaders } }
+      )
+    }
+
+    // Fetch payment methods
+    const pmRes = await fetch(`https://api.stripe.com/v1/payment_methods?customer=${customerId}&type=card&limit=5`, {
+      headers: { 'Authorization': `Bearer ${STRIPE_KEY}` },
+    })
+    const pmData = await pmRes.json()
+
+    const paymentMethods = (pmData.data || []).map((pm: any) => ({
+      id: pm.id,
+      brand: pm.card?.brand || 'unknown',
+      last4: pm.card?.last4 || '****',
+      expMonth: pm.card?.exp_month,
+      expYear: pm.card?.exp_year,
+    }))
+
+    // Fetch recent invoices
+    const invRes = await fetch(`https://api.stripe.com/v1/invoices?customer=${customerId}&limit=10&status=paid`, {
+      headers: { 'Authorization': `Bearer ${STRIPE_KEY}` },
+    })
+    const invData = await invRes.json()
+
+    const invoices = (invData.data || []).map((inv: any) => ({
+      id: inv.id,
+      number: inv.number,
+      amount: inv.amount_paid,
+      currency: inv.currency,
+      date: inv.created,
+      pdfUrl: inv.invoice_pdf,
+      status: inv.status,
+    }))
+
+    // Fetch subscription details
+    let subscription = null
+    const subRes = await fetch(`https://api.stripe.com/v1/subscriptions?customer=${customerId}&limit=1&status=active`, {
+      headers: { 'Authorization': `Bearer ${STRIPE_KEY}` },
+    })
+    const subData = await subRes.json()
+    if (subData.data?.[0]) {
+      const sub = subData.data[0]
+      subscription = {
+        id: sub.id,
+        status: sub.status,
+        currentPeriodEnd: sub.current_period_end,
+        cancelAtPeriodEnd: sub.cancel_at_period_end,
+        items: (sub.items?.data || []).map((item: any) => ({
+          id: item.id,
+          priceId: item.price?.id,
+          productName: item.price?.product,
+          amount: item.price?.unit_amount,
+          interval: item.price?.recurring?.interval,
+        })),
+      }
+    }
+
+    return new Response(
+      JSON.stringify({ paymentMethods, invoices, subscription }),
+      { headers: { 'Content-Type': 'application/json', ...corsHeaders } }
+    )
+  } catch (error) {
+    console.error('Stripe customer-info error:', error)
+    return new Response(
+      JSON.stringify({ error: error instanceof Error ? error.message : 'Error' }),
+      { status: 500, headers: { 'Content-Type': 'application/json', ...corsHeaders } }
+    )
+  }
+})
