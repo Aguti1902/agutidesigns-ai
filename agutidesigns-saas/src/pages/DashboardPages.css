@@ -313,6 +313,55 @@
 .ticket-reply textarea::placeholder { color: #444; }
 .ticket-reply .btn { align-self: flex-end; }
 
+/* ── Billing Manage Section ── */
+.billing-manage {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.25rem 1.5rem;
+  background: linear-gradient(135deg, #0f1510 0%, #111 100%);
+  border: 1px solid rgba(var(--color-primary-rgb), 0.2);
+  border-radius: var(--radius-xl);
+  margin-bottom: 1rem;
+}
+
+.billing-manage__info {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+}
+
+.billing-manage__info svg { color: var(--color-primary); margin-top: 0.15rem; flex-shrink: 0; }
+.billing-manage__info h4 { font-size: 0.9rem; font-weight: 700; color: #eee; margin-bottom: 0.15rem; }
+.billing-manage__info p { font-size: 0.78rem; color: #777; line-height: 1.4; }
+
+.billing-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.billing-section-badges { display: flex; gap: 0.5rem; }
+.billing-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.68rem;
+  font-family: var(--font-mono);
+  color: #666;
+  background: #111;
+  border: 1px solid #1e1e1e;
+  padding: 0.25rem 0.6rem;
+  border-radius: var(--radius-full);
+}
+
+.page__header h1 { display: flex; align-items: center; gap: 0.5rem; }
+.page__section-desc { color: #666; font-size: 0.82rem; margin-top: -0.5rem; margin-bottom: 1rem; }
+
 /* ── Spin ── */
 .spin { animation: spin 0.7s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }

@@ -1,10 +1,14 @@
 import { useState } from 'react';
-import { CreditCard, Zap, Check, AlertTriangle, ArrowRight, Plus, MessageCircle, Smartphone, Package, Loader2, ExternalLink } from 'lucide-react';
+import {
+  Zap, Check, AlertTriangle, ArrowRight, Plus, MessageCircle,
+  Smartphone, Package, Loader2, ExternalLink, CreditCard, Shield,
+  Star, Sparkles
+} from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { supabase } from '../lib/supabase';
+import CheckoutModal from '../components/checkout/CheckoutModal';
 import './DashboardPages.css';
 
-// URL de Edge Functions: prioridad VITE_API_URL, si no existe se construye desde Supabase URL
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || '';
 const API_URL = import.meta.env.VITE_API_URL || (SUPABASE_URL ? `${SUPABASE_URL.replace(/\/$/, '')}/functions/v1` : '');
 
@@ -40,114 +44,49 @@ const PLANS = [
 ];
 
 const MSG_PACKS = [
-  { id: 'pack-500', messages: 500, price: 9, priceId: 'price_1T0RliC3QI1Amukvz8BJx96a' },
-  { id: 'pack-1000', messages: 1000, price: 15, priceId: 'price_1T0RljC3QI1AmukvfBI04iTh' },
-  { id: 'pack-2500', messages: 2500, price: 29, priceId: 'price_1T0RlkC3QI1AmukvaMakldlD' },
-  { id: 'pack-5000', messages: 5000, price: 49, priceId: 'price_1T0RllC3QI1Amukvpm1oLS0r' },
-  { id: 'pack-10000', messages: 10000, price: 79, priceId: 'price_1T0RlmC3QI1Amukv5Ha2LNhR' },
+  { id: 'pack-500', name: '+500 mensajes', messages: 500, price: '9', priceId: 'price_1T0RliC3QI1Amukvz8BJx96a' },
+  { id: 'pack-1000', name: '+1.000 mensajes', messages: 1000, price: '15', priceId: 'price_1T0RljC3QI1AmukvfBI04iTh' },
+  { id: 'pack-2500', name: '+2.500 mensajes', messages: 2500, price: '29', priceId: 'price_1T0RlkC3QI1AmukvaMakldlD' },
+  { id: 'pack-5000', name: '+5.000 mensajes', messages: 5000, price: '49', priceId: 'price_1T0RllC3QI1Amukvpm1oLS0r' },
+  { id: 'pack-10000', name: '+10.000 mensajes', messages: 10000, price: '79', priceId: 'price_1T0RlmC3QI1Amukv5Ha2LNhR' },
 ];
 
 const fmt = (n) => n.toLocaleString('es-ES');
 
 export default function Billing() {
   const { user, profile, isTrialActive, isSubscribed } = useAuth();
+  const [checkoutPlan, setCheckoutPlan] = useState(null);
+  const [checkoutMode, setCheckoutMode] = useState('subscription');
   const [selectedPack, setSelectedPack] = useState(null);
-  const [loadingPlan, setLoadingPlan] = useState(null);
-  const [loadingPack, setLoadingPack] = useState(false);
   const [loadingPortal, setLoadingPortal] = useState(false);
 
   const trialDaysLeft = profile?.trial_ends_at
     ? Math.max(0, Math.ceil((new Date(profile.trial_ends_at) - new Date()) / 86400000))
     : 0;
 
-  async function getAuthHeaders() {
-    const { data: { session } } = await supabase.auth.getSession();
-    const token = session?.access_token;
-    return {
-      'Content-Type': 'application/json',
-      ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
-    };
+  function openCheckout(plan, mode = 'subscription') {
+    setCheckoutPlan(plan);
+    setCheckoutMode(mode);
   }
 
-  async function handleSubscribe(plan) {
-    if (!API_URL) {
-      alert('Error: No está configurada la URL de la API (VITE_API_URL o VITE_SUPABASE_URL). Revisa las variables de entorno.');
-      return;
-    }
-    setLoadingPlan(plan.id);
-    try {
-      const headers = await getAuthHeaders();
-      const res = await fetch(`${API_URL}/stripe-checkout`, {
-        method: 'POST',
-        headers,
-        body: JSON.stringify({
-          priceId: plan.priceId,
-          userId: user.id,
-          userEmail: user.email,
-          mode: 'subscription',
-          successUrl: `${window.location.origin}/app/billing?success=true`,
-          cancelUrl: `${window.location.origin}/app/billing?cancelled=true`,
-        }),
-      });
-      const data = await res.json().catch(() => ({}));
-      if (res.ok && data.url) {
-        window.location.href = data.url;
-      } else {
-        const msg = data.error || (res.status === 404 ? 'Función stripe-checkout no encontrada. Despliega la Edge Function en Supabase.' : res.status === 500 ? 'Error en el servidor. Revisa que STRIPE_SECRET_KEY esté en Supabase.' : `Error ${res.status}`);
-        alert('Error: ' + msg);
-      }
-    } catch (err) {
-      alert('Error: ' + (err.message || 'No se pudo conectar. Comprueba la URL de la API.'));
-    } finally {
-      setLoadingPlan(null);
-    }
-  }
-
-  async function handleBuyPack() {
+  function handleBuyPack() {
     if (!selectedPack) return;
     const pack = MSG_PACKS.find(p => p.id === selectedPack);
     if (!pack) return;
-    if (!API_URL) {
-      alert('Error: No está configurada la URL de la API. Revisa VITE_API_URL o VITE_SUPABASE_URL.');
-      return;
-    }
-    setLoadingPack(true);
-    try {
-      const headers = await getAuthHeaders();
-      const res = await fetch(`${API_URL}/stripe-checkout`, {
-        method: 'POST',
-        headers,
-        body: JSON.stringify({
-          priceId: pack.priceId,
-          userId: user.id,
-          userEmail: user.email,
-          mode: 'payment',
-          successUrl: `${window.location.origin}/app/billing?pack=true`,
-          cancelUrl: `${window.location.origin}/app/billing`,
-        }),
-      });
-      const data = await res.json().catch(() => ({}));
-      if (res.ok && data.url) window.location.href = data.url;
-      else alert('Error: ' + (data.error || (res.status === 404 ? 'Función no encontrada.' : `Error ${res.status}`)));
-    } catch (err) {
-      alert('Error: ' + (err.message || 'No se pudo conectar.'));
-    } finally {
-      setLoadingPack(false);
-    }
+    openCheckout(pack, 'payment');
   }
 
   async function handleManageSubscription() {
-    if (!profile?.stripe_customer_id) return;
-    if (!API_URL) {
-      alert('Error: No está configurada la URL de la API.');
-      return;
-    }
+    if (!profile?.stripe_customer_id || !API_URL) return;
     setLoadingPortal(true);
     try {
-      const headers = await getAuthHeaders();
+      const { data: { session } } = await supabase.auth.getSession();
       const res = await fetch(`${API_URL}/stripe-portal`, {
         method: 'POST',
-        headers,
+        headers: {
+          'Content-Type': 'application/json',
+          ...(session?.access_token ? { 'Authorization': `Bearer ${session.access_token}` } : {}),
+        },
         body: JSON.stringify({
           customerId: profile.stripe_customer_id,
           returnUrl: `${window.location.origin}/app/billing`,
@@ -163,7 +102,6 @@ export default function Billing() {
     }
   }
 
-  // Success message
   const urlParams = new URLSearchParams(window.location.search);
   const showSuccess = urlParams.get('success') === 'true';
   const showPackSuccess = urlParams.get('pack') === 'true';
@@ -171,7 +109,7 @@ export default function Billing() {
   return (
     <div className="page">
       <div className="page__header">
-        <h1>Suscripción</h1>
+        <h1><CreditCard size={24} /> Suscripción</h1>
         <p>Gestiona tu plan, agentes y mensajes.</p>
       </div>
 
@@ -205,20 +143,38 @@ export default function Billing() {
              'Tu periodo de prueba ha terminado. Elige un plan para continuar.'}
           </p>
         </div>
-        {isSubscribed && profile?.stripe_customer_id && (
-          <button className="btn btn--outline btn--sm" onClick={handleManageSubscription} disabled={loadingPortal} style={{ marginLeft: 'auto' }}>
-            {loadingPortal ? <Loader2 size={14} className="spin" /> : <ExternalLink size={14} />}
-            Gestionar suscripción
-          </button>
-        )}
       </div>
 
+      {/* Payment Methods & Manage */}
+      {isSubscribed && profile?.stripe_customer_id && (
+        <div className="billing-manage">
+          <div className="billing-manage__info">
+            <CreditCard size={18} />
+            <div>
+              <h4>Métodos de pago y facturación</h4>
+              <p>Gestiona tus tarjetas, cambia de plan, consulta facturas o cancela la suscripción.</p>
+            </div>
+          </div>
+          <button className="btn btn--outline" onClick={handleManageSubscription} disabled={loadingPortal}>
+            {loadingPortal ? <Loader2 size={14} className="spin" /> : <ExternalLink size={14} />}
+            Gestionar pagos
+          </button>
+        </div>
+      )}
+
       {/* Plans */}
-      <h3 className="page__section-title">Elige tu plan</h3>
+      <div className="billing-section-header">
+        <h3 className="page__section-title"><Sparkles size={18} /> Elige tu plan</h3>
+        <div className="billing-section-badges">
+          <span className="billing-badge"><Shield size={12} /> Pago 100% seguro</span>
+          <span className="billing-badge"><Zap size={12} /> Cancela cuando quieras</span>
+        </div>
+      </div>
+
       <div className="plans-grid">
         {PLANS.map(plan => (
           <div key={plan.id} className={`plan-card ${plan.popular ? 'plan-card--popular' : ''}`}>
-            {plan.popular && <span className="plan-card__badge">Más popular</span>}
+            {plan.popular && <span className="plan-card__badge"><Star size={11} /> Más popular</span>}
             <h3>{plan.name}</h3>
             <div className="plan-card__price"><span>{plan.price}€</span>/mes</div>
             <div className="plan-card__highlights">
@@ -230,10 +186,9 @@ export default function Billing() {
             </ul>
             <button
               className={`btn ${plan.popular ? 'btn--primary' : 'btn--outline'} btn--full`}
-              onClick={() => handleSubscribe(plan)}
-              disabled={loadingPlan === plan.id}
+              onClick={() => openCheckout(plan, 'subscription')}
             >
-              {loadingPlan === plan.id ? <><Loader2 size={14} className="spin" /> Procesando...</> : <>Elegir {plan.name} <ArrowRight size={14} /></>}
+              Elegir {plan.name} <ArrowRight size={14} />
             </button>
           </div>
         ))}
@@ -259,10 +214,22 @@ export default function Billing() {
 
       {selectedPack && (
         <div className="msg-packs__action">
-          <button className="btn btn--primary" onClick={handleBuyPack} disabled={loadingPack}>
-            {loadingPack ? <><Loader2 size={14} className="spin" /> Procesando...</> : <><Plus size={14} /> Comprar pack de +{fmt(MSG_PACKS.find(p => p.id === selectedPack)?.messages)} mensajes — {MSG_PACKS.find(p => p.id === selectedPack)?.price}€</>}
+          <button className="btn btn--primary" onClick={handleBuyPack}>
+            <Plus size={14} /> Comprar pack de +{fmt(MSG_PACKS.find(p => p.id === selectedPack)?.messages)} mensajes — {MSG_PACKS.find(p => p.id === selectedPack)?.price}€
           </button>
         </div>
+      )}
+
+      {/* Embedded Checkout Modal */}
+      {checkoutPlan && (
+        <CheckoutModal
+          plan={checkoutPlan}
+          mode={checkoutMode}
+          userId={user?.id}
+          userEmail={user?.email}
+          onClose={() => setCheckoutPlan(null)}
+          onSuccess={() => window.location.search = '?success=true'}
+        />
       )}
     </div>
   );
