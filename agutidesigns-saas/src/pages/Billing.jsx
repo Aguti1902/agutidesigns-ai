@@ -90,7 +90,7 @@ export default function Billing() {
   }
 
   const urlParams = new URLSearchParams(window.location.search);
-  const showSuccess = urlParams.get('success') === 'true';
+  const [showSuccess, setShowSuccess] = useState(urlParams.get('success') === 'true');
   const activatedRef = useRef(false);
 
   // Fallback: when returning from Stripe checkout with success, poll profile until active
@@ -128,16 +128,18 @@ export default function Billing() {
       </div>
 
       {showSuccess && isSubscribed && (
-        <div className="billing-status billing-status--active">
+        <div className="billing-status billing-status--active" style={{ position: 'relative' }}>
           <div className="billing-status__icon"><Check size={20} /></div>
           <div><h3>¡Suscripción activada!</h3><p>Tu plan está activo. Ya puedes disfrutar de todas las funcionalidades.</p></div>
+          <button onClick={() => setShowSuccess(false)} className="billing-status__close"><XCircle size={18} /></button>
         </div>
       )}
 
       {showSuccess && !isSubscribed && (
-        <div className="billing-status billing-status--trial">
+        <div className="billing-status billing-status--trial" style={{ position: 'relative' }}>
           <div className="billing-status__icon"><Loader2 size={20} className="spin" /></div>
           <div><h3>Activando tu suscripción...</h3><p>Estamos procesando tu pago. Esto puede tardar unos segundos.</p></div>
+          <button onClick={() => setShowSuccess(false)} className="billing-status__close"><XCircle size={18} /></button>
         </div>
       )}
 

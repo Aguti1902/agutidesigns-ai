@@ -159,6 +159,8 @@
 .billing-status--expired .billing-status__icon { background: rgba(241,37,14,0.1); color: var(--color-error); }
 .billing-status h3 { font-family: var(--font-mono); font-size: 0.85rem; font-weight: 700; }
 .billing-status p { font-size: 0.8rem; color: #777; margin-top: 0.15rem; }
+.billing-status__close { position: absolute; top: 0.75rem; right: 0.75rem; background: none; border: none; color: #555; cursor: pointer; padding: 0.2rem; border-radius: 50%; transition: color 0.15s; }
+.billing-status__close:hover { color: #ccc; }
 
 .plans-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
 .plan-card { position: relative; background: #111; border: 1px solid #1e1e1e; border-radius: var(--radius-xl); padding: 1.75rem; display: flex; flex-direction: column; }
