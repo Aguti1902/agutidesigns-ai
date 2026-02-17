@@ -1,14 +1,18 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import { loadStripe } from '@stripe/stripe-js';
+import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import {
   Zap, Check, AlertTriangle, ArrowRight, MessageCircle,
-  Smartphone, Loader2, ExternalLink, CreditCard, Shield,
+  Smartphone, Loader2, CreditCard, Shield,
   Star, Sparkles, FileText, Download, Calendar, XCircle,
-  BarChart3
+  BarChart3, X, Lock
 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { supabase } from '../lib/supabase';
 import './DashboardPages.css';
+
+const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || '');
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || '';
 const API_URL = import.meta.env.VITE_API_URL || (SUPABASE_URL ? `${SUPABASE_URL.replace(/\/$/, '')}/functions/v1` : '');
@@ -34,89 +38,156 @@ const PLANS = [
   },
 ];
 
-const BRAND_ICONS = { visa: '💳', mastercard: '💳', amex: '💳' };
-
 function formatDate(ts) {
   if (!ts) return '—';
   return new Date(ts * 1000).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' });
 }
 
 function formatAmount(cents, currency = 'eur') {
+  if (!cents && cents !== 0) return '—';
   return (cents / 100).toLocaleString('es-ES', { style: 'currency', currency: currency.toUpperCase() });
 }
 
+const STATUS_MAP = { paid: 'Pagada', open: 'Pendiente', draft: 'Borrador', void: 'Anulada', uncollectible: 'Impagada' };
+
+/* ── Card Update Form (inside Elements provider) ── */
+function CardUpdateForm({ customerId, subscriptionId, onSuccess, onCancel }) {
+  const stripe = useStripe();
+  const elements = useElements();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  async function handleSubmit(e) {
+    e.preventDefault();
+    if (!stripe || !elements) return;
+    setLoading(true);
+    setError(null);
+
+    try {
+      // 1. Create SetupIntent
+      const siRes = await fetch(`${API_URL}/stripe-create-setup-intent`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ customerId }),
+      });
+      const siData = await siRes.json();
+      if (!siRes.ok || !siData.clientSecret) throw new Error(siData.error || 'Error creando setup');
+
+      // 2. Confirm card setup with Stripe.js
+      const { error: stripeError, setupIntent } = await stripe.confirmCardSetup(siData.clientSecret, {
+        payment_method: { card: elements.getElement(CardElement) },
+      });
+      if (stripeError) throw new Error(stripeError.message);
+
+      // 3. Set as default payment method
+      const pmRes = await fetch(`${API_URL}/stripe-update-payment-method`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          customerId,
+          paymentMethodId: setupIntent.payment_method,
+          subscriptionId,
+        }),
+      });
+      const pmData = await pmRes.json();
+      if (!pmRes.ok || !pmData.success) throw new Error(pmData.error || 'Error actualizando tarjeta');
+
+      onSuccess(pmData.card);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="card-update-form">
+      <div className="card-update-form__field">
+        <CardElement
+          options={{
+            style: {
+              base: {
+                fontSize: '15px',
+                color: '#e4e4e7',
+                fontFamily: 'IBM Plex Sans, system-ui, sans-serif',
+                '::placeholder': { color: '#555' },
+              },
+              invalid: { color: '#ef4444' },
+            },
+          }}
+        />
+      </div>
+      {error && <p className="card-update-form__error"><AlertTriangle size={12} /> {error}</p>}
+      <div className="card-update-form__actions">
+        <button type="button" className="btn btn--outline btn--sm" onClick={onCancel} disabled={loading}>Cancelar</button>
+        <button type="submit" className="btn btn--primary btn--sm" disabled={loading || !stripe}>
+          {loading ? <Loader2 size={12} className="spin" /> : <Lock size={12} />}
+          {loading ? 'Guardando...' : 'Guardar tarjeta'}
+        </button>
+      </div>
+    </form>
+  );
+}
+
+/* ── Main Billing Page ── */
 export default function Billing() {
   const navigate = useNavigate();
   const { user, profile, isTrialActive, isSubscribed } = useAuth();
-  const [loadingPortal, setLoadingPortal] = useState(false);
   const [customerInfo, setCustomerInfo] = useState(null);
   const [loadingInfo, setLoadingInfo] = useState(false);
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
   const [cancellingSubscription, setCancellingSubscription] = useState(false);
+  const [showCardForm, setShowCardForm] = useState(false);
+  const [cardSuccess, setCardSuccess] = useState(false);
 
   const trialDaysLeft = profile?.trial_ends_at
     ? Math.max(0, Math.ceil((new Date(profile.trial_ends_at) - new Date()) / 86400000))
     : 0;
 
-  // Load customer info for subscribed users
-  useEffect(() => {
-    if (isSubscribed && profile?.stripe_customer_id && API_URL) {
-      setLoadingInfo(true);
-      fetch(`${API_URL}/stripe-customer-info`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ customerId: profile.stripe_customer_id }),
-      })
-        .then(r => r.json())
-        .then(data => { if (!data.error) setCustomerInfo(data); })
-        .catch(() => {})
-        .finally(() => setLoadingInfo(false));
-    }
+  const loadCustomerInfo = useCallback(() => {
+    if (!isSubscribed || !profile?.stripe_customer_id || !API_URL) return;
+    setLoadingInfo(true);
+    fetch(`${API_URL}/stripe-customer-info`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ customerId: profile.stripe_customer_id }),
+    })
+      .then(r => r.json())
+      .then(data => { if (!data.error) setCustomerInfo(data); })
+      .catch(() => {})
+      .finally(() => setLoadingInfo(false));
   }, [isSubscribed, profile?.stripe_customer_id]);
 
-  async function handleManageSubscription() {
-    if (!profile?.stripe_customer_id || !API_URL) return;
-    setLoadingPortal(true);
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      const res = await fetch(`${API_URL}/stripe-portal`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...(session?.access_token ? { 'Authorization': `Bearer ${session.access_token}` } : {}) },
-        body: JSON.stringify({ customerId: profile.stripe_customer_id, returnUrl: `${window.location.origin}/app/billing` }),
-      });
-      const data = await res.json().catch(() => ({}));
-      if (res.ok && data.url) window.location.href = data.url;
-      else alert('Error: ' + (data.error || `Error ${res.status}`));
-    } catch (err) { alert('Error: ' + err.message); }
-    finally { setLoadingPortal(false); }
-  }
+  useEffect(() => { loadCustomerInfo(); }, [loadCustomerInfo]);
 
   async function handleCancelSubscription() {
     if (!profile?.stripe_subscription_id) return;
     setCancellingSubscription(true);
     try {
-      const STRIPE_KEY_CALL = `${API_URL}/stripe-cancel-subscription`;
-      const res = await fetch(STRIPE_KEY_CALL, {
+      const res = await fetch(`${API_URL}/stripe-cancel-subscription`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          subscriptionId: profile.stripe_subscription_id,
-          customerId: profile.stripe_customer_id,
-        }),
+        body: JSON.stringify({ subscriptionId: profile.stripe_subscription_id }),
       });
       const data = await res.json().catch(() => ({}));
       if (res.ok && data.success) {
         setShowCancelConfirm(false);
-        window.location.reload();
+        loadCustomerInfo();
       } else {
-        // Fallback: redirect to Stripe portal for cancellation
-        handleManageSubscription();
+        alert('Error: ' + (data.error || 'No se pudo cancelar'));
       }
-    } catch {
-      handleManageSubscription();
+    } catch (err) {
+      alert('Error: ' + err.message);
     } finally {
       setCancellingSubscription(false);
     }
+  }
+
+  function handleCardUpdated(card) {
+    setShowCardForm(false);
+    setCardSuccess(true);
+    setTimeout(() => setCardSuccess(false), 4000);
+    loadCustomerInfo();
   }
 
   const urlParams = new URLSearchParams(window.location.search);
@@ -124,7 +195,6 @@ export default function Billing() {
   const [showStatus, setShowStatus] = useState(true);
   const activatedRef = useRef(false);
 
-  // Fallback: when returning from Stripe checkout with success, poll profile until active
   useEffect(() => {
     if (!showSuccess || isSubscribed || activatedRef.current) return;
     activatedRef.current = true;
@@ -145,20 +215,12 @@ export default function Billing() {
 
   return (
     <div className="page">
-      <div className="page__header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-        <div>
-          <h1><CreditCard size={24} /> Suscripción</h1>
-          <p>Gestiona tu plan, métodos de pago y facturación.</p>
-        </div>
-        {isSubscribed && profile?.stripe_customer_id && (
-          <button className="btn btn--outline btn--sm" onClick={handleManageSubscription} disabled={loadingPortal} style={{ marginTop: '0.25rem' }}>
-            {loadingPortal ? <Loader2 size={14} className="spin" /> : <ExternalLink size={14} />}
-            Gestionar facturación
-          </button>
-        )}
+      <div className="page__header">
+        <h1><CreditCard size={24} /> Suscripción</h1>
+        <p>Gestiona tu plan, métodos de pago y facturación.</p>
       </div>
 
-      {/* Single notification banner */}
+      {/* Notification banners */}
       {showStatus && (() => {
         if (showSuccess && !isSubscribed) return (
           <div className="billing-status billing-status--trial" style={{ position: 'relative' }}>
@@ -195,6 +257,15 @@ export default function Billing() {
         );
       })()}
 
+      {/* Card success banner */}
+      {cardSuccess && (
+        <div className="billing-status billing-status--active" style={{ position: 'relative' }}>
+          <div className="billing-status__icon"><Check size={20} /></div>
+          <div><h3>Tarjeta actualizada</h3><p>Tu nuevo método de pago se ha guardado correctamente.</p></div>
+          <button onClick={() => setCardSuccess(false)} className="billing-status__close"><XCircle size={18} /></button>
+        </div>
+      )}
+
       {/* Subscription & Payment Management */}
       {isSubscribed && profile?.stripe_customer_id && (
         <div className="billing-cards-grid">
@@ -205,7 +276,9 @@ export default function Billing() {
               <>
                 <div className="billing-card__detail">
                   <span>Estado</span>
-                  <strong className="billing-card__badge billing-card__badge--green">Activo</strong>
+                  <strong className={`billing-card__badge ${customerInfo.subscription.cancelAtPeriodEnd ? 'billing-card__badge--yellow' : 'billing-card__badge--green'}`}>
+                    {customerInfo.subscription.cancelAtPeriodEnd ? 'Cancela pronto' : 'Activo'}
+                  </strong>
                 </div>
                 <div className="billing-card__detail">
                   <span>Próxima factura</span>
@@ -220,9 +293,6 @@ export default function Billing() {
             ) : (
               <p className="billing-card__empty">Plan activo</p>
             )}
-            <button className="btn btn--outline btn--sm" onClick={handleManageSubscription} disabled={loadingPortal} style={{ marginTop: '0.75rem' }}>
-              {loadingPortal ? <Loader2 size={12} className="spin" /> : <ExternalLink size={12} />} Gestionar plan
-            </button>
           </div>
 
           {/* Payment methods */}
@@ -241,9 +311,22 @@ export default function Billing() {
             ) : (
               <p className="billing-card__empty">No hay tarjeta</p>
             )}
-            <button className="btn btn--outline btn--sm" onClick={handleManageSubscription} disabled={loadingPortal} style={{ marginTop: '0.75rem' }}>
-              <CreditCard size={12} /> Cambiar tarjeta
-            </button>
+            {!showCardForm ? (
+              <button className="btn btn--outline btn--sm" onClick={() => setShowCardForm(true)} style={{ marginTop: '0.75rem' }}>
+                <CreditCard size={12} /> {customerInfo?.paymentMethods?.length > 0 ? 'Cambiar tarjeta' : 'Añadir tarjeta'}
+              </button>
+            ) : (
+              <div style={{ marginTop: '0.75rem' }}>
+                <Elements stripe={stripePromise}>
+                  <CardUpdateForm
+                    customerId={profile.stripe_customer_id}
+                    subscriptionId={profile.stripe_subscription_id}
+                    onSuccess={handleCardUpdated}
+                    onCancel={() => setShowCardForm(false)}
+                  />
+                </Elements>
+              </div>
+            )}
           </div>
 
           {/* Usage link */}
@@ -257,15 +340,11 @@ export default function Billing() {
         </div>
       )}
 
-      {/* Cancel Subscription Confirmation */}
+      {/* Cancel Subscription */}
       {isSubscribed && profile?.stripe_customer_id && !customerInfo?.subscription?.cancelAtPeriodEnd && (
         <div style={{ marginBottom: '1.5rem' }}>
           {!showCancelConfirm ? (
-            <button
-              className="btn btn--outline btn--sm"
-              onClick={() => setShowCancelConfirm(true)}
-              style={{ color: '#888', borderColor: '#333' }}
-            >
+            <button className="btn btn--outline btn--sm" onClick={() => setShowCancelConfirm(true)} style={{ color: '#888', borderColor: '#333' }}>
               <XCircle size={12} /> Cancelar suscripción
             </button>
           ) : (
@@ -275,18 +354,8 @@ export default function Billing() {
                 <h3>¿Seguro que quieres cancelar?</h3>
                 <p>Tu agente de WhatsApp IA dejará de funcionar al final del periodo de facturación actual.</p>
                 <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.75rem' }}>
-                  <button
-                    className="btn btn--outline btn--sm"
-                    onClick={() => setShowCancelConfirm(false)}
-                  >
-                    No, mantener plan
-                  </button>
-                  <button
-                    className="btn btn--sm"
-                    onClick={handleCancelSubscription}
-                    disabled={cancellingSubscription}
-                    style={{ background: 'var(--color-error)', color: '#fff' }}
-                  >
+                  <button className="btn btn--outline btn--sm" onClick={() => setShowCancelConfirm(false)}>No, mantener plan</button>
+                  <button className="btn btn--sm" onClick={handleCancelSubscription} disabled={cancellingSubscription} style={{ background: 'var(--color-error)', color: '#fff' }}>
                     {cancellingSubscription ? <Loader2 size={12} className="spin" /> : <XCircle size={12} />}
                     Sí, cancelar
                   </button>
@@ -307,8 +376,12 @@ export default function Billing() {
                 <div className="invoice-row__info">
                   <span className="invoice-row__number">{inv.number || inv.id.slice(-8)}</span>
                   <span className="invoice-row__date">{formatDate(inv.date)}</span>
+                  {inv.description && <span className="invoice-row__desc">{inv.description}</span>}
                 </div>
                 <div className="invoice-row__right">
+                  <span className={`invoice-row__status invoice-row__status--${inv.status}`}>
+                    {STATUS_MAP[inv.status] || inv.status}
+                  </span>
                   <span className="invoice-row__amount">{formatAmount(inv.amount, inv.currency)}</span>
                   {inv.pdfUrl && (
                     <a href={inv.pdfUrl} target="_blank" rel="noopener" className="btn btn--outline btn--xs"><Download size={12} /> PDF</a>

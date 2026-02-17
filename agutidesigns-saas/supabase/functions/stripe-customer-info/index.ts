@@ -40,21 +40,34 @@ serve(async (req) => {
       expYear: pm.card?.exp_year,
     }))
 
-    // Fetch recent invoices
-    const invRes = await fetch(`https://api.stripe.com/v1/invoices?customer=${customerId}&limit=10&status=paid`, {
-      headers: { 'Authorization': `Bearer ${STRIPE_KEY}` },
-    })
-    const invData = await invRes.json()
+    // Fetch all recent invoices (paid + open) to include subscription + addon charges
+    const [invPaidRes, invOpenRes] = await Promise.all([
+      fetch(`https://api.stripe.com/v1/invoices?customer=${customerId}&limit=20&status=paid`, {
+        headers: { 'Authorization': `Bearer ${STRIPE_KEY}` },
+      }),
+      fetch(`https://api.stripe.com/v1/invoices?customer=${customerId}&limit=5&status=open`, {
+        headers: { 'Authorization': `Bearer ${STRIPE_KEY}` },
+      }),
+    ])
+    const invPaidData = await invPaidRes.json()
+    const invOpenData = await invOpenRes.json()
+    const allInvoices = [...(invOpenData.data || []), ...(invPaidData.data || [])]
 
-    const invoices = (invData.data || []).map((inv: any) => ({
-      id: inv.id,
-      number: inv.number,
-      amount: inv.amount_paid,
-      currency: inv.currency,
-      date: inv.created,
-      pdfUrl: inv.invoice_pdf,
-      status: inv.status,
-    }))
+    const invoices = allInvoices.map((inv: any) => {
+      // Build description from line items
+      const lines = (inv.lines?.data || []).map((line: any) => line.description || line.price?.nickname || '').filter(Boolean)
+      return {
+        id: inv.id,
+        number: inv.number,
+        amount: inv.status === 'paid' ? inv.amount_paid : inv.amount_due,
+        currency: inv.currency,
+        date: inv.created,
+        pdfUrl: inv.invoice_pdf,
+        hostedUrl: inv.hosted_invoice_url,
+        status: inv.status,
+        description: lines.join(', ') || (inv.billing_reason === 'subscription_create' ? 'Suscripción' : inv.billing_reason === 'subscription_cycle' ? 'Renovación' : inv.billing_reason === 'subscription_update' ? 'Actualización de plan' : 'Factura'),
+      }
+    })
 
     // Fetch subscription details
     let subscription = null

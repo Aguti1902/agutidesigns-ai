@@ -375,6 +375,7 @@
 .billing-card__detail strong { color: #eee; font-size: 0.82rem; }
 .billing-card__badge { padding: 0.15rem 0.5rem; border-radius: var(--radius-full); font-size: 0.68rem; font-weight: 700; }
 .billing-card__badge--green { background: rgba(37,211,102,0.1); color: #25D366; }
+.billing-card__badge--yellow { background: rgba(245,158,11,0.1); color: #f59e0b; }
 .billing-card__alert { display: flex; align-items: center; gap: 0.3rem; font-size: 0.72rem; color: #f59e0b; margin-top: 0.5rem; }
 .billing-card__loading { display: flex; justify-content: center; padding: 1rem 0; color: #555; }
 .billing-card__empty { font-size: 0.8rem; color: #555; }
@@ -390,8 +391,21 @@
 .invoice-row__info { display: flex; flex-direction: column; gap: 0.1rem; }
 .invoice-row__number { font-family: var(--font-mono); font-size: 0.78rem; font-weight: 700; color: #ccc; }
 .invoice-row__date { font-size: 0.7rem; color: #666; }
+.invoice-row__desc { font-size: 0.65rem; color: #555; margin-top: 0.1rem; }
 .invoice-row__right { display: flex; align-items: center; gap: 0.75rem; }
 .invoice-row__amount { font-size: 0.85rem; font-weight: 700; color: #eee; }
+.invoice-row__status { font-family: var(--font-mono); font-size: 0.6rem; font-weight: 700; padding: 0.15rem 0.5rem; border-radius: var(--radius-full); }
+.invoice-row__status--paid { background: rgba(37,211,102,0.1); color: #25D366; }
+.invoice-row__status--open { background: rgba(245,158,11,0.1); color: #f59e0b; }
+.invoice-row__status--draft { background: #1a1a1a; color: #666; }
+.invoice-row__status--void, .invoice-row__status--uncollectible { background: rgba(239,68,68,0.1); color: #ef4444; }
+
+/* ── Card Update Form ── */
+.card-update-form { display: flex; flex-direction: column; gap: 0.75rem; }
+.card-update-form__field { padding: 0.75rem 1rem; background: #0a0a0a; border: 1px solid #333; border-radius: var(--radius-md); transition: border-color 0.15s; }
+.card-update-form__field:focus-within { border-color: var(--color-primary); }
+.card-update-form__error { display: flex; align-items: center; gap: 0.3rem; font-size: 0.75rem; color: #ef4444; }
+.card-update-form__actions { display: flex; gap: 0.5rem; justify-content: flex-end; }
 
 /* ── Spin ── */
 .spin { animation: spin 0.7s linear infinite; }
