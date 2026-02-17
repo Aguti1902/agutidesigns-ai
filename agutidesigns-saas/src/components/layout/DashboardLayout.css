@@ -109,6 +109,22 @@
   background: rgba(var(--color-primary-rgb), 0.08);
 }
 
+.dash__nav-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 0.35rem;
+  margin-left: auto;
+  background: #ef4444;
+  color: #fff;
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  font-weight: 800;
+  border-radius: 99px;
+}
+
 .dash__admin-link {
   display: flex;
   align-items: center;

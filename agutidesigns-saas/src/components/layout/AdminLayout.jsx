@@ -1,18 +1,47 @@
+import { useState, useEffect } from 'react';
 import { NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Users, MessageSquare, BarChart3, LogOut, Shield, Zap } from 'lucide-react';
+import { LayoutDashboard, Users, MessageSquare, LogOut, Shield } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
+import { supabase } from '../../lib/supabase';
 import './DashboardLayout.css';
 
 const navItems = [
   { to: '/admin', icon: <LayoutDashboard size={18} />, label: 'Dashboard', end: true },
   { to: '/admin/usuarios', icon: <Users size={18} />, label: 'Usuarios' },
-  { to: '/admin/tickets', icon: <MessageSquare size={18} />, label: 'Soporte' },
-  { to: '/admin/metricas', icon: <BarChart3 size={18} />, label: 'Métricas' },
+  { to: '/admin/tickets', icon: <MessageSquare size={18} />, label: 'Soporte', badge: true },
 ];
 
 export default function AdminLayout() {
   const { profile, signOut } = useAuth();
   const navigate = useNavigate();
+  const [unreadTickets, setUnreadTickets] = useState(0);
+
+  useEffect(() => {
+    async function loadUnread() {
+      // Count tickets with new messages (updated_at > admin_last_viewed_at OR admin_last_viewed_at is null)
+      const { data } = await supabase
+        .from('support_tickets')
+        .select('id, admin_last_viewed_at, updated_at')
+        .in('status', ['open', 'in_progress']);
+      
+      const unread = (data || []).filter(t => 
+        !t.admin_last_viewed_at || new Date(t.updated_at) > new Date(t.admin_last_viewed_at)
+      ).length;
+      
+      setUnreadTickets(unread);
+    }
+
+    loadUnread();
+
+    // Listen for changes
+    const channel = supabase
+      .channel('admin-unread')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'support_tickets' }, () => loadUnread())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'support_messages' }, () => loadUnread())
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, []);
 
   const handleLogout = async () => {
     await signOut();
@@ -39,6 +68,9 @@ export default function AdminLayout() {
                 >
                   {item.icon}
                   <span>{item.label}</span>
+                  {item.badge && unreadTickets > 0 && (
+                    <span className="dash__nav-badge">{unreadTickets}</span>
+                  )}
                 </NavLink>
               ))}
             </nav>
