@@ -31,7 +31,7 @@ export default function AdminTickets() {
   async function loadTickets() {
     const { data } = await supabase
       .from('support_tickets')
-      .select('*, profiles!inner(full_name, email)')
+      .select('*, profiles!inner(full_name)')
       .order('created_at', { ascending: false });
     setTickets(data || []);
   }
@@ -137,7 +137,7 @@ export default function AdminTickets() {
               <div className="admin-ticket-header">
                 <div>
                   <h3>{selectedTicket.subject}</h3>
-                  <p><User size={12} /> {selectedTicket.profiles?.full_name} ({selectedTicket.profiles?.email})</p>
+                  <p><User size={12} /> {selectedTicket.profiles?.full_name}</p>
                   <p style={{ fontSize: '0.7rem', color: '#555', marginTop: '0.2rem' }}><Clock size={11} /> {new Date(selectedTicket.created_at).toLocaleString('es-ES')}</p>
                 </div>
                 <select value={selectedTicket.status} onChange={e => handleStatusChange(selectedTicket.id, e.target.value)} style={{ padding: '0.4rem 0.7rem', background: '#0a0a0a', border: '1px solid #333', borderRadius: 'var(--radius-md)', color: 'white', fontSize: '0.75rem' }}>

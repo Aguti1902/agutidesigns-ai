@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Users, MessageCircle, DollarSign, TrendingUp, Zap, Calendar, BarChart3 } from 'lucide-react';
+import { Users, MessageCircle, DollarSign, TrendingUp, Zap, Calendar, BarChart3, MessageSquare } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import './DashboardPages.css';
@@ -40,10 +40,10 @@ export default function AdminDashboard() {
         newUsersThisMonth: newUsersRes.count || 0,
       });
 
-      // Recent users
+      // Recent users (email is not in profiles table)
       const { data: recent } = await supabase
         .from('profiles')
-        .select('id, full_name, email, subscription_status, created_at')
+        .select('id, full_name, subscription_status, created_at')
         .order('created_at', { ascending: false })
         .limit(10);
       setRecentUsers(recent || []);
@@ -90,7 +90,6 @@ export default function AdminDashboard() {
           <thead>
             <tr>
               <th>Usuario</th>
-              <th>Email</th>
               <th>Plan</th>
               <th>Registro</th>
             </tr>
@@ -99,7 +98,6 @@ export default function AdminDashboard() {
             {recentUsers.map(u => (
               <tr key={u.id}>
                 <td>{u.full_name || 'Sin nombre'}</td>
-                <td>{u.email}</td>
                 <td>
                   <span className={`admin-badge admin-badge--${u.subscription_status}`}>
                     {u.subscription_status === 'active' ? 'Pro/Business' : u.subscription_status === 'trial' ? 'Trial' : 'Expirado'}

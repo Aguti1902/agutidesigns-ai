@@ -29,7 +29,7 @@ export default function AdminUsers() {
     if (filter === 'expired' && !['expired', 'cancelled'].includes(u.subscription_status)) return false;
     if (search) {
       const q = search.toLowerCase();
-      if (!(u.full_name || '').toLowerCase().includes(q) && !(u.email || '').toLowerCase().includes(q)) return false;
+      if (!(u.full_name || '').toLowerCase().includes(q)) return false;
     }
     return true;
   });
@@ -70,9 +70,9 @@ export default function AdminUsers() {
           <thead>
             <tr>
               <th>Usuario</th>
-              <th>Email</th>
               <th>Plan</th>
               <th>Agentes</th>
+              <th>Mensajes</th>
               <th>Registro</th>
             </tr>
           </thead>
@@ -83,7 +83,6 @@ export default function AdminUsers() {
               filtered.map(u => (
                 <tr key={u.id}>
                   <td>{u.full_name || 'Sin nombre'}</td>
-                  <td>{u.email}</td>
                   <td>
                     <span className={`admin-badge admin-badge--${u.subscription_status}`}>
                       {u.subscription_status === 'active' ? <><Zap size={10} /> Activo</> :
@@ -92,6 +91,7 @@ export default function AdminUsers() {
                     </span>
                   </td>
                   <td>{u.agents?.[0]?.count || 0}</td>
+                  <td>{(u.message_limit || 500).toLocaleString('es-ES')}</td>
                   <td>{new Date(u.created_at).toLocaleDateString('es-ES')}</td>
                 </tr>
               ))
