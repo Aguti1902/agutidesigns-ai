@@ -11,7 +11,7 @@
 .landing-nav__badge { display: inline-flex; padding: 0.15rem 0.4rem; background: #25D366; color: #000; font-family: var(--font-mono); font-size: 0.6rem; font-weight: 800; border-radius: 4px; }
 .landing-nav__right { display: flex; align-items: center; gap: 1.5rem; }
 .landing-nav__links { display: flex; align-items: center; gap: 1.25rem; }
-.landing-nav__links a { font-family: var(--font-mono); font-size: 0.75rem; color: #666; text-decoration: none; transition: color 0.15s; }
+.landing-nav__links a { font-family: var(--font-mono); font-size: 0.75rem; color: #aaa; text-decoration: none; transition: color 0.15s; }
 .landing-nav__links a:hover { color: var(--color-primary); }
 .landing-nav__cta { display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.5rem 1.25rem; background: #25D366; color: #000; font-family: var(--font-mono); font-size: 0.8rem; font-weight: 700; border-radius: 99px; text-decoration: none; transition: all 0.2s; }
 .landing-nav__cta:hover { box-shadow: 0 0 20px rgba(37,211,102,0.3); }
@@ -105,12 +105,12 @@
 .landing-final__note { display: block; margin-top: 1rem; font-family: var(--font-mono); font-size: 0.75rem; color: #666; }
 
 /* Footer */
-.landing-footer { padding: 2rem; text-align: center; border-top: 1px solid #1a1a1a; font-family: var(--font-mono); font-size: 0.75rem; color: #555; }
-.landing-footer p { margin-bottom: 0.75rem; }
+.landing-footer { padding: 2rem; text-align: center; border-top: 1px solid #1a1a1a; font-family: var(--font-mono); font-size: 0.75rem; color: #888; }
+.landing-footer p { margin-bottom: 0.75rem; color: #aaa; }
 .landing-footer__links { display: flex; align-items: center; justify-content: center; gap: 0.75rem; font-size: 0.7rem; }
-.landing-footer__links a { color: #666; text-decoration: none; transition: color 0.15s; }
+.landing-footer__links a { color: #aaa; text-decoration: none; transition: color 0.15s; }
 .landing-footer__links a:hover { color: var(--color-primary); }
-.landing-footer__links span { color: #333; }
+.landing-footer__links span { color: #555; }
 
 /* Responsive */
 @media (max-width: 768px) {
