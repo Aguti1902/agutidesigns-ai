@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { NavLink, Outlet, useNavigate, Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, MessageCircle, Building, Brain, BookOpen, CreditCard, LogOut, Zap, HelpCircle, Clock, AlertTriangle, ArrowRight, Lock, BarChart3 } from 'lucide-react';
+import { LayoutDashboard, MessageCircle, Building, Brain, BookOpen, CreditCard, LogOut, Zap, HelpCircle, Clock, AlertTriangle, ArrowRight, Lock, BarChart3, Shield } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import AgentSelector from '../dashboard/AgentSelector';
 import './DashboardLayout.css';
@@ -115,6 +115,12 @@ export default function DashboardLayout() {
                 </NavLink>
               ))}
             </nav>
+
+            {profile?.role === 'admin' && (
+              <Link to="/admin" className="dash__admin-link">
+                <Shield size={14} /> Panel de Admin
+              </Link>
+            )}
           </div>
 
           <div className="dash__sidebar-bottom">

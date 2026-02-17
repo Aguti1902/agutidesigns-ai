@@ -109,6 +109,28 @@
   background: rgba(var(--color-primary-rgb), 0.08);
 }
 
+.dash__admin-link {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 0.75rem;
+  margin: 0.75rem 0;
+  border: 1px solid rgba(245,158,11,0.3);
+  border-radius: var(--radius-md);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #f59e0b;
+  background: rgba(245,158,11,0.05);
+  text-decoration: none;
+  transition: all 0.15s;
+}
+
+.dash__admin-link:hover {
+  border-color: #f59e0b;
+  background: rgba(245,158,11,0.12);
+}
+
 /* ── User ── */
 .dash__user {
   display: flex;

@@ -49,17 +49,32 @@ serve(async (req) => {
     const allInvoices = [...(invOpenData.data || []), ...(invPaidData.data || [])]
 
     const invoices = allInvoices.map((inv: any) => {
-      const lines = (inv.lines?.data || [])
-        .map((line: any) => line.description || line.price?.nickname || '')
-        .filter(Boolean)
+      const lines = inv.lines?.data || []
       const reason = inv.billing_reason
-      let description = lines.join(' · ')
-      if (!description) {
-        if (reason === 'subscription_create') description = 'Alta de suscripción'
-        else if (reason === 'subscription_cycle') description = 'Renovación mensual'
-        else if (reason === 'subscription_update') description = 'Cambio de plan / Addon'
-        else description = 'Factura'
+      let description = ''
+
+      // Parse lines to build clean description
+      if (reason === 'subscription_create') {
+        description = 'Alta de suscripción'
+      } else if (reason === 'subscription_cycle') {
+        description = 'Renovación mensual'
+      } else if (reason === 'subscription_update') {
+        // Extract message pack quantities from lines
+        let totalMessages = 0
+        for (const line of lines) {
+          const msgs = Number(line.price?.metadata?.messages) || 0
+          const qty = line.quantity || 1
+          totalMessages += msgs * qty
+        }
+        if (totalMessages > 0) {
+          description = `Upgrade de ${totalMessages.toLocaleString('es-ES')} mensajes/mes`
+        } else {
+          description = 'Actualización de plan'
+        }
+      } else {
+        description = 'Factura'
       }
+
       return {
         id: inv.id,
         number: inv.number,

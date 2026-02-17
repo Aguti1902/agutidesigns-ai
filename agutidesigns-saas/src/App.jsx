@@ -15,11 +15,23 @@ import Checkout from './pages/Checkout';
 import Messages from './pages/Messages';
 import Support from './pages/Support';
 import BillingDetails from './pages/BillingDetails';
+import AdminLayout from './components/layout/AdminLayout';
+import AdminDashboard from './pages/AdminDashboard';
+import AdminTickets from './pages/AdminTickets';
+import AdminUsers from './pages/AdminUsers';
 
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth();
   if (loading) return <div className="loading-screen"><div className="loading-spinner" /></div>;
   if (!user) return <Navigate to="/" replace />;
+  return children;
+}
+
+function AdminRoute({ children }) {
+  const { user, profile, loading } = useAuth();
+  if (loading) return <div className="loading-screen"><div className="loading-spinner" /></div>;
+  if (!user) return <Navigate to="/" replace />;
+  if (profile?.role !== 'admin') return <Navigate to="/app" replace />;
   return children;
 }
 
@@ -60,6 +72,13 @@ export default function App() {
         <Route path="soporte" element={<Support />} />
       </Route>
       
+      {/* Admin routes */}
+      <Route path="/admin" element={<AdminRoute><AdminLayout /></AdminRoute>}>
+        <Route index element={<AdminDashboard />} />
+        <Route path="usuarios" element={<AdminUsers />} />
+        <Route path="tickets" element={<AdminTickets />} />
+      </Route>
+
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );

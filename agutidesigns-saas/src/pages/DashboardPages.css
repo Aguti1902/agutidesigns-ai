@@ -418,6 +418,38 @@
   .bd-grid { grid-template-columns: 1fr; }
 }
 
+/* ── Admin Styles ── */
+.admin-stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.75rem; margin-bottom: 2rem; }
+.admin-users-table { background: #111; border: 1px solid #1e1e1e; border-radius: var(--radius-xl); overflow: hidden; }
+.admin-users-table table { width: 100%; border-collapse: collapse; }
+.admin-users-table th, .admin-users-table td { padding: 0.85rem 1.25rem; text-align: left; border-bottom: 1px solid #1a1a1a; }
+.admin-users-table th { font-family: var(--font-mono); font-size: 0.7rem; font-weight: 700; color: #555; text-transform: uppercase; letter-spacing: 0.08em; background: #0c0c0c; }
+.admin-users-table td { font-size: 0.85rem; color: #aaa; }
+.admin-users-table tbody tr:hover td { background: #0f0f0f; color: #ccc; }
+.admin-badge { display: inline-flex; align-items: center; gap: 0.3rem; font-family: var(--font-mono); font-size: 0.65rem; font-weight: 700; padding: 0.2rem 0.6rem; border-radius: var(--radius-full); }
+.admin-badge--active { background: rgba(37,211,102,0.1); color: #25D366; }
+.admin-badge--trial { background: rgba(245,158,11,0.1); color: #f59e0b; }
+.admin-badge--expired, .admin-badge--cancelled { background: #1a1a1a; color: #666; }
+.admin-quick-actions { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.75rem; margin-top: 2rem; }
+
+.admin-tickets-filters { display: flex; gap: 0.5rem; margin-bottom: 1rem; align-items: center; }
+.admin-tickets-layout { display: grid; grid-template-columns: 400px 1fr; gap: 0; background: #111; border: 1px solid #1e1e1e; border-radius: var(--radius-xl); overflow: hidden; min-height: 600px; }
+.admin-tickets-list { border-right: 1px solid #1e1e1e; overflow-y: auto; padding: 0.5rem; display: flex; flex-direction: column; gap: 0.4rem; }
+.admin-tickets-detail { padding: 1.5rem; display: flex; flex-direction: column; }
+.ticket-row--selected { border-color: var(--color-primary) !important; background: rgba(var(--color-primary-rgb), 0.05) !important; }
+.ticket-row__status--open, .ticket-row__status--in_progress { background: rgba(245,158,11,0.1); color: #f59e0b; }
+.ticket-row__status--resolved { background: rgba(37,211,102,0.1); color: #25D366; }
+.ticket-row__status--closed { background: #1a1a1a; color: #666; }
+.admin-ticket-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; padding-bottom: 1rem; border-bottom: 1px solid #1e1e1e; margin-bottom: 1rem; }
+.admin-ticket-header h3 { font-size: 1rem; font-weight: 700; margin-bottom: 0.3rem; }
+.admin-ticket-header p { font-size: 0.75rem; color: #777; display: flex; align-items: center; gap: 0.3rem; }
+
+@media (max-width: 768px) {
+  .admin-stats-grid { grid-template-columns: repeat(2, 1fr); }
+  .admin-tickets-layout { grid-template-columns: 1fr; }
+  .admin-quick-actions { grid-template-columns: 1fr; }
+}
+
 /* ── Spin ── */
 .spin { animation: spin 0.7s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
