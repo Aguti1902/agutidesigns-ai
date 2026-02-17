@@ -4,6 +4,7 @@ import { useAuth } from '../hooks/useAuth';
 import { useAgents } from '../hooks/useAgents';
 import { supabase } from '../lib/supabase';
 import './DashboardPages.css';
+import './WhatsAppConnect.css';
 
 const API_URL = import.meta.env.VITE_API_URL || 'https://xzyhrloiwapbrqmglxeo.supabase.co/functions/v1';
 
@@ -15,10 +16,17 @@ export default function CalendarIntegration() {
   const [loading, setLoading] = useState(true);
   const [connecting, setConnecting] = useState(false);
   const [error, setError] = useState('');
+  const [calendarEnabled, setCalendarEnabled] = useState(false);
 
   useEffect(() => {
     loadCalendarStatus();
   }, [user]);
+
+  useEffect(() => {
+    if (activeAgent) {
+      setCalendarEnabled(activeAgent.calendar_enabled || false);
+    }
+  }, [activeAgent]);
 
   async function loadCalendarStatus() {
     if (!user) return;
@@ -75,8 +83,15 @@ export default function CalendarIntegration() {
 
   async function handleToggleCalendar(enabled) {
     if (!activeAgent) return;
-    await supabase.from('agents').update({ calendar_enabled: enabled }).eq('id', activeAgent.id);
-    refreshAgents();
+    setCalendarEnabled(enabled);
+    try {
+      const { error } = await supabase.from('agents').update({ calendar_enabled: enabled }).eq('id', activeAgent.id);
+      if (error) throw error;
+      await refreshAgents();
+    } catch (err) {
+      console.error('Toggle error:', err);
+      setCalendarEnabled(!enabled); // Revert on error
+    }
   }
 
   if (loading) {
@@ -108,7 +123,7 @@ export default function CalendarIntegration() {
             <label className="wa-toggle" style={{ marginBottom: '1rem' }}>
               <input 
                 type="checkbox" 
-                checked={activeAgent?.calendar_enabled || false} 
+                checked={calendarEnabled} 
                 onChange={e => handleToggleCalendar(e.target.checked)} 
               />
               <span className="wa-toggle__slider" />
