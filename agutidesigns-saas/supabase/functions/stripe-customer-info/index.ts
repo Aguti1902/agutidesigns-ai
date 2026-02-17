@@ -99,8 +99,32 @@ serve(async (req) => {
       }
     }
 
+    // Fetch customer billing details
+    const custRes = await fetch(`https://api.stripe.com/v1/customers/${customerId}`, { headers: h })
+    const custData = await custRes.json()
+    const billingDetails = {
+      name: custData.name || '',
+      email: custData.email || '',
+      phone: custData.phone || '',
+      taxId: '',
+      address: {
+        line1: custData.address?.line1 || '',
+        line2: custData.address?.line2 || '',
+        city: custData.address?.city || '',
+        state: custData.address?.state || '',
+        postalCode: custData.address?.postal_code || '',
+        country: custData.address?.country || 'ES',
+      },
+    }
+    // Get tax ID if exists
+    const taxRes = await fetch(`https://api.stripe.com/v1/customers/${customerId}/tax_ids?limit=1`, { headers: h })
+    const taxData = await taxRes.json()
+    if (taxData.data?.[0]) {
+      billingDetails.taxId = taxData.data[0].value || ''
+    }
+
     return new Response(
-      JSON.stringify({ paymentMethods, invoices, subscription }),
+      JSON.stringify({ paymentMethods, invoices, subscription, billingDetails }),
       { headers: { 'Content-Type': 'application/json', ...corsHeaders } }
     )
   } catch (error) {

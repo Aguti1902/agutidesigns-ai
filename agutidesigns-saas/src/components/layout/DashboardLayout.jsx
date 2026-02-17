@@ -56,7 +56,8 @@ export default function DashboardLayout() {
   const isBillingPage = location.pathname.includes('/billing');
   const isCheckoutPage = location.pathname.includes('/checkout');
   const isMessagesPage = location.pathname.includes('/mensajes');
-  const allowWhenExpired = isBillingPage || isCheckoutPage || isMessagesPage;
+  const isFacturacionPage = location.pathname.includes('/facturacion');
+  const allowWhenExpired = isBillingPage || isCheckoutPage || isMessagesPage || isFacturacionPage;
 
   // ── Expired: bloquear todo excepto billing, checkout y mensajes ──
   if (!hasAccess && profile && !allowWhenExpired) {

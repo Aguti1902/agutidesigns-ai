@@ -410,6 +410,14 @@
 .card-update-form__error { display: flex; align-items: center; gap: 0.3rem; font-size: 0.75rem; color: #ef4444; }
 .card-update-form__actions { display: flex; gap: 0.5rem; justify-content: flex-end; }
 
+/* ── Billing Details Page ── */
+.bd-grid { display: grid; grid-template-columns: 1.2fr 1fr; gap: 1rem; align-items: start; }
+.bd-section-title { display: flex; align-items: center; gap: 0.4rem; font-family: var(--font-mono); font-size: 0.9rem; font-weight: 700; color: #ccc; margin-bottom: 1.25rem; }
+
+@media (max-width: 768px) {
+  .bd-grid { grid-template-columns: 1fr; }
+}
+
 /* ── Spin ── */
 .spin { animation: spin 0.7s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
