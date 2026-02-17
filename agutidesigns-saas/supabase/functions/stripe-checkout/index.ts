@@ -35,6 +35,8 @@ serve(async (req) => {
     params.append('client_reference_id', userId)
     if (userEmail) params.append('customer_email', userEmail)
     params.append('metadata[user_id]', userId)
+    // Solo tarjeta (incluye Google/Apple Pay automáticamente, quita Link)
+    params.append('payment_method_types[0]', 'card')
 
     if (embedded) {
       params.append('ui_mode', 'embedded')

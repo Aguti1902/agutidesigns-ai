@@ -6,7 +6,7 @@ const EVOLUTION_KEY = Deno.env.get('EVOLUTION_API_KEY')!
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': '*' } })
+    return new Response('ok', { headers: { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': '*', 'Access-Control-Allow-Methods': 'POST, DELETE, OPTIONS' } })
   }
 
   try {
@@ -15,23 +15,27 @@ serve(async (req) => {
     if (!agentId) return new Response(JSON.stringify({ error: 'agentId required' }), { status: 400 })
 
     const instanceName = `agent-${agentId}`
+    console.log('Disconnecting:', instanceName)
 
-    // Try logout, fallback to delete
+    // Step 1: Logout (disconnect WhatsApp session)
     try {
-      await fetch(`${EVOLUTION_URL}/instance/logout/${instanceName}`, {
+      const logoutRes = await fetch(`${EVOLUTION_URL}/instance/logout/${instanceName}`, {
         method: 'DELETE',
         headers: { 'apikey': EVOLUTION_KEY }
       })
-    } catch {
-      try {
-        await fetch(`${EVOLUTION_URL}/instance/delete/${instanceName}`, {
-          method: 'DELETE',
-          headers: { 'apikey': EVOLUTION_KEY }
-        })
-      } catch {}
-    }
+      console.log('Logout:', logoutRes.status)
+    } catch (e) { console.log('Logout error:', e) }
 
-    // Update Supabase
+    // Step 2: ALWAYS delete the instance so it can be recreated cleanly
+    try {
+      const deleteRes = await fetch(`${EVOLUTION_URL}/instance/delete/${instanceName}`, {
+        method: 'DELETE',
+        headers: { 'apikey': EVOLUTION_KEY }
+      })
+      console.log('Delete:', deleteRes.status)
+    } catch (e) { console.log('Delete error:', e) }
+
+    // Step 3: Update Supabase
     const supabase = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!)
     await supabase.from('agents').update({
       whatsapp_connected: false,
@@ -39,11 +43,14 @@ serve(async (req) => {
       whatsapp_number: null
     }).eq('id', agentId)
 
+    console.log('Disconnected and deleted:', instanceName)
+
     return new Response(
       JSON.stringify({ success: true }),
       { headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' } }
     )
   } catch (error) {
+    console.error('Disconnect error:', error)
     return new Response(JSON.stringify({ success: true }), {
       status: 200,
       headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }

@@ -11,9 +11,9 @@
 
 .checkout-page__grid {
   display: grid;
-  grid-template-columns: 320px 1fr;
-  gap: 1.25rem;
-  max-width: 1060px;
+  grid-template-columns: 38% 1fr;
+  gap: 1.5rem;
+  max-width: 1100px;
   margin: 0 auto;
   align-items: start;
 }
