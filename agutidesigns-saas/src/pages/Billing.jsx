@@ -153,7 +153,7 @@ export default function Billing() {
     try {
       const res = await fetch(`${API_URL}/stripe-cancel-subscription`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ subscriptionId: profile.stripe_subscription_id }),
+        body: JSON.stringify({ subscriptionId: profile.stripe_subscription_id, userId: user?.id }),
       });
       const data = await res.json().catch(() => ({}));
       if (res.ok && data.success) {

@@ -137,8 +137,11 @@ serve(async (req) => {
         console.log('Subscription cancelled for:', profile.id)
         await supabase.from('profiles').update({
           subscription_status: 'cancelled',
+          extra_messages: 0,
           updated_at: new Date().toISOString(),
         }).eq('id', profile.id)
+        // Deactivate all agents
+        await supabase.from('agents').update({ is_active: false }).eq('user_id', profile.id)
       }
     }
 
