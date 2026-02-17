@@ -58,19 +58,40 @@ Supabase reemplaza automáticamente estas variables:
 - `{{ .SiteURL }}` - URL del sitio configurada
 - `{{ .Email }}` - Email del usuario
 
-## Configurar remitente:
+## Configurar remitente y dominio:
 
-En **Authentication → Settings → SMTP Settings**:
+### Opción 1: SMTP de Resend (recomendado)
 
-Si usas **Resend** (recomendado):
-- Host: `smtp.resend.com`
-- Port: `465`
-- Username: `resend`
-- Password: Tu `RESEND_API_KEY`
-- Sender email: `soporte@agutidesigns.io`
-- Sender name: `Agutidesigns IA`
+Ve a **Authentication → Settings → Email**:
 
-O deja el SMTP por defecto de Supabase (usa su propio servicio).
+1. Scroll hasta **SMTP Settings**
+2. Habilita **"Enable Custom SMTP"**
+3. Configura:
+   - **Sender email**: `soporte@agutidesigns.io`
+   - **Sender name**: `Agutidesigns IA`
+   - **Host**: `smtp.resend.com`
+   - **Port**: `465`
+   - **Username**: `resend`
+   - **Password**: Tu `RESEND_API_KEY` (empieza por `re_`)
+4. Haz clic en **"Save"**
+
+### Opción 2: Configurar solo el remitente (sin SMTP custom)
+
+Si dejas el SMTP por defecto de Supabase, al menos cambia:
+
+Ve a **Authentication → Settings → Email → Email Settings**:
+- **Sender email**: `soporte@agutidesigns.io` (o deja `noreply@mail.app.supabase.io` si no tienes dominio verificado)
+- **Sender name**: `Agutidesigns IA`
+
+### Configurar redirect URL:
+
+En **Authentication → URL Configuration**:
+- **Site URL**: `https://app.agutidesigns.io`
+- **Redirect URLs** (añadir):
+  - `https://app.agutidesigns.io/**`
+  - `https://agutidesigns-ai-saas.vercel.app/**`
+
+Esto hará que después de confirmar el email, el usuario vuelva a `app.agutidesigns.io` en vez de `xzyhrloiwapbrqmglxeo.supabase.co`.
 
 ## Importante:
 

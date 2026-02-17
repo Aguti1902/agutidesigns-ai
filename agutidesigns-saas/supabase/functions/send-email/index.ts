@@ -24,16 +24,17 @@ function getTemplate(template: string, data: Record<string, any> = {}): string {
     .card { background: #111; border: 1px solid #1e1e1e; border-radius: 16px; padding: 32px; margin-bottom: 20px; }
     .logo { text-align: center; margin-bottom: 32px; }
     .logo img { height: 40px; }
-    h1 { font-size: 24px; font-weight: 700; color: #E5FC63; margin: 0 0 12px; }
+    h1 { font-size: 24px; font-weight: 700; color: #25D366; margin: 0 0 12px; }
     p { font-size: 15px; line-height: 1.6; color: #aaa; margin: 0 0 16px; }
-    .btn { display: inline-block; padding: 14px 28px; background: #E5FC63; color: #000; text-decoration: none; border-radius: 99px; font-weight: 700; font-size: 14px; margin: 16px 0; }
+    .btn { display: inline-block; padding: 14px 28px; background: #25D366; color: #000; text-decoration: none; border-radius: 99px; font-weight: 700; font-size: 14px; margin: 16px 0; }
+    .btn:hover { background: #2ee56e; }
     .footer { text-align: center; padding: 20px; font-size: 13px; color: #555; }
-    .highlight { color: #E5FC63; font-weight: 600; }
+    .highlight { color: #25D366; font-weight: 600; }
     .alert { background: rgba(245,158,11,0.1); border: 1px solid rgba(245,158,11,0.2); border-radius: 8px; padding: 16px; margin: 16px 0; }
     .alert-error { background: rgba(239,68,68,0.1); border-color: rgba(239,68,68,0.2); }
     .stats { display: flex; gap: 16px; margin: 20px 0; }
     .stat { flex: 1; background: #0a0a0a; border: 1px solid #222; border-radius: 8px; padding: 16px; text-align: center; }
-    .stat-value { font-size: 28px; font-weight: 800; color: #E5FC63; display: block; }
+    .stat-value { font-size: 28px; font-weight: 800; color: #25D366; display: block; }
     .stat-label { font-size: 12px; color: #666; text-transform: uppercase; }
   `
 
