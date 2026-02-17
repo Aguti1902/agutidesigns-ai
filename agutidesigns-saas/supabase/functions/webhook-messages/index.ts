@@ -237,61 +237,60 @@ serve(async (req) => {
           if (ctx.length) systemPrompt += '\n\n═══ INFORMACIÓN DEL NEGOCIO ═══\n' + ctx.join('\n\n')
         }
 
-        // Load calendar events if enabled - with smart slot calculation
-        if (agent.calendar_enabled) {
-          try {
-            const calRes = await fetch(`${SUPABASE_URL}/functions/v1/google-calendar-events?userId=${agent.user_id}&action=list`, {
-              headers: { 'Authorization': `Bearer ${SUPABASE_KEY}` }
-            })
-            const calData = await calRes.json()
+        // Load existing appointments for availability context
+        let appointmentsContext = ''
+        try {
+          const todayStr = now.toISOString().split('T')[0]
+          const nextWeek = new Date(now)
+          nextWeek.setDate(nextWeek.getDate() + 7)
+          const nextWeekStr = nextWeek.toISOString().split('T')[0]
 
-            let calendarContext = '\n\n═══ CALENDARIO Y DISPONIBILIDAD ═══\n'
-            
-            if (calData.events?.length > 0) {
-              // Group events by day for better readability
-              const eventsByDay: Record<string, any[]> = {}
-              for (const e of calData.events) {
-                const start = new Date(e.start)
-                const dayKey = start.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })
-                if (!eventsByDay[dayKey]) eventsByDay[dayKey] = []
-                eventsByDay[dayKey].push(e)
-              }
+          const { data: appts } = await supabase
+            .from('appointments')
+            .select('client_name, service, appointment_date, start_time, end_time, status')
+            .eq('user_id', agent.user_id)
+            .gte('appointment_date', todayStr)
+            .lte('appointment_date', nextWeekStr)
+            .neq('status', 'cancelled')
+            .order('appointment_date', { ascending: true })
 
-              calendarContext += 'EVENTOS PROGRAMADOS (próximos 7 días):\n'
-              for (const [day, events] of Object.entries(eventsByDay)) {
-                calendarContext += `\n📅 ${day}:\n`
-                for (const e of events) {
-                  const start = new Date(e.start)
-                  const end = new Date(e.end)
-                  const startStr = start.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })
-                  const endStr = end.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })
-                  calendarContext += `  - ${startStr} a ${endStr}: ${e.summary || 'Ocupado'}\n`
-                }
-              }
-
-              calendarContext += `\nINSTRUCCIONES DE AGENDAMIENTO:
-- Los huecos SIN eventos son horarios DISPONIBLES para agendar
-- Propón SIEMPRE horarios concretos (día y hora exacta) dentro del horario de apertura del negocio
-- Ofrece 2-3 opciones de horarios libres para que el cliente elija
-- Al confirmar cita, repite: fecha, hora, servicio y nombre del cliente
-- Si piden un horario ocupado, di que no está disponible y ofrece alternativas cercanas`
-
-              if (scheduleInfo) {
-                calendarContext += `\n\nHORARIO DE APERTURA DEL NEGOCIO:\n${scheduleInfo}IMPORTANTE: Solo propón citas DENTRO de estos horarios.`
-              }
-            } else {
-              calendarContext += 'No hay eventos programados en los próximos 7 días. Toda la agenda está libre.\n'
-              calendarContext += 'Propón horarios dentro del horario de apertura del negocio.'
-              if (scheduleInfo) {
-                calendarContext += `\n\nHORARIO DE APERTURA:\n${scheduleInfo}`
+          if (appts && appts.length > 0) {
+            const apptsByDay: Record<string, any[]> = {}
+            for (const a of appts) {
+              const d = new Date(a.appointment_date + 'T12:00:00')
+              const dayKey = d.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })
+              if (!apptsByDay[dayKey]) apptsByDay[dayKey] = []
+              apptsByDay[dayKey].push(a)
+            }
+            appointmentsContext = '\n\nCITAS PROGRAMADAS (próximos 7 días):\n'
+            for (const [day, dayAppts] of Object.entries(apptsByDay)) {
+              appointmentsContext += `\n📅 ${day}:\n`
+              for (const a of dayAppts) {
+                appointmentsContext += `  - ${a.start_time?.substring(0,5)} a ${a.end_time?.substring(0,5)}: ${a.client_name}${a.service ? ' (' + a.service + ')' : ''}\n`
               }
             }
-
-            systemPrompt += calendarContext
-          } catch (e) {
-            console.warn('Calendar fetch error (non-fatal):', e)
+          } else {
+            appointmentsContext = '\n\nCITAS: No hay citas programadas en los próximos 7 días. La agenda está libre.'
           }
+        } catch (e) {
+          console.warn('Appointments fetch error (non-fatal):', e)
         }
+
+        let calendarContext = '\n\n═══ CALENDARIO Y DISPONIBILIDAD ═══'
+        calendarContext += appointmentsContext
+        calendarContext += `\n\nINSTRUCCIONES DE AGENDAMIENTO:
+- Los huecos SIN citas son horarios DISPONIBLES
+- Propón SIEMPRE horarios concretos (día y hora exacta) dentro del horario de apertura
+- Ofrece 2-3 opciones de horarios libres para que el cliente elija
+- Al confirmar cita, repite: fecha, hora, servicio y nombre del cliente
+- Si piden un horario ocupado, di que no está disponible y ofrece alternativas cercanas
+- IMPORTANTE: Cuando el cliente CONFIRME una cita, usa la función create_appointment para guardarla`
+
+        if (scheduleInfo) {
+          calendarContext += `\n\nHORARIO DE APERTURA DEL NEGOCIO:\n${scheduleInfo}Solo propón citas DENTRO de estos horarios.`
+        }
+
+        systemPrompt += calendarContext
 
         // Add enhanced behavioral instructions if the prompt doesn't already include them
         if (!systemPrompt.includes('FLUJO DE CONVERSACIÓN') && !systemPrompt.includes('TÉCNICAS DE VENTA')) {
@@ -329,7 +328,30 @@ serve(async (req) => {
           })
         } catch {}
 
-        // Call OpenAI
+        // Define function tools for OpenAI
+        const tools = [
+          {
+            type: 'function',
+            function: {
+              name: 'create_appointment',
+              description: 'Crea una cita/reserva cuando el cliente confirma día, hora y servicio. Usa SOLO cuando el cliente haya confirmado explícitamente.',
+              parameters: {
+                type: 'object',
+                properties: {
+                  client_name: { type: 'string', description: 'Nombre del cliente' },
+                  service: { type: 'string', description: 'Servicio que solicita' },
+                  appointment_date: { type: 'string', description: 'Fecha de la cita en formato YYYY-MM-DD' },
+                  start_time: { type: 'string', description: 'Hora de inicio en formato HH:MM' },
+                  end_time: { type: 'string', description: 'Hora de fin en formato HH:MM' },
+                  notes: { type: 'string', description: 'Notas adicionales (opcional)' },
+                },
+                required: ['client_name', 'appointment_date', 'start_time', 'end_time'],
+              },
+            },
+          },
+        ]
+
+        // Call OpenAI with function calling
         const historyMsgs = (history || []).slice(-20)
         console.log('Calling OpenAI... key starts with:', OPENAI_KEY?.substring(0, 12), 'history:', historyMsgs.length, 'prompt length:', systemPrompt.length)
         
@@ -344,6 +366,8 @@ serve(async (req) => {
                 { role: 'system', content: systemPrompt },
                 ...historyMsgs,
               ],
+              tools,
+              tool_choice: 'auto',
               temperature: 0.65,
               max_tokens: 600,
               presence_penalty: 0.1,
@@ -352,7 +376,62 @@ serve(async (req) => {
           })
           const openaiData = await openaiRes.json()
           console.log('OpenAI status:', openaiRes.status, 'error:', openaiData.error?.message || 'none')
-          aiResponse = openaiData.choices?.[0]?.message?.content || ''
+          
+          const choice = openaiData.choices?.[0]
+          
+          // Handle function calls (create_appointment)
+          if (choice?.message?.tool_calls && choice.message.tool_calls.length > 0) {
+            const toolCall = choice.message.tool_calls[0]
+            if (toolCall.function.name === 'create_appointment') {
+              try {
+                const args = JSON.parse(toolCall.function.arguments)
+                console.log('Creating appointment:', JSON.stringify(args))
+                
+                const { error: apptError } = await supabase.from('appointments').insert({
+                  user_id: agent.user_id,
+                  agent_id: agentId,
+                  client_name: args.client_name || contactName,
+                  client_phone: contactPhone,
+                  service: args.service || null,
+                  appointment_date: args.appointment_date,
+                  start_time: args.start_time,
+                  end_time: args.end_time,
+                  notes: args.notes || null,
+                  status: 'confirmed',
+                  created_by: 'ai',
+                })
+                
+                if (apptError) {
+                  console.error('Appointment insert error:', apptError)
+                }
+                
+                // Call OpenAI again with the function result to get the final response
+                const followUpRes = await fetch('https://api.openai.com/v1/chat/completions', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${OPENAI_KEY}` },
+                  body: JSON.stringify({
+                    model: 'gpt-4o-mini',
+                    messages: [
+                      { role: 'system', content: systemPrompt },
+                      ...historyMsgs,
+                      choice.message,
+                      { role: 'tool', tool_call_id: toolCall.id, content: apptError ? 'Error al crear la cita. Informa al cliente que hubo un problema y que lo intente de nuevo.' : `Cita creada correctamente: ${args.client_name}, ${args.appointment_date} de ${args.start_time} a ${args.end_time}${args.service ? ', servicio: ' + args.service : ''}. Confirma al cliente que su cita ha sido agendada.` }
+                    ],
+                    temperature: 0.65,
+                    max_tokens: 400,
+                  })
+                })
+                const followUpData = await followUpRes.json()
+                aiResponse = followUpData.choices?.[0]?.message?.content || ''
+                if (!aiResponse) aiResponse = `¡Tu cita ha quedado agendada para el ${args.appointment_date} de ${args.start_time} a ${args.end_time}! Si necesitas cambiar algo, avísame.`
+              } catch (fnErr) {
+                console.error('Function call error:', fnErr)
+                aiResponse = choice.message.content || 'He intentado agendar tu cita pero ha habido un problema. ¿Podrías confirmarme los datos de nuevo?'
+              }
+            }
+          } else {
+            aiResponse = choice?.message?.content || ''
+          }
           
           if (!aiResponse && openaiData.error) {
             console.error('OpenAI error:', JSON.stringify(openaiData.error))
