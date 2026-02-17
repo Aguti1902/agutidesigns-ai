@@ -6,7 +6,7 @@ import {
   Zap, Check, AlertTriangle, ArrowRight, MessageCircle,
   Smartphone, Loader2, CreditCard, Shield,
   Star, Sparkles, FileText, Download, Calendar, XCircle,
-  BarChart3, Lock, Clock
+  BarChart3, Lock, Clock, ExternalLink
 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { supabase } from '../lib/supabase';
@@ -118,6 +118,7 @@ export default function Billing() {
   const [cardSuccess, setCardSuccess] = useState(false);
   const [justCancelled, setJustCancelled] = useState(false);
   const [reactivating, setReactivating] = useState(false);
+  const [loadingPortal, setLoadingPortal] = useState(false);
 
   // Persist status banner dismiss in localStorage
   const [statusDismissed, setStatusDismissed] = useState(() => {
@@ -192,6 +193,21 @@ export default function Billing() {
     }
   }
 
+  async function handleBillingDetails() {
+    if (!profile?.stripe_customer_id) return;
+    setLoadingPortal(true);
+    try {
+      const res = await fetch(`${API_URL}/stripe-portal`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ customerId: profile.stripe_customer_id, returnUrl: `${window.location.origin}/app/billing` }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && data.url) window.location.href = data.url;
+      else alert('Error: ' + (data.error || 'No se pudo abrir'));
+    } catch (err) { alert('Error: ' + err.message); }
+    finally { setLoadingPortal(false); }
+  }
+
   function handleCardUpdated() {
     setShowCardForm(false);
     setCardSuccess(true);
@@ -229,9 +245,17 @@ export default function Billing() {
 
   return (
     <div className="page">
-      <div className="page__header">
-        <h1><CreditCard size={24} /> Suscripción</h1>
-        <p>Gestiona tu plan, métodos de pago y facturación.</p>
+      <div className="page__header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+        <div>
+          <h1><CreditCard size={24} /> Suscripción</h1>
+          <p>Gestiona tu plan, métodos de pago y facturación.</p>
+        </div>
+        {isSubscribed && profile?.stripe_customer_id && (
+          <button className="btn btn--outline btn--sm" onClick={handleBillingDetails} disabled={loadingPortal} style={{ marginTop: '0.25rem' }}>
+            {loadingPortal ? <Loader2 size={14} className="spin" /> : <ExternalLink size={14} />}
+            Datos de facturación
+          </button>
+        )}
       </div>
 
       {/* ── PERMANENT banner: subscription cancelling (NOT dismissable) ── */}
