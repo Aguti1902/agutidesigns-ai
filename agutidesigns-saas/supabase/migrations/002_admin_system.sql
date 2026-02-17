@@ -51,6 +51,4 @@ CREATE INDEX IF NOT EXISTS idx_support_tickets_user_id ON support_tickets(user_i
 CREATE INDEX IF NOT EXISTS idx_support_tickets_status ON support_tickets(status);
 CREATE INDEX IF NOT EXISTS idx_support_messages_ticket_id ON support_messages(ticket_id);
 
--- 8. Habilitar realtime en tickets
-ALTER PUBLICATION supabase_realtime ADD TABLE support_tickets;
-ALTER PUBLICATION supabase_realtime ADD TABLE support_messages;
+-- 8. Habilitar realtime en tickets (omitido porque ya están en realtime)
