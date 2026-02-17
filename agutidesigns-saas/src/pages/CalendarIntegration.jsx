@@ -17,6 +17,8 @@ export default function CalendarIntegration() {
   const [connecting, setConnecting] = useState(false);
   const [error, setError] = useState('');
   const [calendarEnabled, setCalendarEnabled] = useState(false);
+  const [events, setEvents] = useState([]);
+  const [loadingEvents, setLoadingEvents] = useState(false);
 
   useEffect(() => {
     loadCalendarStatus();
@@ -25,8 +27,12 @@ export default function CalendarIntegration() {
   useEffect(() => {
     if (activeAgent) {
       setCalendarEnabled(activeAgent.calendar_enabled || false);
+      // Load events if calendar is enabled and connected
+      if (activeAgent.calendar_enabled && connected) {
+        loadEvents();
+      }
     }
-  }, [activeAgent]);
+  }, [activeAgent, connected]);
 
   async function loadCalendarStatus() {
     if (!user) return;
@@ -81,6 +87,22 @@ export default function CalendarIntegration() {
     }
   }
 
+  async function loadEvents() {
+    if (!user || !connected) return;
+    setLoadingEvents(true);
+    try {
+      const res = await fetch(`${API_URL}/google-calendar-events?userId=${user.id}&action=list`);
+      const data = await res.json();
+      if (data.events) {
+        setEvents(data.events);
+      }
+    } catch (err) {
+      console.error('Load events error:', err);
+    } finally {
+      setLoadingEvents(false);
+    }
+  }
+
   async function handleToggleCalendar(enabled) {
     if (!activeAgent) return;
     setCalendarEnabled(enabled);
@@ -88,9 +110,13 @@ export default function CalendarIntegration() {
       const { error } = await supabase.from('agents').update({ calendar_enabled: enabled }).eq('id', activeAgent.id);
       if (error) throw error;
       await refreshAgents();
+      if (enabled) {
+        loadEvents();
+      }
     } catch (err) {
       console.error('Toggle error:', err);
       setCalendarEnabled(!enabled); // Revert on error
+      alert('Error al activar: ' + err.message + '. Asegúrate de haber ejecutado la migración SQL 003_google_calendar.sql');
     }
   }
 
@@ -146,6 +172,48 @@ export default function CalendarIntegration() {
               horarios de trabajo, duración de citas, políticas de cancelación, etc.
             </p>
           </div>
+
+          {/* Calendar Events */}
+          {calendarEnabled && (
+            <div className="card" style={{ padding: '1.5rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                <h3 className="bd-section-title" style={{ marginBottom: 0 }}>
+                  <Calendar size={16} /> Próximos eventos (7 días)
+                </h3>
+                <button className="btn btn--outline btn--sm" onClick={loadEvents} disabled={loadingEvents}>
+                  {loadingEvents ? <Loader2 size={12} className="spin" /> : <>Actualizar</>}
+                </button>
+              </div>
+
+              {loadingEvents ? (
+                <div style={{ textAlign: 'center', padding: '2rem', color: '#555' }}>
+                  <Loader2 size={24} className="spin" />
+                </div>
+              ) : events.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '2rem', color: '#555' }}>
+                  <Calendar size={32} style={{ marginBottom: '0.75rem', color: '#333' }} />
+                  <p style={{ fontSize: '0.85rem' }}>No hay eventos programados en los próximos 7 días</p>
+                </div>
+              ) : (
+                <div className="calendar-events-list">
+                  {events.map((event, i) => (
+                    <div key={event.id || i} className="calendar-event-item">
+                      <div className="calendar-event-dot" />
+                      <div className="calendar-event-info">
+                        <span className="calendar-event-time">
+                          {new Date(event.start).toLocaleString('es-ES', { dateStyle: 'short', timeStyle: 'short' })}
+                        </span>
+                        <span className="calendar-event-title">{event.summary || 'Sin título'}</span>
+                        {event.description && (
+                          <span className="calendar-event-desc">{event.description}</span>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
         </>
       ) : (
         <div className="card" style={{ padding: '2.5rem', textAlign: 'center' }}>

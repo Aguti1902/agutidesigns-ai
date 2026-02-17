@@ -414,6 +414,15 @@
 .bd-grid { display: grid; grid-template-columns: 1.2fr 1fr; gap: 1rem; align-items: start; }
 .bd-section-title { display: flex; align-items: center; gap: 0.4rem; font-family: var(--font-mono); font-size: 0.9rem; font-weight: 700; color: #ccc; margin-bottom: 1.25rem; }
 
+/* ── Calendar Events ── */
+.calendar-events-list { display: flex; flex-direction: column; gap: 0.75rem; }
+.calendar-event-item { display: flex; gap: 0.75rem; padding: 0.75rem; background: #0a0a0a; border: 1px solid #222; border-radius: var(--radius-md); }
+.calendar-event-dot { width: 8px; height: 8px; min-width: 8px; border-radius: 50%; background: var(--color-primary); margin-top: 0.4rem; }
+.calendar-event-info { display: flex; flex-direction: column; gap: 0.2rem; flex: 1; }
+.calendar-event-time { font-family: var(--font-mono); font-size: 0.7rem; color: var(--color-primary); font-weight: 600; }
+.calendar-event-title { font-size: 0.9rem; color: #fff; font-weight: 600; }
+.calendar-event-desc { font-size: 0.75rem; color: #777; }
+
 @media (max-width: 768px) {
   .bd-grid { grid-template-columns: 1fr; }
 }
