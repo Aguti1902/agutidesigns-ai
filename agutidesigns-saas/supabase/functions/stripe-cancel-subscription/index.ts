@@ -9,9 +9,9 @@ const corsHeaders = {
 
 // Plan price IDs (not addons)
 const PLAN_PRICE_IDS = new Set([
-  'price_1T0RlfC3QI1AmukvNi6TCABc',
-  'price_1T0RlgC3QI1Amukv4Pq4kpBh',
-  'price_1T0RliC3QI1AmukvBqxU8Qnu',
+  'price_1T1qSzFjBSJ299OpJBLCMTrn',
+  'price_1T1qTcFjBSJ299OpSxVO6ZFM',
+  'price_1T1qU1FjBSJ299OpTOdjIRya',
 ])
 
 serve(async (req) => {

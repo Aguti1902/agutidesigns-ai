@@ -43,9 +43,9 @@ serve(async (req) => {
 
     // Map plan price IDs to message limits
     const PLAN_LIMITS: Record<string, number> = {
-      'price_1T0RlfC3QI1AmukvNi6TCABc': 500,    // Starter
-      'price_1T0RlgC3QI1Amukv4Pq4kpBh': 5000,   // Pro
-      'price_1T0RliC3QI1AmukvBqxU8Qnu': 20000,   // Business
+      'price_1T1qSzFjBSJ299OpJBLCMTrn': 500,    // Starter
+      'price_1T1qTcFjBSJ299OpSxVO6ZFM': 5000,   // Pro
+      'price_1T1qU1FjBSJ299OpTOdjIRya': 20000,   // Business
     }
 
     // Helper: get message_limit from a Stripe subscription's items

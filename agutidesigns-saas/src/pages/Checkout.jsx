@@ -17,32 +17,32 @@ const PLANS = [
     id: 'starter',
     name: 'Starter',
     price: '29',
-    priceId: 'price_1T0RlfC3QI1AmukvNi6TCABc',
+    priceId: 'price_1T1qSzFjBSJ299OpJBLCMTrn',
     features: ['1 agente IA', '500 msgs/mes', 'Dashboard básico'],
   },
   {
     id: 'pro',
     name: 'Pro',
     price: '79',
-    priceId: 'price_1T0RlgC3QI1Amukv4Pq4kpBh',
+    priceId: 'price_1T1qTcFjBSJ299OpSxVO6ZFM',
     features: ['3 agentes IA', '5.000 msgs/mes', 'Dashboard avanzado', 'Soporte prioritario'],
   },
   {
     id: 'business',
     name: 'Business',
     price: '199',
-    priceId: 'price_1T0RliC3QI1AmukvBqxU8Qnu',
+    priceId: 'price_1T1qU1FjBSJ299OpTOdjIRya',
     features: ['Agentes ilimitados', '20.000 msgs/mes', 'API personalizada', 'Marca blanca'],
   },
 ];
 
 // Packs de mensajes
 const MSG_PACKS = [
-  { id: 'pack-500', name: '+500 mensajes', price: '9', priceId: 'price_1T0RliC3QI1Amukvz8BJx96a' },
-  { id: 'pack-1000', name: '+1.000 mensajes', price: '15', priceId: 'price_1T0RljC3QI1AmukvfBI04iTh' },
-  { id: 'pack-2500', name: '+2.500 mensajes', price: '29', priceId: 'price_1T0RlkC3QI1AmukvaMakldlD' },
-  { id: 'pack-5000', name: '+5.000 mensajes', price: '49', priceId: 'price_1T0RllC3QI1Amukvpm1oLS0r' },
-  { id: 'pack-10000', name: '+10.000 mensajes', price: '79', priceId: 'price_1T0RlmC3QI1Amukv5Ha2LNhR' },
+  { id: 'pack-500', name: '+500 mensajes', price: '9', priceId: 'price_1T1qUMFjBSJ299OprGXORk0J' },
+  { id: 'pack-1000', name: '+1.000 mensajes', price: '15', priceId: 'price_1T1qUNFjBSJ299OpBO38XWfG' },
+  { id: 'pack-2500', name: '+2.500 mensajes', price: '29', priceId: 'price_1T1qUOFjBSJ299OpY8sL9IBL' },
+  { id: 'pack-5000', name: '+5.000 mensajes', price: '49', priceId: 'price_1T1qUPFjBSJ299OpTTZodJ3B' },
+  { id: 'pack-10000', name: '+10.000 mensajes', price: '79', priceId: 'price_1T1qUPFjBSJ299OpqtaOMyK3' },
 ];
 
 export default function Checkout() {

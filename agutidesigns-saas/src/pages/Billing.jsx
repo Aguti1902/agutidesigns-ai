@@ -19,19 +19,19 @@ const API_URL = import.meta.env.VITE_API_URL || (SUPABASE_URL ? `${SUPABASE_URL.
 const PLANS = [
   {
     id: 'starter', name: 'Starter', price: '29',
-    priceId: 'price_1T0RlfC3QI1AmukvNi6TCABc',
+    priceId: 'price_1T1qSzFjBSJ299OpJBLCMTrn',
     agents: '1 número de WhatsApp', messages: '500 mensajes/mes',
     features: ['1 agente IA (1 número WhatsApp)', '500 mensajes/mes incluidos', '1 prompt personalizado', 'Datos de negocio', 'Soporte por email', 'Dashboard básico'],
   },
   {
     id: 'pro', name: 'Pro', price: '79',
-    priceId: 'price_1T0RlgC3QI1Amukv4Pq4kpBh', popular: true,
+    priceId: 'price_1T1qTcFjBSJ299OpSxVO6ZFM', popular: true,
     agents: '3 números de WhatsApp', messages: '5.000 mensajes/mes',
     features: ['3 agentes IA (3 números WhatsApp)', '5.000 mensajes/mes incluidos', 'Prompt independiente por agente', 'Datos de negocio por agente', 'Soporte prioritario', 'Dashboard avanzado', 'Estadísticas por agente'],
   },
   {
     id: 'business', name: 'Business', price: '199',
-    priceId: 'price_1T0RliC3QI1AmukvBqxU8Qnu',
+    priceId: 'price_1T1qU1FjBSJ299OpTOdjIRya',
     agents: 'Números ilimitados', messages: '20.000 mensajes/mes',
     features: ['Agentes ilimitados (WhatsApp ilimitados)', '20.000 mensajes/mes incluidos', 'Prompt independiente por agente', 'Datos de negocio por agente', 'Soporte 24/7', 'Dashboard completo', 'API personalizada', 'Marca blanca'],
   },
