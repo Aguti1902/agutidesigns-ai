@@ -94,6 +94,14 @@ export default function AdminLayout() {
 
         <main className="dash__content">
           <Outlet />
+          <footer className="dash__footer">
+            <p>© 2026 Agutidesigns IA · Panel de Administración</p>
+            <div className="dash__footer-links">
+              <a href="/privacidad.html" target="_blank" rel="noopener">Privacidad</a>
+              <span>·</span>
+              <a href="/terminos.html" target="_blank" rel="noopener">Términos</a>
+            </div>
+          </footer>
         </main>
       </div>
     </div>

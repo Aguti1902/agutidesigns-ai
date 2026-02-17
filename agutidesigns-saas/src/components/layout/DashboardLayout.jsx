@@ -195,6 +195,16 @@ export default function DashboardLayout() {
         <main className="dash__content">
           <AgentSelector />
           <Outlet />
+          <footer className="dash__footer">
+            <p>© 2026 Agutidesigns IA</p>
+            <div className="dash__footer-links">
+              <a href="/privacidad.html" target="_blank" rel="noopener">Privacidad</a>
+              <span>·</span>
+              <a href="/terminos.html" target="_blank" rel="noopener">Términos</a>
+              <span>·</span>
+              <a href="mailto:soporte@agutidesigns.io">Soporte</a>
+            </div>
+          </footer>
         </main>
       </div>
     </div>

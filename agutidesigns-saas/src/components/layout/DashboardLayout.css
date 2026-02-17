@@ -209,6 +209,45 @@
   flex: 1;
   padding: 2rem 3rem;
   overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── Footer ── */
+.dash__footer {
+  margin-top: auto;
+  padding-top: 3rem;
+  padding-bottom: 1rem;
+  border-top: 1px solid #1a1a1a;
+  text-align: center;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  color: #555;
+}
+
+.dash__footer p {
+  margin-bottom: 0.5rem;
+}
+
+.dash__footer-links {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+}
+
+.dash__footer-links a {
+  color: #666;
+  text-decoration: none;
+  transition: color 0.15s;
+}
+
+.dash__footer-links a:hover {
+  color: var(--color-primary);
+}
+
+.dash__footer-links span {
+  color: #333;
 }
 
 /* ── Expired Screen ── */

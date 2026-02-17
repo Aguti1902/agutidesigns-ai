@@ -195,6 +195,12 @@ export default function AuthPage() {
 
           {error && <p className="auth__error">{error}</p>}
 
+          {mode === 'register' && (
+            <p className="auth__terms">
+              Al registrarte, aceptas nuestros <a href="/terminos.html" target="_blank" rel="noopener">Términos de Servicio</a> y nuestra <a href="/privacidad.html" target="_blank" rel="noopener">Política de Privacidad</a>.
+            </p>
+          )}
+
           <button type="submit" className="auth__submit" disabled={loading}>
             {loading ? 'Cargando...' : mode === 'login' ? 'Entrar' : 'Crear cuenta gratis'}
             <ArrowRight size={16} />
