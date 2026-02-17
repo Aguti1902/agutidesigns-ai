@@ -156,7 +156,9 @@ export default function WhatsAppConnect() {
 
   function startPolling(agentId) {
     if (pollRef.current) clearInterval(pollRef.current);
+    let attempts = 0;
     pollRef.current = setInterval(async () => {
+      attempts++;
       try {
         const res = await fetch(`${API_URL}/evolution-status/${agentId}`, { headers: getHeaders() });
         const data = await res.json();
@@ -164,7 +166,17 @@ export default function WhatsAppConnect() {
           setQrCode(null); clearInterval(pollRef.current);
           refreshAgents();
         }
+        // Check if agent was deactivated (phone already used for trial)
+        const { data: agentData } = await supabase.from('agents').select('is_active, whatsapp_connected').eq('id', agentId).single();
+        if (agentData && !agentData.is_active && !agentData.whatsapp_connected) {
+          setQrCode(null);
+          clearInterval(pollRef.current);
+          setError('Este número de WhatsApp ya se ha utilizado para una prueba gratuita. Si necesitas ayuda, contacta con soporte.');
+          setConnecting(false);
+        }
       } catch {}
+      // Stop polling after 2 minutes
+      if (attempts > 24) clearInterval(pollRef.current);
     }, 5000);
   }
 

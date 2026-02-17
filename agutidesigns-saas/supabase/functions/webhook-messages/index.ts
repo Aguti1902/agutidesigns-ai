@@ -35,6 +35,56 @@ serve(async (req) => {
           }
         }
 
+        // Anti-abuse: check if phone was already used for a trial
+        if (isConnected && updates.whatsapp_number) {
+          const phone = updates.whatsapp_number.replace(/[^0-9+]/g, '')
+          
+          // Check if phone already used for trial
+          const { data: usedPhone } = await supabase
+            .from('used_trial_phones')
+            .select('phone')
+            .eq('phone', phone)
+            .single()
+          
+          if (usedPhone) {
+            console.log('❌ Phone already used for trial:', phone, '- disconnecting')
+            // Disconnect immediately
+            updates.whatsapp_connected = false
+            updates.is_active = false
+            await supabase.from('agents').update(updates).eq('id', agentId)
+            // Try to delete the Evolution instance
+            try {
+              await fetch(`${EVOLUTION_URL}/instance/delete/agent-${agentId}`, {
+                method: 'DELETE',
+                headers: { 'apikey': EVOLUTION_KEY }
+              })
+            } catch {}
+            return new Response(JSON.stringify({ 
+              ok: false, 
+              error: 'Este número de WhatsApp ya se ha usado para una prueba gratuita.' 
+            }), { headers: { 'Content-Type': 'application/json' } })
+          }
+          
+          // Phone is new, check if user is in trial
+          const { data: agentData } = await supabase.from('agents').select('user_id').eq('id', agentId).single()
+          if (agentData?.user_id) {
+            const { data: profileData } = await supabase
+              .from('profiles')
+              .select('subscription_status')
+              .eq('id', agentData.user_id)
+              .single()
+            
+            // If trial user, register the phone
+            if (profileData?.subscription_status === 'trial') {
+              await supabase.from('used_trial_phones').insert({
+                phone,
+                user_id: agentData.user_id,
+              })
+              console.log('✅ Registered trial phone:', phone)
+            }
+          }
+        }
+
         await supabase.from('agents').update(updates).eq('id', agentId)
         console.log('Connection update:', agentId, isConnected, 'phone:', updates.whatsapp_number || 'none')
         
