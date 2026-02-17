@@ -37,6 +37,38 @@ serve(async (req) => {
 
         await supabase.from('agents').update(updates).eq('id', agentId)
         console.log('Connection update:', agentId, isConnected, 'phone:', updates.whatsapp_number || 'none')
+        
+        // Send email when agent connects successfully
+        if (isConnected && SUPABASE_URL && SUPABASE_KEY) {
+          try {
+            const { data: agentData } = await supabase.from('agents').select('user_id, name').eq('id', agentId).single()
+            if (agentData?.user_id) {
+              const { data: profileData } = await supabase.from('profiles').select('full_name, stripe_customer_id').eq('id', agentData.user_id).single()
+              if (profileData?.stripe_customer_id) {
+                const custRes = await fetch(`https://api.stripe.com/v1/customers/${profileData.stripe_customer_id}`, {
+                  headers: { 'Authorization': `Bearer ${Deno.env.get('STRIPE_SECRET_KEY')}` }
+                })
+                const custData = await custRes.json()
+                if (custData.email) {
+                  await fetch(`${SUPABASE_URL}/functions/v1/send-email`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${SUPABASE_KEY}` },
+                    body: JSON.stringify({
+                      to: custData.email,
+                      subject: '✅ WhatsApp conectado - Tu agente ya está activo',
+                      template: 'agent_connected',
+                      data: {
+                        name: profileData?.full_name || 'ahí',
+                        phone: updates.whatsapp_number || 'XXX',
+                        agentName: agentData.name || 'Mi Agente IA'
+                      }
+                    })
+                  }).catch(e => console.warn('Email failed:', e))
+                }
+              }
+            }
+          } catch (e) { console.warn('Email error:', e) }
+        }
       }
       return new Response(JSON.stringify({ ok: true }))
     }
@@ -190,7 +222,64 @@ serve(async (req) => {
         // Save AI response
         await supabase.from('messages').insert({ conversation_id: conv.id, role: 'assistant', content: aiResponse })
         await supabase.from('conversations').update({ messages_count: (conv.messages_count || 0) + 2, last_message_at: new Date().toISOString() }).eq('id', conv.id)
-        await supabase.from('agents').update({ total_messages: (agent.total_messages || 0) + 1 }).eq('id', agentId)
+        const newTotal = (agent.total_messages || 0) + 1
+        await supabase.from('agents').update({ total_messages: newTotal }).eq('id', agentId)
+        
+        // Check message usage and send alerts
+        const { data: profile } = await supabase.from('profiles').select('full_name, stripe_customer_id, last_80_alert, last_95_alert').eq('id', agent.user_id).single()
+        if (profile?.stripe_customer_id) {
+          const { data: allAgents } = await supabase.from('agents').select('total_messages').eq('user_id', agent.user_id)
+          const totalUsed = (allAgents || []).reduce((sum, a) => sum + (a.total_messages || 0), 0)
+          const limit = msgLimit
+          const percentage = limit > 0 ? (totalUsed / limit) * 100 : 0
+          
+          const today = new Date().toISOString().split('T')[0]
+          
+          // Alert at 95% (critical)
+          if (percentage >= 95 && profile.last_95_alert !== today) {
+            try {
+              const custRes = await fetch(`https://api.stripe.com/v1/customers/${profile.stripe_customer_id}`, {
+                headers: { 'Authorization': `Bearer ${Deno.env.get('STRIPE_SECRET_KEY')}` }
+              })
+              const custData = await custRes.json()
+              if (custData.email) {
+                await fetch(`${SUPABASE_URL}/functions/v1/send-email`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${SUPABASE_KEY}` },
+                  body: JSON.stringify({
+                    to: custData.email,
+                    subject: '🚨 ¡Casi sin mensajes! - Amplía tu plan ahora',
+                    template: 'messages_95',
+                    data: { name: profile.full_name || 'ahí', used: totalUsed, limit, percentage: Math.round(percentage) }
+                  })
+                }).catch(e => console.warn('Email failed:', e))
+                await supabase.from('profiles').update({ last_95_alert: today }).eq('id', agent.user_id)
+              }
+            } catch (e) { console.warn('95% alert error:', e) }
+          }
+          // Alert at 80% (warning)
+          else if (percentage >= 80 && profile.last_80_alert !== today) {
+            try {
+              const custRes = await fetch(`https://api.stripe.com/v1/customers/${profile.stripe_customer_id}`, {
+                headers: { 'Authorization': `Bearer ${Deno.env.get('STRIPE_SECRET_KEY')}` }
+              })
+              const custData = await custRes.json()
+              if (custData.email) {
+                await fetch(`${SUPABASE_URL}/functions/v1/send-email`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${SUPABASE_KEY}` },
+                  body: JSON.stringify({
+                    to: custData.email,
+                    subject: '⚠️ Llegando al límite de mensajes',
+                    template: 'messages_80',
+                    data: { name: profile.full_name || 'ahí', used: totalUsed, limit, percentage: Math.round(percentage) }
+                  })
+                }).catch(e => console.warn('Email failed:', e))
+                await supabase.from('profiles').update({ last_80_alert: today }).eq('id', agent.user_id)
+              }
+            } catch (e) { console.warn('80% alert error:', e) }
+          }
+        }
 
         // Send via WhatsApp - use remoteJid directly
         console.log('Sending to:', remoteJid)

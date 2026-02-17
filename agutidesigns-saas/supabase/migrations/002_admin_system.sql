@@ -5,6 +5,10 @@
 -- 1. Añadir campo role a profiles
 ALTER TABLE profiles ADD COLUMN IF NOT EXISTS role TEXT DEFAULT 'user' CHECK (role IN ('user', 'admin'));
 
+-- 1b. Añadir campos para alertas de email (evitar duplicados)
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS last_80_alert DATE;
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS last_95_alert DATE;
+
 -- 2. Crear índice para búsquedas rápidas de admins
 CREATE INDEX IF NOT EXISTS idx_profiles_role ON profiles(role);
 
