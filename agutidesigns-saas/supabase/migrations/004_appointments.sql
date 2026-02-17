@@ -21,7 +21,11 @@ CREATE TABLE IF NOT EXISTS public.appointments (
 
 ALTER TABLE public.appointments ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Users can CRUD own appointments" ON public.appointments FOR ALL USING (auth.uid() = user_id);
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Users can CRUD own appointments' AND tablename = 'appointments') THEN
+    CREATE POLICY "Users can CRUD own appointments" ON public.appointments FOR ALL USING (auth.uid() = user_id);
+  END IF;
+END $$;
 
-CREATE INDEX idx_appointments_user_date ON public.appointments(user_id, appointment_date);
-CREATE INDEX idx_appointments_agent ON public.appointments(agent_id);
+CREATE INDEX IF NOT EXISTS idx_appointments_user_date ON public.appointments(user_id, appointment_date);
+CREATE INDEX IF NOT EXISTS idx_appointments_agent ON public.appointments(agent_id);

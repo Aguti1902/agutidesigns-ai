@@ -169,10 +169,14 @@ export default function WhatsAppConnect() {
         // Check if agent was deactivated (phone already used for trial)
         const { data: agentData } = await supabase.from('agents').select('is_active, whatsapp_connected').eq('id', agentId).single();
         if (agentData && !agentData.is_active && !agentData.whatsapp_connected) {
-          setQrCode(null);
-          clearInterval(pollRef.current);
-          setError('Este número de WhatsApp ya se ha utilizado para una prueba gratuita. Si necesitas ayuda, contacta con soporte.');
-          setConnecting(false);
+          // Only show trial error if user is actually on trial
+          const { data: profile } = await supabase.from('profiles').select('subscription_status').eq('id', user.id).single();
+          if (profile?.subscription_status === 'trial') {
+            setQrCode(null);
+            clearInterval(pollRef.current);
+            setError('Este número de WhatsApp ya se ha utilizado para una prueba gratuita. Si necesitas ayuda, contacta con soporte.');
+            setConnecting(false);
+          }
         }
       } catch {}
       // Stop polling after 2 minutes

@@ -39,6 +39,18 @@ serve(async (req) => {
         if (isConnected && updates.whatsapp_number) {
           const phone = updates.whatsapp_number.replace(/[^0-9+]/g, '')
           
+          // First get the user's subscription status
+          const { data: agentData } = await supabase.from('agents').select('user_id').eq('id', agentId).single()
+          let userSubscription = 'trial'
+          if (agentData?.user_id) {
+            const { data: profileData } = await supabase
+              .from('profiles')
+              .select('subscription_status')
+              .eq('id', agentData.user_id)
+              .single()
+            userSubscription = profileData?.subscription_status || 'trial'
+          }
+
           // Check if phone already used for trial
           const { data: usedPhone } = await supabase
             .from('used_trial_phones')
@@ -46,13 +58,12 @@ serve(async (req) => {
             .eq('phone', phone)
             .single()
           
-          if (usedPhone) {
+          if (usedPhone && userSubscription === 'trial') {
+            // Only block if user is still on trial - paid users can reuse their number
             console.log('❌ Phone already used for trial:', phone, '- disconnecting')
-            // Disconnect immediately
             updates.whatsapp_connected = false
             updates.is_active = false
             await supabase.from('agents').update(updates).eq('id', agentId)
-            // Try to delete the Evolution instance
             try {
               await fetch(`${EVOLUTION_URL}/instance/delete/agent-${agentId}`, {
                 method: 'DELETE',
@@ -65,23 +76,17 @@ serve(async (req) => {
             }), { headers: { 'Content-Type': 'application/json' } })
           }
           
-          // Phone is new, check if user is in trial
-          const { data: agentData } = await supabase.from('agents').select('user_id').eq('id', agentId).single()
-          if (agentData?.user_id) {
-            const { data: profileData } = await supabase
-              .from('profiles')
-              .select('subscription_status')
-              .eq('id', agentData.user_id)
-              .single()
-            
-            // If trial user, register the phone
-            if (profileData?.subscription_status === 'trial') {
-              await supabase.from('used_trial_phones').insert({
-                phone,
-                user_id: agentData.user_id,
-              })
-              console.log('✅ Registered trial phone:', phone)
-            }
+          if (usedPhone && userSubscription === 'active') {
+            console.log('✅ Phone reused by paid user:', phone, '- allowing')
+          }
+          
+          // If trial user with new phone, register it
+          if (!usedPhone && userSubscription === 'trial' && agentData?.user_id) {
+            await supabase.from('used_trial_phones').insert({
+              phone,
+              user_id: agentData.user_id,
+            })
+            console.log('✅ Registered trial phone:', phone)
           }
         }
 
