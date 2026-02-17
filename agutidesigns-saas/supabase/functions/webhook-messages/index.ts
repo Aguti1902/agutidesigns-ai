@@ -332,15 +332,22 @@ serve(async (req) => {
 - Ofrece 2-3 opciones concretas (ej: "miércoles 19 a las 10:00, jueves 20 a las 16:00").
 - Si piden un horario OCUPADO, di que no está disponible y ofrece la siguiente hora libre.
 
-⚠️ REGLA CRÍTICA SOBRE AGENDAR:
-- Cuando el cliente DICE una fecha y/o hora (ej: "el jueves a las 16", "19 de febrero a las 14:00", "mañana por la mañana", "el viernes"), eso ES UNA CONFIRMACIÓN.
-- En ese momento DEBES llamar a la función create_appointment INMEDIATAMENTE. NO vuelvas a preguntar.
-- Si el cliente elige una de las opciones que le has propuesto, eso ES UNA CONFIRMACIÓN. Agenda directamente.
-- Si falta algún dato (hora exacta, servicio), pregunta SOLO lo que falta, pero en cuanto tengas fecha+hora, AGENDA.
-- NO pidas "confirmación de la confirmación". Si el cliente dice un horario, CRÉALO.
-- El campo appointment_date debe ser formato YYYY-MM-DD (usa las fechas entre paréntesis del calendario).
-- Si no conoces el nombre del cliente, usa el nombre de WhatsApp (${contactName}).
-- Si no se especifica hora de fin, asume 1 hora de duración.`
+⚠️⚠️⚠️ REGLA MÁS IMPORTANTE — CÓMO AGENDAR:
+Cuando el cliente indica una fecha y/o hora para su cita, DEBES incluir esta etiqueta EXACTA en tu respuesta:
+<<CITA|nombre_cliente|YYYY-MM-DD|HH:MM|HH:MM|servicio>>
+
+Ejemplos:
+- Cliente dice "el jueves 19 a las 14:00" → Tu respuesta incluye: <<CITA|${contactName}|2026-02-19|14:00|15:00|>>
+- Cliente dice "mañana a las 10 para un corte" → Tu respuesta incluye: <<CITA|${contactName}|2026-02-18|10:00|11:00|corte>>
+- Cliente elige una opción que propusiste → INCLUYE LA ETIQUETA INMEDIATAMENTE.
+
+REGLAS:
+- Si el cliente dice una fecha/hora, eso ES una confirmación. NO preguntes de nuevo. Incluye la etiqueta y confirma.
+- Si no hay hora de fin, suma 1 hora a la de inicio.
+- Si no sabes el nombre, usa: ${contactName}
+- Si falta la hora exacta, pregunta SOLO la hora. En cuanto la tengas, incluye la etiqueta.
+- NUNCA pidas "¿confirmas?" si el cliente ya dijo cuándo quiere la cita. Solo incluye la etiqueta y escribe el mensaje de confirmación.
+- La etiqueta NO se mostrará al cliente, es un comando interno.`
 
         systemPrompt += calendarContext
         } // end if (bookingEnabled)
@@ -381,114 +388,30 @@ serve(async (req) => {
           })
         } catch {}
 
-        // Define function tools for OpenAI (only if booking enabled)
-        const tools = bookingEnabled ? [
-          {
-            type: 'function',
-            function: {
-              name: 'create_appointment',
-              description: 'Crea una cita/reserva. Llama a esta función en cuanto el cliente indique una fecha y hora para su cita. No esperes a una doble confirmación.',
-              parameters: {
-                type: 'object',
-                properties: {
-                  client_name: { type: 'string', description: 'Nombre del cliente' },
-                  service: { type: 'string', description: 'Servicio que solicita' },
-                  appointment_date: { type: 'string', description: 'Fecha de la cita en formato YYYY-MM-DD' },
-                  start_time: { type: 'string', description: 'Hora de inicio en formato HH:MM' },
-                  end_time: { type: 'string', description: 'Hora de fin en formato HH:MM' },
-                  notes: { type: 'string', description: 'Notas adicionales (opcional)' },
-                },
-                required: ['client_name', 'appointment_date', 'start_time', 'end_time'],
-              },
-            },
-          },
-        ] : []
-
-        // Call OpenAI
+        // Call OpenAI (no function calling - using tag-based booking instead)
         const historyMsgs = (history || []).slice(-20)
         console.log('Calling OpenAI... booking:', bookingEnabled, 'history:', historyMsgs.length, 'prompt length:', systemPrompt.length)
         
         let aiResponse = ''
         try {
-          const openaiBody: any = {
-            model: 'gpt-4o-mini',
-            messages: [
-              { role: 'system', content: systemPrompt },
-              ...historyMsgs,
-            ],
-            temperature: 0.65,
-            max_tokens: 600,
-            presence_penalty: 0.1,
-            frequency_penalty: 0.15
-          }
-          if (tools.length > 0) {
-            openaiBody.tools = tools
-            openaiBody.tool_choice = 'auto'
-            openaiBody.parallel_tool_calls = false
-          }
           const openaiRes = await fetch('https://api.openai.com/v1/chat/completions', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${OPENAI_KEY}` },
-            body: JSON.stringify(openaiBody)
+            body: JSON.stringify({
+              model: 'gpt-4o-mini',
+              messages: [
+                { role: 'system', content: systemPrompt },
+                ...historyMsgs,
+              ],
+              temperature: 0.65,
+              max_tokens: 600,
+              presence_penalty: 0.1,
+              frequency_penalty: 0.15
+            })
           })
           const openaiData = await openaiRes.json()
           console.log('OpenAI status:', openaiRes.status, 'error:', openaiData.error?.message || 'none')
-          
-          const choice = openaiData.choices?.[0]
-          
-          // Handle function calls (create_appointment)
-          if (choice?.message?.tool_calls && choice.message.tool_calls.length > 0) {
-            const toolCall = choice.message.tool_calls[0]
-            if (toolCall.function.name === 'create_appointment') {
-              try {
-                const args = JSON.parse(toolCall.function.arguments)
-                console.log('Creating appointment:', JSON.stringify(args))
-                
-                const { error: apptError } = await supabase.from('appointments').insert({
-                  user_id: agent.user_id,
-                  agent_id: agentId,
-                  client_name: args.client_name || contactName,
-                  client_phone: contactPhone,
-                  service: args.service || null,
-                  appointment_date: args.appointment_date,
-                  start_time: args.start_time,
-                  end_time: args.end_time,
-                  notes: args.notes || null,
-                  status: 'confirmed',
-                  created_by: 'ai',
-                })
-                
-                if (apptError) {
-                  console.error('Appointment insert error:', apptError)
-                }
-                
-                // Call OpenAI again with the function result to get the final response
-                const followUpRes = await fetch('https://api.openai.com/v1/chat/completions', {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${OPENAI_KEY}` },
-                  body: JSON.stringify({
-                    model: 'gpt-4o-mini',
-                    messages: [
-                      { role: 'system', content: systemPrompt },
-                      ...historyMsgs,
-                      choice.message,
-                      { role: 'tool', tool_call_id: toolCall.id, content: apptError ? 'Error al crear la cita. Informa al cliente que hubo un problema y que lo intente de nuevo.' : `Cita creada correctamente: ${args.client_name}, ${args.appointment_date} de ${args.start_time} a ${args.end_time}${args.service ? ', servicio: ' + args.service : ''}. Confirma al cliente que su cita ha sido agendada.` }
-                    ],
-                    temperature: 0.65,
-                    max_tokens: 400,
-                  })
-                })
-                const followUpData = await followUpRes.json()
-                aiResponse = followUpData.choices?.[0]?.message?.content || ''
-                if (!aiResponse) aiResponse = `¡Tu cita ha quedado agendada para el ${args.appointment_date} de ${args.start_time} a ${args.end_time}! Si necesitas cambiar algo, avísame.`
-              } catch (fnErr) {
-                console.error('Function call error:', fnErr)
-                aiResponse = choice.message.content || 'He intentado agendar tu cita pero ha habido un problema. ¿Podrías confirmarme los datos de nuevo?'
-              }
-            }
-          } else {
-            aiResponse = choice?.message?.content || ''
-          }
+          aiResponse = openaiData.choices?.[0]?.message?.content || ''
           
           if (!aiResponse && openaiData.error) {
             console.error('OpenAI error:', JSON.stringify(openaiData.error))
@@ -500,6 +423,40 @@ serve(async (req) => {
           console.error('OpenAI fetch error:', openaiErr)
           aiResponse = 'Disculpa, tengo un problema técnico temporal.'
         }
+
+        // Parse <<CITA|name|date|start|end|service>> tag from AI response and create appointment
+        if (bookingEnabled) {
+          const citaMatch = aiResponse.match(/<<CITA\|([^|]*)\|(\d{4}-\d{2}-\d{2})\|(\d{2}:\d{2})\|(\d{2}:\d{2})\|([^>]*)>>/)
+          if (citaMatch) {
+            const [fullTag, cName, cDate, cStart, cEnd, cService] = citaMatch
+            console.log('📅 Booking detected:', cName, cDate, cStart, '-', cEnd, cService)
+            try {
+              const { error: apptError } = await supabase.from('appointments').insert({
+                user_id: agent.user_id,
+                agent_id: agentId,
+                client_name: cName.trim() || contactName,
+                client_phone: contactPhone,
+                service: cService.trim() || null,
+                appointment_date: cDate,
+                start_time: cStart,
+                end_time: cEnd,
+                notes: null,
+                status: 'confirmed',
+                created_by: 'ai',
+              })
+              if (apptError) {
+                console.error('Appointment insert error:', apptError)
+              } else {
+                console.log('✅ Appointment created successfully')
+              }
+            } catch (e) {
+              console.error('Appointment creation failed:', e)
+            }
+            // Remove the tag from the message sent to the client
+            aiResponse = aiResponse.replace(fullTag, '').trim()
+          }
+        }
+
         console.log('AI:', aiResponse.substring(0, 80))
 
         // Save AI response
