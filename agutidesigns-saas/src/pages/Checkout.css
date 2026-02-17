@@ -183,13 +183,12 @@
   overflow: hidden;
 }
 
-/* Ocultar el header de precio de Stripe y forzar modo oscuro */
+/* Forzar modo oscuro en el iframe de Stripe */
 .checkout-page__stripe iframe {
   border: none !important;
   border-radius: var(--radius-lg) !important;
   filter: invert(0.88) hue-rotate(180deg);
-  margin-top: -148px;
-  min-height: 530px;
+  min-height: 380px;
 }
 
 /* ── Error state ── */

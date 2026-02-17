@@ -76,7 +76,7 @@ serve(async (req) => {
       }
     }
 
-    // Step 3: Create fresh instance if needed
+    // Step 3: Create fresh instance if needed (WITHOUT webhook in body - v2.3.7 crashes with it)
     if (!qrResult && !instanceExists) {
       console.log('Creating fresh instance...')
       const createRes = await fetch(`${EVOLUTION_URL}/instance/create`, {
@@ -86,9 +86,6 @@ serve(async (req) => {
           instanceName,
           integration: 'WHATSAPP-BAILEYS',
           qrcode: true,
-          webhook: WEBHOOK_URL,
-          webhook_by_events: false,
-          events: ['MESSAGES_UPSERT', 'CONNECTION_UPDATE'],
         })
       })
       const createData = await createRes.json()
