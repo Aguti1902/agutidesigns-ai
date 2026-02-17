@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import {
   Zap, Check, AlertTriangle, ArrowRight, MessageCircle,
@@ -91,6 +91,26 @@ export default function Billing() {
 
   const urlParams = new URLSearchParams(window.location.search);
   const showSuccess = urlParams.get('success') === 'true';
+  const activatedRef = useRef(false);
+
+  // Fallback: when returning from Stripe checkout with success, poll profile until active
+  useEffect(() => {
+    if (!showSuccess || isSubscribed || activatedRef.current) return;
+    activatedRef.current = true;
+    let attempts = 0;
+    const poll = setInterval(async () => {
+      attempts++;
+      if (attempts > 15) { clearInterval(poll); return; }
+      if (user?.id) {
+        const { data } = await supabase.from('profiles').select('subscription_status').eq('id', user.id).single();
+        if (data?.subscription_status === 'active') {
+          clearInterval(poll);
+          window.location.href = '/app/billing?success=true';
+        }
+      }
+    }, 2000);
+    return () => clearInterval(poll);
+  }, [showSuccess, isSubscribed, user?.id]);
 
   return (
     <div className="page">
@@ -107,30 +127,39 @@ export default function Billing() {
         )}
       </div>
 
-      {showSuccess && (
+      {showSuccess && isSubscribed && (
         <div className="billing-status billing-status--active">
           <div className="billing-status__icon"><Check size={20} /></div>
           <div><h3>¡Suscripción activada!</h3><p>Tu plan está activo. Ya puedes disfrutar de todas las funcionalidades.</p></div>
         </div>
       )}
 
-      {/* Status */}
-      <div className={`billing-status ${isTrialActive ? 'billing-status--trial' : isSubscribed ? 'billing-status--active' : 'billing-status--expired'}`}>
-        <div className="billing-status__icon">
-          {isTrialActive ? <Zap size={20} /> : isSubscribed ? <Check size={20} /> : <AlertTriangle size={20} />}
+      {showSuccess && !isSubscribed && (
+        <div className="billing-status billing-status--trial">
+          <div className="billing-status__icon"><Loader2 size={20} className="spin" /></div>
+          <div><h3>Activando tu suscripción...</h3><p>Estamos procesando tu pago. Esto puede tardar unos segundos.</p></div>
         </div>
-        <div>
-          <h3>
-            {isTrialActive ? `Periodo de prueba — ${trialDaysLeft} día${trialDaysLeft !== 1 ? 's' : ''} restante${trialDaysLeft !== 1 ? 's' : ''}` :
-             isSubscribed ? 'Suscripción activa' : 'Suscripción expirada'}
-          </h3>
-          <p>
-            {isTrialActive ? 'Disfruta de todas las funcionalidades. Elige un plan antes de que acabe.' :
-             isSubscribed ? 'Tienes acceso completo a todas las funcionalidades.' :
-             'Tu periodo de prueba ha terminado. Elige un plan para continuar.'}
-          </p>
+      )}
+
+      {/* Status - only show when NOT in success state */}
+      {!showSuccess && (
+        <div className={`billing-status ${isTrialActive ? 'billing-status--trial' : isSubscribed ? 'billing-status--active' : 'billing-status--expired'}`}>
+          <div className="billing-status__icon">
+            {isTrialActive ? <Zap size={20} /> : isSubscribed ? <Check size={20} /> : <AlertTriangle size={20} />}
+          </div>
+          <div>
+            <h3>
+              {isTrialActive ? `Periodo de prueba — ${trialDaysLeft} día${trialDaysLeft !== 1 ? 's' : ''} restante${trialDaysLeft !== 1 ? 's' : ''}` :
+               isSubscribed ? 'Suscripción activa' : 'Suscripción expirada'}
+            </h3>
+            <p>
+              {isTrialActive ? 'Disfruta de todas las funcionalidades. Elige un plan antes de que acabe.' :
+               isSubscribed ? 'Tienes acceso completo a todas las funcionalidades.' :
+               'Tu periodo de prueba ha terminado. Elige un plan para continuar.'}
+            </p>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Subscription & Payment Management */}
       {isSubscribed && profile?.stripe_customer_id && (
