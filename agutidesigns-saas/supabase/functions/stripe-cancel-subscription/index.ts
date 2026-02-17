@@ -86,11 +86,34 @@ serve(async (req) => {
         Deno.env.get('SUPABASE_URL') || '',
         Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || ''
       )
+      const { data: profile } = await supabase.from('profiles').select('full_name, stripe_customer_id').eq('id', userId).single()
       await supabase.from('profiles').update({
         extra_messages: 0,
         updated_at: new Date().toISOString(),
       }).eq('id', userId)
       console.log('Reset extra_messages for user:', userId)
+      
+      // Send cancellation email
+      if (profile?.stripe_customer_id) {
+        try {
+          const custRes = await fetch(`https://api.stripe.com/v1/customers/${profile.stripe_customer_id}`, { headers: h })
+          const custData = await custRes.json()
+          const accessUntil = new Date(cancelData.current_period_end * 1000).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })
+          
+          if (custData.email) {
+            await fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/send-email`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}` },
+              body: JSON.stringify({
+                to: custData.email,
+                subject: 'Plan cancelado - Acceso hasta ' + accessUntil,
+                template: 'plan_cancelled',
+                data: { name: profile?.full_name || 'ahí', accessUntil }
+              })
+            }).catch(e => console.warn('Email failed:', e))
+          }
+        } catch (e) { console.warn('Email error:', e) }
+      }
     }
 
     return new Response(

@@ -89,6 +89,33 @@ serve(async (req) => {
             console.log('Setting message_limit:', messageLimit)
           }
           await supabase.from('profiles').update(updates).eq('id', userId)
+          
+          // Send payment success email
+          try {
+            const { data: profileData } = await supabase.from('profiles').select('full_name').eq('id', userId).single()
+            const custRes = await fetch(`https://api.stripe.com/v1/customers/${customerId}`, {
+              headers: { 'Authorization': `Bearer ${STRIPE_KEY}` }
+            })
+            const custData = await custRes.json()
+            const userEmail = custData.email || data.customer_email
+            
+            if (userEmail) {
+              await fetch(`${SUPABASE_URL}/functions/v1/send-email`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${SUPABASE_KEY}` },
+                body: JSON.stringify({
+                  to: userEmail,
+                  subject: '¡Pago recibido! Tu agente IA está activo',
+                  template: 'payment_success',
+                  data: { 
+                    name: profileData?.full_name || 'ahí',
+                    amount: messageLimit === 500 ? '29' : messageLimit === 5000 ? '79' : '199',
+                    plan: messageLimit === 500 ? 'Starter' : messageLimit === 5000 ? 'Pro' : 'Business',
+                  }
+                })
+              }).catch(e => console.warn('Email failed:', e))
+            }
+          } catch (e) { console.warn('Email send failed (non-fatal):', e) }
         } else {
           console.log('One-time payment (pack) for user:', userId, '- saving customer_id')
           await supabase.from('profiles').update({
@@ -170,13 +197,33 @@ serve(async (req) => {
     // Payment failed
     if (event === 'invoice.payment_failed') {
       const customerId = data.customer
-      const { data: profile } = await supabase.from('profiles').select('id').eq('stripe_customer_id', customerId).single()
+      const { data: profile } = await supabase.from('profiles').select('id, full_name').eq('stripe_customer_id', customerId).single()
       if (profile) {
         console.log('Payment failed for:', profile.id)
         await supabase.from('profiles').update({
           subscription_status: 'expired',
           updated_at: new Date().toISOString(),
         }).eq('id', profile.id)
+        
+        // Send payment failed email
+        try {
+          const custRes = await fetch(`https://api.stripe.com/v1/customers/${customerId}`, {
+            headers: { 'Authorization': `Bearer ${STRIPE_KEY}` }
+          })
+          const custData = await custRes.json()
+          if (custData.email) {
+            await fetch(`${SUPABASE_URL}/functions/v1/send-email`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${SUPABASE_KEY}` },
+              body: JSON.stringify({
+                to: custData.email,
+                subject: '❌ Pago rechazado - Actualiza tu tarjeta',
+                template: 'payment_failed',
+                data: { name: profile.full_name || 'ahí', amount: String(Math.round(data.amount_due / 100)) }
+              })
+            }).catch(e => console.warn('Email failed:', e))
+          }
+        } catch (e) { console.warn('Email error:', e) }
       }
     }
 

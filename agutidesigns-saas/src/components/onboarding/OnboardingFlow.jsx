@@ -13,10 +13,26 @@ const STEPS = [
 
 export default function OnboardingFlow({ onComplete }) {
   const [step, setStep] = useState(0);
-  const { updateProfile } = useAuth();
+  const { updateProfile, user, profile } = useAuth();
 
   const handleFinish = async () => {
     await updateProfile({ onboarding_completed: true });
+    
+    // Send welcome email
+    try {
+      const API_URL = import.meta.env.VITE_API_URL || 'https://xzyhrloiwapbrqmglxeo.supabase.co/functions/v1';
+      await fetch(`${API_URL}/send-email`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          to: user.email,
+          subject: '¡Bienvenido a Agutidesigns IA! 🚀',
+          template: 'welcome',
+          data: { name: profile?.full_name || 'ahí', trialDays: 7 }
+        })
+      }).catch(() => {})
+    } catch {}
+    
     onComplete();
   };
 

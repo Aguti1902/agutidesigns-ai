@@ -31,7 +31,7 @@ export default function AdminTickets() {
   async function loadTickets() {
     const { data } = await supabase
       .from('support_tickets')
-      .select('*, profiles!inner(full_name)')
+      .select('*, profiles!inner(full_name, id)')
       .order('created_at', { ascending: false });
     setTickets(data || []);
   }
@@ -69,6 +69,19 @@ export default function AdminTickets() {
       setReplyText('');
       loadMessages(selectedTicket.id);
       loadTickets();
+      
+      // Send email notification to user
+      try {
+        const API_URL = import.meta.env.VITE_API_URL || 'https://xzyhrloiwapbrqmglxeo.supabase.co/functions/v1';
+        await fetch(`${API_URL}/notify-ticket-reply`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            ticketId: selectedTicket.id,
+            replyPreview: replyText.trim().slice(0, 150)
+          })
+        }).catch(() => {})
+      } catch {}
     } catch (err) { console.error(err); }
     finally { setSending(false); }
   }

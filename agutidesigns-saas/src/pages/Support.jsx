@@ -124,6 +124,25 @@ export default function Support() {
       setNewMessage('');
       await loadTickets();
       setView('list');
+      
+      // Send confirmation email
+      try {
+        await fetch(`${import.meta.env.VITE_API_URL}/send-email`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            to: user.email,
+            subject: `Ticket #${ticket.id.slice(0,8)} creado - Te responderemos pronto`,
+            template: 'ticket_created',
+            data: { 
+              name: profile?.full_name || 'ahí',
+              ticketId: ticket.id.slice(0,8),
+              subject: newSubject,
+              message: newMessage.slice(0, 150)
+            }
+          })
+        }).catch(() => {})
+      } catch {}
     } catch (err) {
       console.error(err);
     } finally {
