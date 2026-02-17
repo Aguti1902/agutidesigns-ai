@@ -38,7 +38,9 @@ En **Project Settings → General**:
 Site URL: https://app.agutidesigns.io/app
 ```
 
-(La página `/email-confirmado` se usa solo para confirmación manual de email. OAuth va directo a `/app`)
+**IMPORTANTE**: El Site URL debe ser `/app`, NO `/email-confirmado`. Así:
+- OAuth (Google) → va directo a `/app` 
+- Confirmación de email manual → Supabase añade automáticamente parámetros `?type=signup&token=xxx` a la URL, y EmailConfirmed.jsx detecta esos parámetros y muestra la página de éxito solo en ese caso específico
 
 En **Redirect URLs** (añadir ambos):
 ```

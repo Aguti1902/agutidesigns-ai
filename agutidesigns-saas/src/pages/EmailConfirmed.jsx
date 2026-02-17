@@ -10,12 +10,27 @@ export default function EmailConfirmed() {
   const [searchParams] = useSearchParams();
   const [countdown, setCountdown] = useState(3);
 
-  // Check if coming from OAuth (Google, etc) - they already have session
-  const isOAuth = searchParams.get('type') === 'signup' || (user && !searchParams.get('token'));
-
   useEffect(() => {
-    // If OAuth or already logged in, skip this page entirely
-    if (isOAuth || (user && window.location.hash.includes('access_token'))) {
+    // This page should ONLY show for manual email verification links
+    // URL must have either 'type' or 'token' params from Supabase email link
+    const type = searchParams.get('type');
+    const token = searchParams.get('token') || searchParams.get('token_hash');
+    const hasHash = window.location.hash.includes('access_token');
+    const error = searchParams.get('error');
+    const errorCode = searchParams.get('error_code');
+    const errorDescription = searchParams.get('error_description');
+    
+    // If arriving WITHOUT email verification params → redirect immediately to /app
+    // This catches OAuth, manual navigation, or any other case
+    if (!type && !token && !error && !errorCode && !errorDescription) {
+      console.log('EmailConfirmed: No verification params, redirecting to /app');
+      navigate('/app', { replace: true });
+      return;
+    }
+
+    // If OAuth flow (access_token in hash, no email token) → skip
+    if (hasHash && !token) {
+      console.log('EmailConfirmed: OAuth detected, redirecting to /app');
       navigate('/app', { replace: true });
       return;
     }
