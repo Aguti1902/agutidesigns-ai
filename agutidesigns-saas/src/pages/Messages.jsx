@@ -109,38 +109,47 @@ export default function Messages() {
         )}
       </section>
 
-      {/* 2. Grid de packs */}
-      <section className="messages-section">
-        <h3 className="page__section-title"><Package size={18} /> Packs de mensajes extra</h3>
-        <p className="page__section-desc">Se sumará a tu suscripción mensual.</p>
+      {/* 2. Packs de mensajes */}
+      <section className="messages-packs-section">
+        <div className="messages-packs-header">
+          <div>
+            <h3><Package size={20} /> Ampliar mensajes</h3>
+            <p>Selecciona un pack y se sumará a tu suscripción mensual de forma recurrente.</p>
+          </div>
+        </div>
 
         <div className="messages-packs-grid">
-          {MSG_PACKS.map((pack) => (
-            <div
-              key={pack.id}
-              className={`messages-pack-card ${selectedPack === pack.id ? 'messages-pack-card--selected' : ''}`}
-              onClick={() => setSelectedPack(selectedPack === pack.id ? null : pack.id)}
-            >
-              <span className="messages-pack-card__name">{pack.name}</span>
-              <span className="messages-pack-card__count">+{fmt(pack.messages)}</span>
-              <span className="messages-pack-card__price">{pack.price}€</span>
-            </div>
-          ))}
+          {MSG_PACKS.map((pack) => {
+            const isSelected = selectedPack === pack.id;
+            return (
+              <div
+                key={pack.id}
+                className={`messages-pack-card ${isSelected ? 'messages-pack-card--selected' : ''}`}
+                onClick={() => setSelectedPack(isSelected ? null : pack.id)}
+              >
+                {isSelected && <div className="messages-pack-card__check"><MessageCircle size={14} /></div>}
+                <span className="messages-pack-card__count">+{fmt(pack.messages)}</span>
+                <span className="messages-pack-card__label">mensajes/mes</span>
+                <span className="messages-pack-card__price">{pack.price}€<span>/mes</span></span>
+                <span className="messages-pack-card__unit">{((Number(pack.price) / pack.messages) * 1000).toFixed(1)}€ / 1.000 msgs</span>
+              </div>
+            );
+          })}
         </div>
 
         {selectedPack && (
-          <div className="messages-packs__action">
+          <div className="messages-packs-cta">
+            <div className="messages-packs-cta__info">
+              <strong>+{fmt(MSG_PACKS.find(p => p.id === selectedPack)?.messages)} mensajes/mes</strong>
+              <span>Se cobrarán {MSG_PACKS.find(p => p.id === selectedPack)?.price}€ extra en tu próxima factura y cada mes.</span>
+            </div>
             <button
-              className="btn btn--primary"
+              className="btn btn--primary btn--lg"
               onClick={handleAddPack}
               disabled={loadingAddon}
             >
-              {loadingAddon ? (
-                <Loader2 size={14} className="spin" />
-              ) : (
-                <Plus size={14} />
-              )}
-              Añadir a mi plan
+              {loadingAddon ? <Loader2 size={16} className="spin" /> : <Plus size={16} />}
+              Añadir {MSG_PACKS.find(p => p.id === selectedPack)?.price}€/mes a mi plan
             </button>
           </div>
         )}
