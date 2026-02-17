@@ -414,14 +414,42 @@
 .bd-grid { display: grid; grid-template-columns: 1.2fr 1fr; gap: 1rem; align-items: start; }
 .bd-section-title { display: flex; align-items: center; gap: 0.4rem; font-family: var(--font-mono); font-size: 0.9rem; font-weight: 700; color: #ccc; margin-bottom: 1.25rem; }
 
-/* ── Calendar Events ── */
-.calendar-events-list { display: flex; flex-direction: column; gap: 0.75rem; }
-.calendar-event-item { display: flex; gap: 0.75rem; padding: 0.75rem; background: #0a0a0a; border: 1px solid #222; border-radius: var(--radius-md); }
-.calendar-event-dot { width: 8px; height: 8px; min-width: 8px; border-radius: 50%; background: var(--color-primary); margin-top: 0.4rem; }
-.calendar-event-info { display: flex; flex-direction: column; gap: 0.2rem; flex: 1; }
-.calendar-event-time { font-family: var(--font-mono); font-size: 0.7rem; color: var(--color-primary); font-weight: 600; }
-.calendar-event-title { font-size: 0.9rem; color: #fff; font-weight: 600; }
-.calendar-event-desc { font-size: 0.75rem; color: #777; }
+/* ── Calendar Weekly Grid ── */
+.cal-nav { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 1rem; }
+.cal-nav__arrow { display: flex; align-items: center; justify-content: center; width: 32px; height: 32px; background: #111; border: 1px solid #222; border-radius: var(--radius-md); color: #aaa; cursor: pointer; transition: all 0.15s; }
+.cal-nav__arrow:hover { border-color: var(--color-primary); color: var(--color-primary); }
+.cal-nav__range { font-family: var(--font-mono); font-size: 0.85rem; font-weight: 600; color: #ccc; margin-left: 0.5rem; }
+
+.cal-grid { background: #111; border: 1px solid #1e1e1e; border-radius: var(--radius-xl); overflow: hidden; }
+
+.cal-grid__header { display: grid; grid-template-columns: 56px repeat(7, 1fr); border-bottom: 1px solid #1e1e1e; }
+.cal-grid__time-header { background: #0c0c0c; }
+.cal-grid__day-header { display: flex; flex-direction: column; align-items: center; gap: 0.2rem; padding: 0.75rem 0; border-left: 1px solid #1e1e1e; }
+.cal-grid__day-header--weekend { background: rgba(255,255,255,0.02); }
+.cal-grid__day-header--today { background: rgba(37,211,102,0.06); }
+.cal-grid__day-name { font-family: var(--font-mono); font-size: 0.65rem; font-weight: 700; color: #666; letter-spacing: 0.05em; }
+.cal-grid__day-num { font-family: var(--font-display); font-size: 1.1rem; font-weight: 700; color: #aaa; }
+.cal-grid__day-num--today { color: #000; background: var(--color-primary); width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+
+.cal-grid__body { display: grid; grid-template-columns: 56px repeat(7, 1fr); max-height: 528px; overflow-y: auto; }
+.cal-grid__times { display: flex; flex-direction: column; }
+.cal-grid__time-label { height: 48px; display: flex; align-items: flex-start; justify-content: flex-end; padding: 0 0.5rem 0 0; font-family: var(--font-mono); font-size: 0.65rem; color: #555; border-top: 1px solid #1a1a1a; transform: translateY(-6px); }
+.cal-grid__col { position: relative; border-left: 1px solid #1e1e1e; }
+.cal-grid__col--weekend { background: rgba(255,255,255,0.015); }
+.cal-grid__cell { height: 48px; border-top: 1px solid #1a1a1a; position: relative; }
+
+.cal-event { position: absolute; left: 2px; right: 2px; background: rgba(37,211,102,0.15); border-left: 3px solid var(--color-primary); border-radius: 4px; padding: 2px 6px; overflow: hidden; cursor: default; z-index: 1; transition: background 0.15s; }
+.cal-event:hover { background: rgba(37,211,102,0.25); }
+.cal-event__time { display: block; font-family: var(--font-mono); font-size: 0.6rem; color: var(--color-primary); font-weight: 600; white-space: nowrap; overflow: hidden; }
+.cal-event__title { display: block; font-size: 0.7rem; color: #ddd; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+@media (max-width: 768px) {
+  .cal-grid__header { grid-template-columns: 40px repeat(7, 1fr); }
+  .cal-grid__body { grid-template-columns: 40px repeat(7, 1fr); }
+  .cal-grid__day-name { font-size: 0.55rem; }
+  .cal-grid__day-num { font-size: 0.85rem; }
+  .cal-event__time { display: none; }
+}
 
 @media (max-width: 768px) {
   .bd-grid { grid-template-columns: 1fr; }
