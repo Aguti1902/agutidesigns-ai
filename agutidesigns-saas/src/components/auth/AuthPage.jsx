@@ -197,7 +197,7 @@ export default function AuthPage() {
 
           {mode === 'register' && (
             <p className="auth__terms">
-              Al registrarte, aceptas nuestros <a href="/terminos.html" target="_blank" rel="noopener">Términos de Servicio</a> y nuestra <a href="/privacidad.html" target="_blank" rel="noopener">Política de Privacidad</a>.
+              Al registrarte, aceptas nuestros <a href="https://agutidesigns.io/terminos.html" target="_blank" rel="noopener">Términos de Servicio</a> y nuestra <a href="https://agutidesigns.io/privacidad.html" target="_blank" rel="noopener">Política de Privacidad</a>.
             </p>
           )}
 

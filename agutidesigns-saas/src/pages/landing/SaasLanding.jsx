@@ -69,8 +69,8 @@ export default function SaasLanding() {
         </div>
         <div className="landing-nav__right">
           <div className="landing-nav__links">
-            <a href="/privacidad.html" target="_blank" rel="noopener">Privacidad</a>
-            <a href="/terminos.html" target="_blank" rel="noopener">Términos</a>
+            <a href="https://agutidesigns.io/privacidad.html" target="_blank" rel="noopener">Privacidad</a>
+            <a href="https://agutidesigns.io/terminos.html" target="_blank" rel="noopener">Términos</a>
           </div>
           <Link to="/auth" className="landing-nav__cta">
             <Zap size={14} /> Probar gratis 2 días
@@ -281,9 +281,9 @@ export default function SaasLanding() {
       <footer className="landing-footer">
         <p>© 2026 Agutidesigns IA · Hecho con Inteligencia Artificial</p>
         <div className="landing-footer__links">
-          <a href="/privacidad.html" target="_blank" rel="noopener">Privacidad</a>
+          <a href="https://agutidesigns.io/privacidad.html" target="_blank" rel="noopener">Privacidad</a>
           <span>·</span>
-          <a href="/terminos.html" target="_blank" rel="noopener">Términos</a>
+          <a href="https://agutidesigns.io/terminos.html" target="_blank" rel="noopener">Términos</a>
           <span>·</span>
           <a href="mailto:soporte@agutidesigns.io">Contacto</a>
         </div>
