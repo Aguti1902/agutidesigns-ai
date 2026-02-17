@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <style>
+    body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0a0a0a; color: #e4e4e7; }
+    .container { max-width: 600px; margin: 0 auto; padding: 40px 20px; }
+    .card { background: #111; border: 1px solid #1e1e1e; border-radius: 16px; padding: 32px; margin-bottom: 20px; }
+    .logo { text-align: center; margin-bottom: 32px; }
+    .logo img { height: 40px; }
+    h1 { font-size: 24px; font-weight: 700; color: #E5FC63; margin: 0 0 16px; }
+    p { font-size: 15px; line-height: 1.6; color: #aaa; margin: 0 0 16px; }
+    .btn { display: inline-block; padding: 16px 32px; background: #E5FC63; color: #000; text-decoration: none; border-radius: 99px; font-weight: 700; font-size: 15px; margin: 20px 0; }
+    .btn:hover { background: #f0ff7a; }
+    .footer { text-align: center; padding: 20px; font-size: 13px; color: #555; }
+    .footer a { color: #666; text-decoration: none; }
+    .highlight { color: #E5FC63; font-weight: 600; }
+    .code { display: inline-block; padding: 12px 20px; background: #0a0a0a; border: 1px solid #333; border-radius: 8px; font-family: 'Courier New', monospace; font-size: 18px; font-weight: 700; color: #E5FC63; letter-spacing: 2px; margin: 16px 0; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="logo">
+      <img src="https://app.agutidesigns.io/images/Logoverde.png" alt="Agutidesigns IA" />
+    </div>
+    <div class="card">
+      <h1>¡Confirma tu email! 📧</h1>
+      <p>Hola,</p>
+      <p>Gracias por registrarte en <strong>Agutidesigns IA</strong>. Para activar tu cuenta y empezar a usar tu agente de WhatsApp, confirma tu dirección de email.</p>
+      
+      <!-- Botón de confirmación con token de Supabase -->
+      <div style="text-align: center;">
+        <a href="{{ .ConfirmationURL }}" class="btn">Confirmar mi email</a>
+      </div>
+
+      <p style="font-size: 13px; color: #666; margin-top: 24px; padding-top: 24px; border-top: 1px solid #1e1e1e;">
+        Si no te has registrado en Agutidesigns, ignora este email.
+      </p>
+
+      <p style="font-size: 13px; color: #555; margin-top: 16px;">
+        ¿Problemas con el botón? Copia este enlace en tu navegador:<br>
+        <span style="color: #777; word-break: break-all; font-size: 11px;">{{ .ConfirmationURL }}</span>
+      </p>
+    </div>
+    <div class="footer">
+      © 2026 Agutidesigns IA · <a href="https://agutidesigns.io">agutidesigns.io</a>
+    </div>
+  </div>
+</body>
+</html>
