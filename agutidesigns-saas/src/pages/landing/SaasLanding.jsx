@@ -67,9 +67,15 @@ export default function SaasLanding() {
           <img src="/images/Logoverde.png" alt="Agutidesigns" className="landing-nav__logo-img" />
           <span className="landing-nav__badge">IA</span>
         </div>
-        <Link to="/auth" className="landing-nav__cta">
-          <Zap size={14} /> Probar gratis 2 días
-        </Link>
+        <div className="landing-nav__right">
+          <div className="landing-nav__links">
+            <a href="/privacidad.html" target="_blank" rel="noopener">Privacidad</a>
+            <a href="/terminos.html" target="_blank" rel="noopener">Términos</a>
+          </div>
+          <Link to="/auth" className="landing-nav__cta">
+            <Zap size={14} /> Probar gratis 2 días
+          </Link>
+        </div>
       </nav>
 
       {/* Hero */}
