@@ -54,13 +54,26 @@ export default function Support() {
   // Load tickets
   useEffect(() => {
     loadTickets();
-  }, [user]);
+    
+    // Real-time updates
+    const channel = supabase
+      .channel('user-tickets')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'support_tickets', filter: `user_id=eq.${user?.id}` }, () => loadTickets())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'support_messages' }, (payload) => {
+        if (selectedTicket && payload.new.ticket_id === selectedTicket.id) {
+          loadMessages(selectedTicket.id);
+        }
+      })
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [user, selectedTicket?.id]);
 
   async function loadTickets() {
     if (!user) return;
     setLoading(true);
     const { data } = await supabase
-      .from('tickets')
+      .from('support_tickets')
       .select('*')
       .eq('user_id', user.id)
       .order('created_at', { ascending: false });
@@ -70,7 +83,7 @@ export default function Support() {
 
   async function loadMessages(ticketId) {
     const { data } = await supabase
-      .from('ticket_messages')
+      .from('support_messages')
       .select('*')
       .eq('ticket_id', ticketId)
       .order('created_at', { ascending: true });
@@ -89,18 +102,18 @@ export default function Support() {
     setSubmitting(true);
 
     try {
-      const { data: ticket } = await supabase.from('tickets').insert({
+      const { data: ticket, error } = await supabase.from('support_tickets').insert({
         user_id: user.id,
         subject: newSubject,
-        category: newCategory,
-        priority: newPriority,
       }).select().single();
 
-      await supabase.from('ticket_messages').insert({
+      if (error) throw error;
+
+      await supabase.from('support_messages').insert({
         ticket_id: ticket.id,
-        sender_type: 'user',
-        sender_name: profile?.full_name || 'Usuario',
-        content: newMessage,
+        sender_id: user.id,
+        is_admin: false,
+        message: newMessage,
       });
 
       setNewSubject('');
@@ -122,14 +135,14 @@ export default function Support() {
     setSending(true);
 
     try {
-      await supabase.from('ticket_messages').insert({
+      await supabase.from('support_messages').insert({
         ticket_id: selectedTicket.id,
-        sender_type: 'user',
-        sender_name: profile?.full_name || 'Usuario',
-        content: reply,
+        sender_id: user.id,
+        is_admin: false,
+        message: reply,
       });
 
-      await supabase.from('tickets').update({ updated_at: new Date().toISOString() }).eq('id', selectedTicket.id);
+      await supabase.from('support_tickets').update({ updated_at: new Date().toISOString() }).eq('id', selectedTicket.id);
 
       setReply('');
       await loadMessages(selectedTicket.id);
@@ -281,18 +294,18 @@ export default function Support() {
             {/* Messages thread */}
             <div className="ticket-thread">
               {messages.map(msg => (
-                <div key={msg.id} className={`ticket-msg ticket-msg--${msg.sender_type}`}>
+                <div key={msg.id} className={`ticket-msg ${msg.is_admin ? 'ticket-msg--admin' : 'ticket-msg--user'}`}>
                   <div className="ticket-msg__avatar">
-                    {msg.sender_type === 'admin' ? 'A' : profile?.full_name?.charAt(0) || 'U'}
+                    {msg.is_admin ? 'A' : profile?.full_name?.charAt(0) || 'U'}
                   </div>
                   <div className="ticket-msg__body">
                     <div className="ticket-msg__header">
                       <span className="ticket-msg__name">
-                        {msg.sender_type === 'admin' ? 'Soporte Agutidesigns' : msg.sender_name || 'Tú'}
+                        {msg.is_admin ? 'Soporte Agutidesigns' : 'Tú'}
                       </span>
                       <span className="ticket-msg__time">{formatDate(msg.created_at)}</span>
                     </div>
-                    <p className="ticket-msg__content">{msg.content}</p>
+                    <p className="ticket-msg__content">{msg.message}</p>
                   </div>
                 </div>
               ))}
