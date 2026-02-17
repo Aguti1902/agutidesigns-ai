@@ -19,6 +19,7 @@ import AdminLayout from './components/layout/AdminLayout';
 import AdminDashboard from './pages/AdminDashboard';
 import AdminTickets from './pages/AdminTickets';
 import AdminUsers from './pages/AdminUsers';
+import EmailConfirmed from './pages/EmailConfirmed';
 
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth();
@@ -57,6 +58,7 @@ export default function App() {
       {/* Public routes */}
       <Route path="/" element={user ? <Navigate to="/app" replace /> : <SaasLanding />} />
       <Route path="/auth" element={user ? <Navigate to="/app" replace /> : <AuthPage />} />
+      <Route path="/email-confirmado" element={<EmailConfirmed />} />
       
       {/* Protected dashboard routes */}
       <Route path="/app" element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>

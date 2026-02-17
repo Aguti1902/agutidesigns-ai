@@ -85,13 +85,17 @@ Ve a **Authentication → Settings → Email → Email Settings**:
 
 ### Configurar redirect URL:
 
-En **Authentication → URL Configuration**:
-- **Site URL**: `https://app.agutidesigns.io`
-- **Redirect URLs** (añadir):
-  - `https://app.agutidesigns.io/**`
-  - `https://agutidesigns-ai-saas.vercel.app/**`
+Ve a **Project Settings → General** (rueda abajo en el sidebar):
 
-Esto hará que después de confirmar el email, el usuario vuelva a `app.agutidesigns.io` en vez de `xzyhrloiwapbrqmglxeo.supabase.co`.
+1. **Site URL**: `https://app.agutidesigns.io/email-confirmado`
+2. **Redirect URLs** (añadir estas 2 líneas):
+   ```
+   https://app.agutidesigns.io/**
+   https://agutidesigns-ai-saas.vercel.app/**
+   ```
+3. Save
+
+Esto hará que después de confirmar el email, el usuario vaya a la página de "Email confirmado" que redirige automáticamente al dashboard en 3 segundos.
 
 ## Importante:
 

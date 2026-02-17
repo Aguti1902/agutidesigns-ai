@@ -1,0 +1,129 @@
+/* ══════════════════════════════════
+   Email Confirmed Success Page
+   ══════════════════════════════════ */
+
+.email-confirmed {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-black);
+  padding: 2rem;
+}
+
+.email-confirmed__card {
+  text-align: center;
+  max-width: 540px;
+  background: #111;
+  border: 1px solid rgba(37,211,102,0.2);
+  border-radius: var(--radius-xl);
+  padding: 3rem 2.5rem;
+}
+
+.email-confirmed__icon {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  background: rgba(37,211,102,0.1);
+  color: #25D366;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 1.5rem;
+  animation: scaleIn 0.5s ease-out;
+}
+
+@keyframes scaleIn {
+  from { transform: scale(0.5); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+.email-confirmed h1 {
+  font-family: var(--font-display);
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #25D366;
+  margin-bottom: 0.75rem;
+}
+
+.email-confirmed p {
+  color: #aaa;
+  font-size: 1rem;
+  line-height: 1.7;
+  margin-bottom: 2rem;
+}
+
+.email-confirmed__countdown {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  color: #666;
+  margin-bottom: 1.5rem;
+}
+
+.email-confirmed .btn {
+  margin-bottom: 2rem;
+}
+
+.email-confirmed__steps {
+  padding-top: 2rem;
+  border-top: 1px solid #1e1e1e;
+  text-align: left;
+}
+
+.email-confirmed__steps h3 {
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #888;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 1rem;
+}
+
+.email-confirmed__steps ol {
+  list-style: none;
+  counter-reset: steps;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding-left: 0;
+}
+
+.email-confirmed__steps li {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 0.9rem;
+  color: #aaa;
+  counter-increment: steps;
+}
+
+.email-confirmed__steps li::before {
+  content: counter(steps);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  min-width: 28px;
+  border-radius: 50%;
+  background: rgba(37,211,102,0.1);
+  color: #25D366;
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  font-weight: 800;
+}
+
+@media (max-width: 640px) {
+  .email-confirmed__card {
+    padding: 2rem 1.5rem;
+  }
+
+  .email-confirmed h1 {
+    font-size: 1.5rem;
+  }
+}
