@@ -66,6 +66,9 @@ serve(async (req) => {
       calendar_name: calData.summary || 'Calendario principal',
     }, { onConflict: 'user_id' })
 
+    // Auto-enable calendar on all user's agents
+    await supabase.from('agents').update({ calendar_enabled: true }).eq('user_id', userId)
+
     return Response.redirect('https://app.agutidesigns.io/app/calendario?success=true')
   } catch (error) {
     console.error('Callback error:', error)
