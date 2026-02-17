@@ -8,27 +8,37 @@ export function useDomainRedirect(user) {
   const navigate = useNavigate();
   const location = useLocation();
   const currentDomain = window.location.hostname;
-  const isAppDomain = currentDomain === APP_DOMAIN || currentDomain === 'localhost';
-  const isMainDomain = currentDomain === MAIN_DOMAIN || currentDomain === 'localhost';
+  const isLocalhost = currentDomain === 'localhost';
+  const isAppDomain = currentDomain === APP_DOMAIN || isLocalhost;
+  const isMainDomain = currentDomain === MAIN_DOMAIN;
 
   useEffect(() => {
-    // Si estás en app.agutidesigns.io SIN login → redirect a main domain /auth
-    if (isAppDomain && !user && !location.pathname.includes('/email-confirmado')) {
-      window.location.href = `https://${MAIN_DOMAIN}/auth`;
+    // Skip all redirects in localhost
+    if (isLocalhost) return;
+
+    // Si estás en agutidesigns.io intentando acceder a /auth → redirect a app domain
+    if (isMainDomain && location.pathname === '/auth') {
+      window.location.href = `https://${APP_DOMAIN}/auth`;
       return;
     }
 
-    // Si estás en agutidesigns.io CON login y en landing/auth → redirect a app domain
-    if (isMainDomain && user && (location.pathname === '/' || location.pathname === '/auth')) {
+    // Si estás en agutidesigns.io CON login → redirect a app domain
+    if (isMainDomain && user) {
       window.location.href = `https://${APP_DOMAIN}/app`;
       return;
     }
 
-    // Si estás en app.agutidesigns.io CON login pero en / → redirect interno a /app
+    // Si estás en app.agutidesigns.io SIN login y NO estás en auth/email-confirmado → redirect a auth
+    if (isAppDomain && !user && !location.pathname.includes('/auth') && !location.pathname.includes('/email-confirmado')) {
+      navigate('/auth', { replace: true });
+      return;
+    }
+
+    // Si estás en app.agutidesigns.io CON login en / → redirect a /app
     if (isAppDomain && user && location.pathname === '/') {
       navigate('/app', { replace: true });
     }
-  }, [user, location.pathname, isAppDomain, isMainDomain, navigate]);
+  }, [user, location.pathname, isAppDomain, isMainDomain, navigate, isLocalhost]);
 
-  return { isAppDomain, isMainDomain };
+  return { isAppDomain, isMainDomain, isLocalhost };
 }

@@ -48,18 +48,19 @@ https://app.agutidesigns.io/**
 
 ### Registro:
 1. `agutidesigns.io` → ve landing
-2. Click "Probar gratis" → `agutidesigns.io/auth`
+2. Click "Probar gratis" → auto-redirect a `app.agutidesigns.io/auth`
 3. Se registra → recibe email
 4. Confirma email → redirect a `app.agutidesigns.io/email-confirmado`
-5. Auto-redirect → `app.agutidesigns.io/app`
+5. Auto-redirect (3s) → `app.agutidesigns.io/app`
 
 ### Login existente:
-1. `agutidesigns.io/auth` → login
+1. `app.agutidesigns.io/auth` → login
 2. Success → redirect a `app.agutidesigns.io/app`
 
 ### Acceso directo:
 - Usuario logueado va a `agutidesigns.io` → auto-redirect a `app.agutidesigns.io/app`
-- Usuario NO logueado va a `app.agutidesigns.io` → redirect a `agutidesigns.io/auth`
+- Usuario NO logueado va a `app.agutidesigns.io` (raíz) → redirect a `app.agutidesigns.io/auth`
+- Usuario NO logueado va a `agutidesigns.io/auth` → redirect a `app.agutidesigns.io/auth`
 
 ## Localhost:
 

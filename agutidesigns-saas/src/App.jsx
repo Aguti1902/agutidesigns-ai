@@ -63,7 +63,7 @@ export default function App() {
       {/* Public routes */}
       <Route path="/" element={
         user ? <Navigate to="/app" replace /> : 
-        (isAppDomain && !isLocalhost) ? <Navigate to="/app" replace /> : 
+        (isAppDomain && !isLocalhost) ? <Navigate to="/auth" replace /> : 
         <SaasLanding />
       } />
       <Route path="/auth" element={user ? <Navigate to="/app" replace /> : <AuthPage />} />
