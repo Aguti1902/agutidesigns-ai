@@ -189,7 +189,7 @@ serve(async (req) => {
 
         let systemPrompt = agent.system_prompt || 'Eres un asistente virtual amable y profesional. Responde en español. Atiende al cliente, responde sus preguntas e intenta ayudarle al máximo.'
 
-        // Add temporal context so the AI knows current date/time
+        // Build real calendar for the next 7 days
         const now = new Date()
         const dayNames = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado']
         const monthNames = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre']
@@ -197,14 +197,17 @@ serve(async (req) => {
         const currentDate = `${now.getDate()} de ${monthNames[now.getMonth()]} de ${now.getFullYear()}`
         const currentTime = now.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })
 
-        systemPrompt += `\n\n═══ CONTEXTO TEMPORAL ═══\nFecha actual: ${currentDay}, ${currentDate}\nHora actual: ${currentTime}\nUsa esta información para proponer horarios futuros y saber qué día es hoy.`
+        systemPrompt += `\n\n═══ CONTEXTO TEMPORAL ═══\nHOY es: ${currentDay}, ${currentDate}\nHora actual: ${currentTime}`
 
         // Add client context
         systemPrompt += `\n\n═══ CONTEXTO DEL CLIENTE ═══\nNombre del cliente: ${contactName}\nTeléfono: ${contactPhone}\nCanal: WhatsApp`
 
-        // Load business data for context (before calendar, so schedule info is available)
+        // Load business data for context
         const { data: business } = await supabase.from('businesses').select('*').eq('user_id', agent.user_id).single()
-        let scheduleInfo = ''
+        let scheduleWeekdays = ''
+        let scheduleSaturday = ''
+        let scheduleSunday = ''
+        let scheduleNotes = ''
         if (business) {
           const ctx: string[] = []
           if (business.name) ctx.push(`NOMBRE DEL NEGOCIO: ${business.name}`)
@@ -234,66 +237,100 @@ serve(async (req) => {
                 if (v && typeof v === 'string' && (v as string).trim()) {
                   const label = labels[k] || k.toUpperCase().replace(/_/g, ' ')
                   ctx.push(`${label}: ${v}`)
-                  if (k.startsWith('schedule_')) scheduleInfo += `${label}: ${v}\n`
+                  if (k === 'schedule_weekdays') scheduleWeekdays = v as string
+                  if (k === 'schedule_saturday') scheduleSaturday = v as string
+                  if (k === 'schedule_sunday') scheduleSunday = v as string
+                  if (k === 'schedule_notes') scheduleNotes = v as string
                 }
               }
             } catch { ctx.push(`INFORMACIÓN ADICIONAL:\n${business.extra_context}`) }
           }
+          if (!scheduleWeekdays && business.schedule) scheduleWeekdays = business.schedule
           if (ctx.length) systemPrompt += '\n\n═══ INFORMACIÓN DEL NEGOCIO ═══\n' + ctx.join('\n\n')
         }
 
-        // Load existing appointments for availability context
-        let appointmentsContext = ''
-        try {
-          const todayStr = now.toISOString().split('T')[0]
-          const nextWeek = new Date(now)
-          nextWeek.setDate(nextWeek.getDate() + 7)
-          const nextWeekStr = nextWeek.toISOString().split('T')[0]
+        // Build an explicit day-by-day calendar for the next 7 days
+        const todayStr = now.toISOString().split('T')[0]
+        const next7: { date: Date, dateStr: string, label: string, dayOfWeek: number }[] = []
+        for (let i = 0; i < 7; i++) {
+          const d = new Date(now)
+          d.setDate(d.getDate() + i)
+          const dStr = d.toISOString().split('T')[0]
+          const dayNum = d.getDay() // 0=dom, 1=lun ... 6=sáb
+          const label = `${dayNames[dayNum]} ${d.getDate()} de ${monthNames[d.getMonth()]}`
+          next7.push({ date: d, dateStr: dStr, label, dayOfWeek: dayNum })
+        }
 
+        // Load existing appointments
+        let apptsByDate: Record<string, any[]> = {}
+        try {
+          const lastDateStr = next7[6].dateStr
           const { data: appts } = await supabase
             .from('appointments')
             .select('client_name, service, appointment_date, start_time, end_time, status')
             .eq('user_id', agent.user_id)
             .gte('appointment_date', todayStr)
-            .lte('appointment_date', nextWeekStr)
+            .lte('appointment_date', lastDateStr)
             .neq('status', 'cancelled')
-            .order('appointment_date', { ascending: true })
-
-          if (appts && appts.length > 0) {
-            const apptsByDay: Record<string, any[]> = {}
+            .order('start_time', { ascending: true })
+          if (appts) {
             for (const a of appts) {
-              const d = new Date(a.appointment_date + 'T12:00:00')
-              const dayKey = d.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })
-              if (!apptsByDay[dayKey]) apptsByDay[dayKey] = []
-              apptsByDay[dayKey].push(a)
+              if (!apptsByDate[a.appointment_date]) apptsByDate[a.appointment_date] = []
+              apptsByDate[a.appointment_date].push(a)
             }
-            appointmentsContext = '\n\nCITAS PROGRAMADAS (próximos 7 días):\n'
-            for (const [day, dayAppts] of Object.entries(apptsByDay)) {
-              appointmentsContext += `\n📅 ${day}:\n`
-              for (const a of dayAppts) {
-                appointmentsContext += `  - ${a.start_time?.substring(0,5)} a ${a.end_time?.substring(0,5)}: ${a.client_name}${a.service ? ' (' + a.service + ')' : ''}\n`
-              }
-            }
-          } else {
-            appointmentsContext = '\n\nCITAS: No hay citas programadas en los próximos 7 días. La agenda está libre.'
           }
         } catch (e) {
           console.warn('Appointments fetch error (non-fatal):', e)
         }
 
-        let calendarContext = '\n\n═══ CALENDARIO Y DISPONIBILIDAD ═══'
-        calendarContext += appointmentsContext
-        calendarContext += `\n\nINSTRUCCIONES DE AGENDAMIENTO:
-- Los huecos SIN citas son horarios DISPONIBLES
-- Propón SIEMPRE horarios concretos (día y hora exacta) dentro del horario de apertura
-- Ofrece 2-3 opciones de horarios libres para que el cliente elija
-- Al confirmar cita, repite: fecha, hora, servicio y nombre del cliente
-- Si piden un horario ocupado, di que no está disponible y ofrece alternativas cercanas
-- IMPORTANTE: Cuando el cliente CONFIRME una cita, usa la función create_appointment para guardarla`
+        // Build the full availability calendar
+        let calendarContext = '\n\n═══ CALENDARIO REAL — PRÓXIMOS 7 DÍAS ═══\n'
+        calendarContext += '⚠️ ESTA ES LA REFERENCIA EXACTA DE FECHAS. NO inventes días ni fechas. Usa SOLO las que aparecen aquí:\n'
 
-        if (scheduleInfo) {
-          calendarContext += `\n\nHORARIO DE APERTURA DEL NEGOCIO:\n${scheduleInfo}Solo propón citas DENTRO de estos horarios.`
+        for (const day of next7) {
+          const dow = day.dayOfWeek
+          let schedule = 'No definido'
+          const isClosed = (str: string) => {
+            const s = str.trim().toLowerCase()
+            return s === 'cerrado' || s === 'closed' || s === '-' || s === ''
+          }
+          if (dow >= 1 && dow <= 5) {
+            schedule = scheduleWeekdays || 'No definido'
+          } else if (dow === 6) {
+            schedule = scheduleSaturday || 'No definido'
+          } else if (dow === 0) {
+            schedule = scheduleSunday || 'No definido'
+          }
+          const closed = isClosed(schedule)
+
+          calendarContext += `\n📅 ${day.label.toUpperCase()} (${day.dateStr})`
+          if (closed) {
+            calendarContext += ` — CERRADO\n`
+          } else {
+            calendarContext += ` — Horario: ${schedule}\n`
+            const dayAppts = apptsByDate[day.dateStr]
+            if (dayAppts && dayAppts.length > 0) {
+              for (const a of dayAppts) {
+                calendarContext += `   🔴 OCUPADO ${a.start_time?.substring(0,5)}-${a.end_time?.substring(0,5)}: ${a.client_name}${a.service ? ' (' + a.service + ')' : ''}\n`
+              }
+              calendarContext += `   🟢 El resto de horas dentro del horario (${schedule}) están LIBRES\n`
+            } else {
+              calendarContext += `   🟢 TODO EL DÍA LIBRE dentro del horario (${schedule})\n`
+            }
+          }
         }
+
+        if (scheduleNotes) calendarContext += `\nNOTAS: ${scheduleNotes}\n`
+
+        calendarContext += `\n═══ REGLAS DE AGENDAMIENTO (OBLIGATORIAS) ═══
+- Usa SIEMPRE las fechas EXACTAS del calendario de arriba. NUNCA inventes un día de la semana.
+- Propón solo días que estén ABIERTOS y horas LIBRES.
+- Ofrece 2-3 opciones concretas (ej: "miércoles 19 a las 10:00, jueves 20 a las 16:00").
+- Formato de fecha al proponer: *día_semana día_mes de mes* (ej: *miércoles 19 de febrero a las 10:00*).
+- Al confirmar, repite: fecha completa, hora, servicio y nombre del cliente.
+- Si piden un horario OCUPADO, di que no está disponible y ofrece la siguiente hora libre.
+- Cuando el cliente CONFIRME, usa la función create_appointment para guardar la cita.
+- El campo appointment_date debe ser formato YYYY-MM-DD (usa las fechas entre paréntesis del calendario).`
 
         systemPrompt += calendarContext
 
