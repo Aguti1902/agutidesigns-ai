@@ -260,21 +260,31 @@ export default function Billing() {
       </div>
 
       <div className="plans-grid">
-        {PLANS.map(plan => (
-          <div key={plan.id} className={`plan-card ${plan.popular ? 'plan-card--popular' : ''}`}>
-            {plan.popular && <span className="plan-card__badge"><Star size={11} /> Más popular</span>}
-            <h3>{plan.name}</h3>
-            <div className="plan-card__price"><span>{plan.price}€</span>/mes</div>
-            <div className="plan-card__highlights">
-              <div className="plan-card__highlight"><Smartphone size={13} /><span>{plan.agents}</span></div>
-              <div className="plan-card__highlight"><MessageCircle size={13} /><span>{plan.messages}</span></div>
+        {PLANS.map(plan => {
+          const isCurrent = customerInfo?.subscription?.items?.some(item => item.priceId === plan.priceId);
+          return (
+            <div key={plan.id} className={`plan-card ${plan.popular ? 'plan-card--popular' : ''} ${isCurrent ? 'plan-card--current' : ''}`}>
+              {isCurrent && <span className="plan-card__badge plan-card__badge--current"><Check size={11} /> Tu plan actual</span>}
+              {!isCurrent && plan.popular && <span className="plan-card__badge"><Star size={11} /> Más popular</span>}
+              <h3>{plan.name}</h3>
+              <div className="plan-card__price"><span>{plan.price}€</span>/mes</div>
+              <div className="plan-card__highlights">
+                <div className="plan-card__highlight"><Smartphone size={13} /><span>{plan.agents}</span></div>
+                <div className="plan-card__highlight"><MessageCircle size={13} /><span>{plan.messages}</span></div>
+              </div>
+              <ul>{plan.features.map((f, i) => (<li key={i}><Check size={14} /> {f}</li>))}</ul>
+              {isCurrent ? (
+                <button className="btn btn--primary btn--full" disabled style={{ opacity: 0.6 }}>
+                  <Check size={14} /> Plan activo
+                </button>
+              ) : (
+                <button className="btn btn--outline btn--full" onClick={() => navigate(`/app/checkout?plan=${plan.id}&mode=subscription`)}>
+                  Elegir {plan.name} <ArrowRight size={14} />
+                </button>
+              )}
             </div>
-            <ul>{plan.features.map((f, i) => (<li key={i}><Check size={14} /> {f}</li>))}</ul>
-            <button className="btn btn--outline btn--full" onClick={() => navigate(`/app/checkout?plan=${plan.id}&mode=subscription`)}>
-              Elegir {plan.name} <ArrowRight size={14} />
-            </button>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );
