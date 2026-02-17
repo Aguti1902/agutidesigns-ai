@@ -1,13 +1,25 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { CheckCircle, ArrowRight, Loader2 } from 'lucide-react';
+import { useAuth } from '../hooks/useAuth';
 import './EmailConfirmed.css';
 
 export default function EmailConfirmed() {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const [searchParams] = useSearchParams();
   const [countdown, setCountdown] = useState(3);
 
+  // Check if coming from OAuth (Google, etc) - they already have session
+  const isOAuth = searchParams.get('type') === 'signup' || (user && !searchParams.get('token'));
+
   useEffect(() => {
+    // If OAuth or already logged in, skip this page entirely
+    if (isOAuth || (user && window.location.hash.includes('access_token'))) {
+      navigate('/app', { replace: true });
+      return;
+    }
+
     const timer = setInterval(() => {
       setCountdown(prev => {
         if (prev <= 1) {
@@ -20,7 +32,7 @@ export default function EmailConfirmed() {
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [navigate]);
+  }, [navigate, isOAuth, user]);
 
   return (
     <div className="email-confirmed">

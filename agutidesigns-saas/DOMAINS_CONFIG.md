@@ -35,8 +35,10 @@ Valor: cname.vercel-dns.com (o el que te de Vercel)
 En **Project Settings → General**:
 
 ```
-Site URL: https://app.agutidesigns.io/email-confirmado
+Site URL: https://app.agutidesigns.io/app
 ```
+
+(La página `/email-confirmado` se usa solo para confirmación manual de email. OAuth va directo a `/app`)
 
 En **Redirect URLs** (añadir ambos):
 ```
@@ -46,15 +48,21 @@ https://app.agutidesigns.io/**
 
 ## Flujo de usuario:
 
-### Registro:
+### Registro con email:
 1. `agutidesigns.io` → ve landing
 2. Click "Probar gratis" → auto-redirect a `app.agutidesigns.io/auth`
-3. Se registra → recibe email
+3. Se registra con email/contraseña → recibe email
 4. Confirma email → redirect a `app.agutidesigns.io/email-confirmado`
 5. Auto-redirect (3s) → `app.agutidesigns.io/app`
 
+### Registro con Google:
+1. `agutidesigns.io` → ve landing
+2. Click "Probar gratis" → auto-redirect a `app.agutidesigns.io/auth`
+3. Click "Continuar con Google" → popup de Google
+4. Acepta → redirect directo a `app.agutidesigns.io/app` (sin confirmación de email)
+
 ### Login existente:
-1. `app.agutidesigns.io/auth` → login
+1. `app.agutidesigns.io/auth` → login (email o Google)
 2. Success → redirect a `app.agutidesigns.io/app`
 
 ### Acceso directo:
