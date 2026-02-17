@@ -128,42 +128,42 @@ export default function Billing() {
         )}
       </div>
 
-      {showSuccess && isSubscribed && (
-        <div className="billing-status billing-status--active" style={{ position: 'relative' }}>
-          <div className="billing-status__icon"><Check size={20} /></div>
-          <div><h3>¡Suscripción activada!</h3><p>Tu plan está activo. Ya puedes disfrutar de todas las funcionalidades.</p></div>
-          <button onClick={() => setShowSuccess(false)} className="billing-status__close"><XCircle size={18} /></button>
-        </div>
-      )}
-
-      {showSuccess && !isSubscribed && (
-        <div className="billing-status billing-status--trial" style={{ position: 'relative' }}>
-          <div className="billing-status__icon"><Loader2 size={20} className="spin" /></div>
-          <div><h3>Activando tu suscripción...</h3><p>Estamos procesando tu pago. Esto puede tardar unos segundos.</p></div>
-          <button onClick={() => setShowSuccess(false)} className="billing-status__close"><XCircle size={18} /></button>
-        </div>
-      )}
-
-      {/* Status - only show when NOT in success state and not dismissed */}
-      {!showSuccess && showStatus && (
-        <div className={`billing-status ${isTrialActive ? 'billing-status--trial' : isSubscribed ? 'billing-status--active' : 'billing-status--expired'}`} style={{ position: 'relative' }}>
-          <div className="billing-status__icon">
-            {isTrialActive ? <Zap size={20} /> : isSubscribed ? <Check size={20} /> : <AlertTriangle size={20} />}
+      {/* Single notification banner */}
+      {showStatus && (() => {
+        if (showSuccess && !isSubscribed) return (
+          <div className="billing-status billing-status--trial" style={{ position: 'relative' }}>
+            <div className="billing-status__icon"><Loader2 size={20} className="spin" /></div>
+            <div><h3>Activando tu suscripción...</h3><p>Estamos procesando tu pago. Esto puede tardar unos segundos.</p></div>
+            <button onClick={() => { setShowStatus(false); setShowSuccess(false); }} className="billing-status__close"><XCircle size={18} /></button>
           </div>
-          <div>
-            <h3>
-              {isTrialActive ? `Periodo de prueba — ${trialDaysLeft} día${trialDaysLeft !== 1 ? 's' : ''} restante${trialDaysLeft !== 1 ? 's' : ''}` :
-               isSubscribed ? 'Suscripción activa' : 'Suscripción expirada'}
-            </h3>
-            <p>
-              {isTrialActive ? 'Disfruta de todas las funcionalidades. Elige un plan antes de que acabe.' :
-               isSubscribed ? 'Tienes acceso completo a todas las funcionalidades.' :
-               'Tu periodo de prueba ha terminado. Elige un plan para continuar.'}
-            </p>
+        );
+        if (showSuccess && isSubscribed) return (
+          <div className="billing-status billing-status--active" style={{ position: 'relative' }}>
+            <div className="billing-status__icon"><Check size={20} /></div>
+            <div><h3>¡Suscripción activada!</h3><p>Tu plan está activo. Ya puedes disfrutar de todas las funcionalidades.</p></div>
+            <button onClick={() => { setShowStatus(false); setShowSuccess(false); }} className="billing-status__close"><XCircle size={18} /></button>
           </div>
-          <button onClick={() => setShowStatus(false)} className="billing-status__close"><XCircle size={18} /></button>
-        </div>
-      )}
+        );
+        return (
+          <div className={`billing-status ${isTrialActive ? 'billing-status--trial' : isSubscribed ? 'billing-status--active' : 'billing-status--expired'}`} style={{ position: 'relative' }}>
+            <div className="billing-status__icon">
+              {isTrialActive ? <Zap size={20} /> : isSubscribed ? <Check size={20} /> : <AlertTriangle size={20} />}
+            </div>
+            <div>
+              <h3>
+                {isTrialActive ? `Periodo de prueba — ${trialDaysLeft} día${trialDaysLeft !== 1 ? 's' : ''} restante${trialDaysLeft !== 1 ? 's' : ''}` :
+                 isSubscribed ? 'Suscripción activa' : 'Suscripción expirada'}
+              </h3>
+              <p>
+                {isTrialActive ? 'Disfruta de todas las funcionalidades. Elige un plan antes de que acabe.' :
+                 isSubscribed ? 'Tienes acceso completo a todas las funcionalidades.' :
+                 'Tu periodo de prueba ha terminado. Elige un plan para continuar.'}
+              </p>
+            </div>
+            <button onClick={() => setShowStatus(false)} className="billing-status__close"><XCircle size={18} /></button>
+          </div>
+        );
+      })()}
 
       {/* Subscription & Payment Management */}
       {isSubscribed && profile?.stripe_customer_id && (
