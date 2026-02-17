@@ -120,7 +120,6 @@ export default function AdminDashboard() {
     { label: 'Revenue total (MRR)', value: `${stats.totalRevenue.toLocaleString('es-ES')}€`, icon: <DollarSign size={20} />, color: '#10b981' },
     { label: 'Revenue addons', value: `${stats.addonRevenue.toLocaleString('es-ES')}€`, icon: <TrendingUp size={20} />, color: '#a855f7' },
     { label: 'Mensajes procesados', value: stats.totalMessages.toLocaleString('es-ES'), icon: <MessageCircle size={20} />, color: '#EC6746' },
-    { label: 'Mensajes extra totales', value: stats.extraMessagesTotal.toLocaleString('es-ES'), icon: <BarChart3 size={20} />, color: '#3b82f6' },
     { label: 'Tasa de consumo', value: `${stats.avgConsumptionRate}%`, icon: <TrendingUp size={20} />, color: stats.avgConsumptionRate > 80 ? '#ef4444' : '#10b981' },
     { label: 'Usuarios agotados', value: stats.usersExhausted, icon: <MessageCircle size={20} />, color: '#ef4444' },
     { label: 'Tickets abiertos', value: stats.openTickets, icon: <MessageSquare size={20} />, color: '#f59e0b' },
