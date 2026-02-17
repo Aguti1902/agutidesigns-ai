@@ -279,11 +279,13 @@ export default function SaasLanding() {
 
       {/* Footer */}
       <footer className="landing-footer">
-        <p>© 2026 Agutidesigns · Hecho con IA</p>
+        <p>© 2026 Agutidesigns IA · Hecho con Inteligencia Artificial</p>
         <div className="landing-footer__links">
-          <a href="/privacidad.html" target="_blank" rel="noopener">Política de Privacidad</a>
+          <a href="/privacidad.html" target="_blank" rel="noopener">Privacidad</a>
           <span>·</span>
-          <a href="/terminos.html" target="_blank" rel="noopener">Términos de Servicio</a>
+          <a href="/terminos.html" target="_blank" rel="noopener">Términos</a>
+          <span>·</span>
+          <a href="mailto:soporte@agutidesigns.io">Contacto</a>
         </div>
       </footer>
     </div>
