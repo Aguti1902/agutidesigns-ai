@@ -91,6 +91,7 @@ export default function Billing() {
 
   const urlParams = new URLSearchParams(window.location.search);
   const [showSuccess, setShowSuccess] = useState(urlParams.get('success') === 'true');
+  const [showStatus, setShowStatus] = useState(true);
   const activatedRef = useRef(false);
 
   // Fallback: when returning from Stripe checkout with success, poll profile until active
@@ -143,9 +144,9 @@ export default function Billing() {
         </div>
       )}
 
-      {/* Status - only show when NOT in success state */}
-      {!showSuccess && (
-        <div className={`billing-status ${isTrialActive ? 'billing-status--trial' : isSubscribed ? 'billing-status--active' : 'billing-status--expired'}`}>
+      {/* Status - only show when NOT in success state and not dismissed */}
+      {!showSuccess && showStatus && (
+        <div className={`billing-status ${isTrialActive ? 'billing-status--trial' : isSubscribed ? 'billing-status--active' : 'billing-status--expired'}`} style={{ position: 'relative' }}>
           <div className="billing-status__icon">
             {isTrialActive ? <Zap size={20} /> : isSubscribed ? <Check size={20} /> : <AlertTriangle size={20} />}
           </div>
@@ -160,6 +161,7 @@ export default function Billing() {
                'Tu periodo de prueba ha terminado. Elige un plan para continuar.'}
             </p>
           </div>
+          <button onClick={() => setShowStatus(false)} className="billing-status__close"><XCircle size={18} /></button>
         </div>
       )}
 
