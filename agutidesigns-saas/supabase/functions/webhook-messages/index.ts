@@ -330,11 +330,17 @@ serve(async (req) => {
 - Usa SIEMPRE las fechas EXACTAS del calendario de arriba. NUNCA inventes un día de la semana.
 - Propón solo días que estén ABIERTOS y horas LIBRES.
 - Ofrece 2-3 opciones concretas (ej: "miércoles 19 a las 10:00, jueves 20 a las 16:00").
-- Formato de fecha al proponer: *día_semana día_mes de mes* (ej: *miércoles 19 de febrero a las 10:00*).
-- Al confirmar, repite: fecha completa, hora, servicio y nombre del cliente.
 - Si piden un horario OCUPADO, di que no está disponible y ofrece la siguiente hora libre.
-- Cuando el cliente CONFIRME, usa la función create_appointment para guardar la cita.
-- El campo appointment_date debe ser formato YYYY-MM-DD (usa las fechas entre paréntesis del calendario).`
+
+⚠️ REGLA CRÍTICA SOBRE AGENDAR:
+- Cuando el cliente DICE una fecha y/o hora (ej: "el jueves a las 16", "19 de febrero a las 14:00", "mañana por la mañana", "el viernes"), eso ES UNA CONFIRMACIÓN.
+- En ese momento DEBES llamar a la función create_appointment INMEDIATAMENTE. NO vuelvas a preguntar.
+- Si el cliente elige una de las opciones que le has propuesto, eso ES UNA CONFIRMACIÓN. Agenda directamente.
+- Si falta algún dato (hora exacta, servicio), pregunta SOLO lo que falta, pero en cuanto tengas fecha+hora, AGENDA.
+- NO pidas "confirmación de la confirmación". Si el cliente dice un horario, CRÉALO.
+- El campo appointment_date debe ser formato YYYY-MM-DD (usa las fechas entre paréntesis del calendario).
+- Si no conoces el nombre del cliente, usa el nombre de WhatsApp (${contactName}).
+- Si no se especifica hora de fin, asume 1 hora de duración.`
 
         systemPrompt += calendarContext
         } // end if (bookingEnabled)
@@ -381,7 +387,7 @@ serve(async (req) => {
             type: 'function',
             function: {
               name: 'create_appointment',
-              description: 'Crea una cita/reserva cuando el cliente confirma día, hora y servicio. Usa SOLO cuando el cliente haya confirmado explícitamente.',
+              description: 'Crea una cita/reserva. Llama a esta función en cuanto el cliente indique una fecha y hora para su cita. No esperes a una doble confirmación.',
               parameters: {
                 type: 'object',
                 properties: {
@@ -418,6 +424,7 @@ serve(async (req) => {
           if (tools.length > 0) {
             openaiBody.tools = tools
             openaiBody.tool_choice = 'auto'
+            openaiBody.parallel_tool_calls = false
           }
           const openaiRes = await fetch('https://api.openai.com/v1/chat/completions', {
             method: 'POST',
