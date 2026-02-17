@@ -182,53 +182,127 @@ serve(async (req) => {
           continue
         }
 
-        let systemPrompt = agent.system_prompt || 'Eres un asistente virtual amable. Responde en español.'
+        let systemPrompt = agent.system_prompt || 'Eres un asistente virtual amable y profesional. Responde en español. Atiende al cliente, responde sus preguntas e intenta ayudarle al máximo.'
 
-        // Load calendar events if enabled
+        // Add temporal context so the AI knows current date/time
+        const now = new Date()
+        const dayNames = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado']
+        const monthNames = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre']
+        const currentDay = dayNames[now.getDay()]
+        const currentDate = `${now.getDate()} de ${monthNames[now.getMonth()]} de ${now.getFullYear()}`
+        const currentTime = now.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })
+
+        systemPrompt += `\n\n═══ CONTEXTO TEMPORAL ═══\nFecha actual: ${currentDay}, ${currentDate}\nHora actual: ${currentTime}\nUsa esta información para proponer horarios futuros y saber qué día es hoy.`
+
+        // Add client context
+        systemPrompt += `\n\n═══ CONTEXTO DEL CLIENTE ═══\nNombre del cliente: ${contactName}\nTeléfono: ${contactPhone}\nCanal: WhatsApp`
+
+        // Load business data for context (before calendar, so schedule info is available)
+        const { data: business } = await supabase.from('businesses').select('*').eq('user_id', agent.user_id).single()
+        let scheduleInfo = ''
+        if (business) {
+          const ctx: string[] = []
+          if (business.name) ctx.push(`NOMBRE DEL NEGOCIO: ${business.name}`)
+          if (business.sector) ctx.push(`SECTOR: ${business.sector}`)
+          if (business.description) ctx.push(`DESCRIPCIÓN: ${business.description}`)
+          if (business.services) ctx.push(`SERVICIOS:\n${business.services}`)
+          if (business.prices) ctx.push(`PRECIOS:\n${business.prices}`)
+          if (business.schedule) ctx.push(`HORARIOS: ${business.schedule}`)
+          if (business.address) ctx.push(`DIRECCIÓN: ${business.address}`)
+          if (business.phone) ctx.push(`TELÉFONO DE CONTACTO: ${business.phone}`)
+          if (business.email) ctx.push(`EMAIL: ${business.email}`)
+          if (business.website) ctx.push(`WEB: ${business.website}`)
+          if (business.faq) ctx.push(`PREGUNTAS FRECUENTES:\n${business.faq}`)
+          if (business.extra_context) {
+            try {
+              const extra = JSON.parse(business.extra_context)
+              const labels: Record<string, string> = {
+                slogan: 'ESLOGAN', schedule_weekdays: 'HORARIO LUNES A VIERNES', schedule_saturday: 'HORARIO SÁBADO',
+                schedule_sunday: 'HORARIO DOMINGO', schedule_notes: 'NOTAS SOBRE HORARIOS', google_maps: 'GOOGLE MAPS',
+                services_list: 'LISTA DE SERVICIOS', prices_list: 'LISTA DE PRECIOS', offers: 'OFERTAS Y PROMOCIONES ACTUALES',
+                faq_list: 'PREGUNTAS FRECUENTES', cancellation_policy: 'POLÍTICA DE CANCELACIÓN',
+                payment_methods: 'MÉTODOS DE PAGO', return_policy: 'POLÍTICA DE DEVOLUCIONES',
+                other_policies: 'OTRAS POLÍTICAS', team: 'EQUIPO Y PERSONAL', specialties: 'ESPECIALIDADES Y DIFERENCIADORES',
+                social_media: 'REDES SOCIALES',
+              }
+              for (const [k, v] of Object.entries(extra)) {
+                if (v && typeof v === 'string' && (v as string).trim()) {
+                  const label = labels[k] || k.toUpperCase().replace(/_/g, ' ')
+                  ctx.push(`${label}: ${v}`)
+                  if (k.startsWith('schedule_')) scheduleInfo += `${label}: ${v}\n`
+                }
+              }
+            } catch { ctx.push(`INFORMACIÓN ADICIONAL:\n${business.extra_context}`) }
+          }
+          if (ctx.length) systemPrompt += '\n\n═══ INFORMACIÓN DEL NEGOCIO ═══\n' + ctx.join('\n\n')
+        }
+
+        // Load calendar events if enabled - with smart slot calculation
         if (agent.calendar_enabled) {
           try {
             const calRes = await fetch(`${SUPABASE_URL}/functions/v1/google-calendar-events?userId=${agent.user_id}&action=list`, {
               headers: { 'Authorization': `Bearer ${SUPABASE_KEY}` }
             })
             const calData = await calRes.json()
+
+            let calendarContext = '\n\n═══ CALENDARIO Y DISPONIBILIDAD ═══\n'
+            
             if (calData.events?.length > 0) {
-              const eventsText = calData.events.map((e: any) => {
-                const start = new Date(e.start).toLocaleString('es-ES', { dateStyle: 'short', timeStyle: 'short' })
-                return `- ${start}: ${e.summary || 'Ocupado'}`
-              }).join('\n')
-              systemPrompt += `\n\nCALENDARIO (próximos 7 días):\n${eventsText}\n\nPuedes proponer horarios libres basándote en estos eventos. Si el cliente quiere agendar, confirma fecha/hora y yo lo añadiré al calendario.`
+              // Group events by day for better readability
+              const eventsByDay: Record<string, any[]> = {}
+              for (const e of calData.events) {
+                const start = new Date(e.start)
+                const dayKey = start.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })
+                if (!eventsByDay[dayKey]) eventsByDay[dayKey] = []
+                eventsByDay[dayKey].push(e)
+              }
+
+              calendarContext += 'EVENTOS PROGRAMADOS (próximos 7 días):\n'
+              for (const [day, events] of Object.entries(eventsByDay)) {
+                calendarContext += `\n📅 ${day}:\n`
+                for (const e of events) {
+                  const start = new Date(e.start)
+                  const end = new Date(e.end)
+                  const startStr = start.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })
+                  const endStr = end.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })
+                  calendarContext += `  - ${startStr} a ${endStr}: ${e.summary || 'Ocupado'}\n`
+                }
+              }
+
+              calendarContext += `\nINSTRUCCIONES DE AGENDAMIENTO:
+- Los huecos SIN eventos son horarios DISPONIBLES para agendar
+- Propón SIEMPRE horarios concretos (día y hora exacta) dentro del horario de apertura del negocio
+- Ofrece 2-3 opciones de horarios libres para que el cliente elija
+- Al confirmar cita, repite: fecha, hora, servicio y nombre del cliente
+- Si piden un horario ocupado, di que no está disponible y ofrece alternativas cercanas`
+
+              if (scheduleInfo) {
+                calendarContext += `\n\nHORARIO DE APERTURA DEL NEGOCIO:\n${scheduleInfo}IMPORTANTE: Solo propón citas DENTRO de estos horarios.`
+              }
             } else {
-              systemPrompt += `\n\nCALENDARIO: No hay eventos programados en los próximos 7 días. Puedes ofrecer horarios disponibles.`
+              calendarContext += 'No hay eventos programados en los próximos 7 días. Toda la agenda está libre.\n'
+              calendarContext += 'Propón horarios dentro del horario de apertura del negocio.'
+              if (scheduleInfo) {
+                calendarContext += `\n\nHORARIO DE APERTURA:\n${scheduleInfo}`
+              }
             }
+
+            systemPrompt += calendarContext
           } catch (e) {
             console.warn('Calendar fetch error (non-fatal):', e)
           }
         }
 
-        // Load business data for context
-        const { data: business } = await supabase.from('businesses').select('*').eq('user_id', agent.user_id).single()
-        if (business) {
-          const ctx = []
-          if (business.name) ctx.push(`Negocio: ${business.name}`)
-          if (business.sector) ctx.push(`Sector: ${business.sector}`)
-          if (business.description) ctx.push(`Descripción: ${business.description}`)
-          if (business.services) ctx.push(`Servicios:\n${business.services}`)
-          if (business.prices) ctx.push(`Precios:\n${business.prices}`)
-          if (business.schedule) ctx.push(`Horarios: ${business.schedule}`)
-          if (business.address) ctx.push(`Dirección: ${business.address}`)
-          if (business.phone) ctx.push(`Teléfono: ${business.phone}`)
-          if (business.email) ctx.push(`Email: ${business.email}`)
-          if (business.website) ctx.push(`Web: ${business.website}`)
-          if (business.faq) ctx.push(`FAQ:\n${business.faq}`)
-          if (business.extra_context) {
-            try {
-              const extra = JSON.parse(business.extra_context)
-              for (const [k, v] of Object.entries(extra)) {
-                if (v && typeof v === 'string' && v.trim()) ctx.push(`${k}: ${v}`)
-              }
-            } catch { ctx.push(business.extra_context) }
-          }
-          if (ctx.length) systemPrompt += '\n\nINFORMACIÓN DEL NEGOCIO:\n' + ctx.join('\n\n')
+        // Add enhanced behavioral instructions if the prompt doesn't already include them
+        if (!systemPrompt.includes('FLUJO DE CONVERSACIÓN') && !systemPrompt.includes('TÉCNICAS DE VENTA')) {
+          systemPrompt += `\n\n═══ INSTRUCCIONES ADICIONALES DE COMPORTAMIENTO ═══
+- Responde de forma CONCISA (2-3 párrafos máximo, esto es WhatsApp)
+- Usa *negritas* para datos clave como precios, horarios o direcciones
+- Termina siempre con una pregunta o llamada a la acción para mantener la conversación
+- Si el cliente muestra interés en un servicio, facilita el siguiente paso (reservar, visitar, contactar)
+- Usa la información del negocio como ÚNICA fuente de verdad. NUNCA inventes datos.
+- Si no tienes una respuesta, sé honesto: "No tengo esa información, pero puedo preguntarlo al equipo"
+- Si detectas intención de compra/reserva, facilita el proceso al máximo`
         }
 
         // Get or create conversation
@@ -256,7 +330,7 @@ serve(async (req) => {
         } catch {}
 
         // Call OpenAI
-        const historyMsgs = (history || []).slice(-18)
+        const historyMsgs = (history || []).slice(-20)
         console.log('Calling OpenAI... key starts with:', OPENAI_KEY?.substring(0, 12), 'history:', historyMsgs.length, 'prompt length:', systemPrompt.length)
         
         let aiResponse = ''
@@ -270,8 +344,10 @@ serve(async (req) => {
                 { role: 'system', content: systemPrompt },
                 ...historyMsgs,
               ],
-              temperature: 0.7,
-              max_tokens: 500
+              temperature: 0.65,
+              max_tokens: 600,
+              presence_penalty: 0.1,
+              frequency_penalty: 0.15
             })
           })
           const openaiData = await openaiRes.json()
