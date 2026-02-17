@@ -191,6 +191,32 @@ serve(async (req) => {
         { status: 400, headers: { 'Content-Type': 'application/json', ...corsHeaders } })
     }
 
+    // Create and pay an invoice immediately for the proration
+    try {
+      const invParams = new URLSearchParams()
+      invParams.append('customer', profile.stripe_customer_id)
+      invParams.append('subscription', subId)
+      invParams.append('auto_advance', 'true')
+      const invRes = await fetch('https://api.stripe.com/v1/invoices', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${STRIPE_KEY}`, 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: invParams.toString(),
+      })
+      const invData = await invRes.json()
+      if (invData.id && !invData.error) {
+        // Finalize and pay
+        await fetch(`https://api.stripe.com/v1/invoices/${invData.id}/finalize`, {
+          method: 'POST', headers: { 'Authorization': `Bearer ${STRIPE_KEY}` },
+        })
+        await fetch(`https://api.stripe.com/v1/invoices/${invData.id}/pay`, {
+          method: 'POST', headers: { 'Authorization': `Bearer ${STRIPE_KEY}` },
+        })
+        console.log('Created & paid proration invoice:', invData.id)
+      }
+    } catch (invErr) {
+      console.warn('Could not create immediate invoice (non-fatal):', invErr)
+    }
+
     const extraMsgs = AMOUNT_TO_MESSAGES[amountCents] || 500
     await supabase.from('profiles').update({
       extra_messages: (profile.extra_messages || 0) + extraMsgs,
