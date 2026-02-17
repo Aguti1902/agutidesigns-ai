@@ -153,6 +153,9 @@
 .billing-status--trial { background: rgba(var(--color-primary-rgb), 0.06); border: 1px solid rgba(var(--color-primary-rgb), 0.15); }
 .billing-status--active { background: rgba(var(--color-primary-rgb), 0.06); border: 1px solid rgba(var(--color-primary-rgb), 0.15); }
 .billing-status--expired { background: rgba(241,37,14,0.06); border: 1px solid rgba(241,37,14,0.15); }
+.billing-status--warning { background: rgba(245,158,11,0.08); border: 1px solid rgba(245,158,11,0.25); }
+.billing-status--warning .billing-status__icon { background: rgba(245,158,11,0.15); color: #f59e0b; }
+.billing-status--warning h3 { color: #f59e0b; }
 .billing-status__icon { width: 40px; height: 40px; border-radius: var(--radius-full); display: flex; align-items: center; justify-content: center; }
 .billing-status--trial .billing-status__icon { background: rgba(var(--color-primary-rgb), 0.15); color: var(--color-primary); }
 .billing-status--active .billing-status__icon { background: rgba(var(--color-primary-rgb), 0.15); color: var(--color-primary); }

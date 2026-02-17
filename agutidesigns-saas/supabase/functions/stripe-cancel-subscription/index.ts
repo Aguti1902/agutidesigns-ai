@@ -18,7 +18,7 @@ serve(async (req) => {
       )
     }
 
-    const { subscriptionId } = await req.json().catch(() => ({}))
+    const { subscriptionId, reactivate } = await req.json().catch(() => ({}))
     if (!subscriptionId) {
       return new Response(
         JSON.stringify({ error: 'subscriptionId requerido' }),
@@ -26,9 +26,9 @@ serve(async (req) => {
       )
     }
 
-    // Cancel at end of current billing period (not immediately)
     const params = new URLSearchParams()
-    params.append('cancel_at_period_end', 'true')
+    // reactivate=true → undo cancellation; otherwise → cancel at period end
+    params.append('cancel_at_period_end', reactivate ? 'false' : 'true')
 
     const res = await fetch(`https://api.stripe.com/v1/subscriptions/${subscriptionId}`, {
       method: 'POST',
@@ -53,9 +53,9 @@ serve(async (req) => {
       { headers: { 'Content-Type': 'application/json', ...corsHeaders } }
     )
   } catch (error) {
-    console.error('Stripe cancel error:', error)
+    console.error('Stripe cancel/reactivate error:', error)
     return new Response(
-      JSON.stringify({ error: error instanceof Error ? error.message : 'Error al cancelar' }),
+      JSON.stringify({ error: error instanceof Error ? error.message : 'Error' }),
       { status: 500, headers: { 'Content-Type': 'application/json', ...corsHeaders } }
     )
   }

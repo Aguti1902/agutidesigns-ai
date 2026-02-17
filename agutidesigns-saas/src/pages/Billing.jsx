@@ -117,6 +117,7 @@ export default function Billing() {
   const [showCardForm, setShowCardForm] = useState(false);
   const [cardSuccess, setCardSuccess] = useState(false);
   const [justCancelled, setJustCancelled] = useState(false);
+  const [reactivating, setReactivating] = useState(false);
 
   // Persist status banner dismiss in localStorage
   const [statusDismissed, setStatusDismissed] = useState(() => {
@@ -169,6 +170,28 @@ export default function Billing() {
     }
   }
 
+  async function handleReactivate() {
+    if (!profile?.stripe_subscription_id) return;
+    setReactivating(true);
+    try {
+      const res = await fetch(`${API_URL}/stripe-cancel-subscription`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ subscriptionId: profile.stripe_subscription_id, reactivate: true }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && data.success) {
+        setJustCancelled(false);
+        loadCustomerInfo();
+      } else {
+        alert('Error: ' + (data.error || 'No se pudo reactivar'));
+      }
+    } catch (err) {
+      alert('Error: ' + err.message);
+    } finally {
+      setReactivating(false);
+    }
+  }
+
   function handleCardUpdated() {
     setShowCardForm(false);
     setCardSuccess(true);
@@ -213,12 +236,16 @@ export default function Billing() {
 
       {/* ── PERMANENT banner: subscription cancelling (NOT dismissable) ── */}
       {isCancelling && (
-        <div className="billing-status billing-status--expired">
+        <div className="billing-status billing-status--warning">
           <div className="billing-status__icon"><Clock size={20} /></div>
-          <div>
+          <div style={{ flex: 1 }}>
             <h3>Tu plan se cancela en {cancelDaysLeft} día{cancelDaysLeft !== 1 ? 's' : ''}</h3>
             <p>Tienes acceso hasta el {formatDate(customerInfo.subscription.currentPeriodEnd)}. Después tu agente se desactivará.</p>
           </div>
+          <button className="btn btn--sm" onClick={handleReactivate} disabled={reactivating} style={{ background: '#f59e0b', color: '#000', fontWeight: 700, flexShrink: 0 }}>
+            {reactivating ? <Loader2 size={12} className="spin" /> : <Zap size={12} />}
+            Reactivar plan
+          </button>
         </div>
       )}
 
