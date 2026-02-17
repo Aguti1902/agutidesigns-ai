@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from './hooks/useAuth';
+import { useDomainRedirect } from './hooks/useDomainRedirect';
 import SaasLanding from './pages/landing/SaasLanding';
 import AuthPage from './components/auth/AuthPage';
 import OnboardingFlow from './components/onboarding/OnboardingFlow';
@@ -39,6 +40,7 @@ function AdminRoute({ children }) {
 export default function App() {
   const { user, profile, loading } = useAuth();
   const [onboardingDone, setOnboardingDone] = useState(false);
+  const { isAppDomain, isMainDomain } = useDomainRedirect(user);
 
   if (loading) {
     return (
@@ -53,10 +55,17 @@ export default function App() {
     return <OnboardingFlow onComplete={() => setOnboardingDone(true)} />;
   }
 
+  // localhost always allows everything
+  const isLocalhost = window.location.hostname === 'localhost';
+
   return (
     <Routes>
       {/* Public routes */}
-      <Route path="/" element={user ? <Navigate to="/app" replace /> : <SaasLanding />} />
+      <Route path="/" element={
+        user ? <Navigate to="/app" replace /> : 
+        (isAppDomain && !isLocalhost) ? <Navigate to="/app" replace /> : 
+        <SaasLanding />
+      } />
       <Route path="/auth" element={user ? <Navigate to="/app" replace /> : <AuthPage />} />
       <Route path="/email-confirmado" element={<EmailConfirmed />} />
       

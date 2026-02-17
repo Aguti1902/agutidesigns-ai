@@ -53,7 +53,7 @@ function getTemplate(template: string, data: Record<string, any> = {}): string {
             <li>Personaliza el prompt de tu agente según tu estilo</li>
             <li>¡Empieza a recibir y responder mensajes automáticamente!</li>
           </ol>
-          <a href="https://app.agutidesigns.io/app/whatsapp" class="btn">Conectar WhatsApp ahora</a>
+          <a href="https://app.agutidesigns.io/app" class="btn">Ir al dashboard</a>
           <p style="font-size: 13px; color: #666; margin-top: 24px;">Tienes <span class="highlight">${data.trialDays || 7} días de prueba gratis</span> para probarlo todo sin límites.</p>
         </div>
         <div class="footer">© 2026 Agutidesigns · <a href="https://agutidesigns.io" style="color: #666;">agutidesigns.io</a></div>
