@@ -16,6 +16,7 @@ CREATE TABLE IF NOT EXISTS support_tickets (
   status TEXT DEFAULT 'open' CHECK (status IN ('open', 'in_progress', 'resolved', 'closed')),
   priority TEXT DEFAULT 'normal' CHECK (priority IN ('low', 'normal', 'high', 'urgent')),
   admin_last_viewed_at TIMESTAMPTZ,
+  user_last_viewed_at TIMESTAMPTZ,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
@@ -32,6 +33,7 @@ CREATE TABLE IF NOT EXISTS support_messages (
 
 -- 5. Añadir campos a support_tickets si ya existía
 ALTER TABLE support_tickets ADD COLUMN IF NOT EXISTS admin_last_viewed_at TIMESTAMPTZ;
+ALTER TABLE support_tickets ADD COLUMN IF NOT EXISTS user_last_viewed_at TIMESTAMPTZ;
 ALTER TABLE support_tickets ADD COLUMN IF NOT EXISTS priority TEXT DEFAULT 'normal' CHECK (priority IN ('low', 'normal', 'high', 'urgent'));
 
 -- 6. Crear tabla de admin actions log (opcional - para auditoría)

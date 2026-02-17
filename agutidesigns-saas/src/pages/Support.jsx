@@ -93,6 +93,8 @@ export default function Support() {
   async function openTicket(ticket) {
     setSelectedTicket(ticket);
     await loadMessages(ticket.id);
+    // Mark as viewed by user
+    await supabase.from('support_tickets').update({ user_last_viewed_at: new Date().toISOString() }).eq('id', ticket.id);
     setView('detail');
   }
 
