@@ -5,15 +5,15 @@
 
 .checkout-page {
   min-height: 100%;
-  background: #111;
-  padding: 1.5rem;
+  background: #0a0a0a;
+  padding: 1rem 1.5rem;
 }
 
 .checkout-page__grid {
   display: grid;
-  grid-template-columns: 40% 1fr;
-  gap: 2rem;
-  max-width: 1200px;
+  grid-template-columns: 320px 1fr;
+  gap: 1.25rem;
+  max-width: 1060px;
   margin: 0 auto;
   align-items: start;
 }
@@ -44,29 +44,29 @@
 }
 
 .checkout-page__summary {
-  background: #0a0a0a;
+  background: #111;
   border: 1px solid #1e1e1e;
   border-radius: var(--radius-xl);
-  padding: 1.75rem;
+  padding: 1.25rem;
 }
 
 .checkout-page__title {
   font-family: var(--font-display);
-  font-size: 1.75rem;
+  font-size: 1.3rem;
   font-weight: 800;
   color: white;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.25rem;
 }
 
 .checkout-page__price {
-  margin-bottom: 1.5rem;
-  padding-bottom: 1.5rem;
+  margin-bottom: 1rem;
+  padding-bottom: 1rem;
   border-bottom: 1px solid #1e1e1e;
 }
 
 .checkout-page__price span:first-child {
   font-family: var(--font-display);
-  font-size: 2.5rem;
+  font-size: 2rem;
   font-weight: 800;
   color: var(--color-primary);
 }
@@ -80,16 +80,16 @@
 
 .checkout-page__features {
   list-style: none;
-  margin-bottom: 1.5rem;
+  margin-bottom: 1rem;
 }
 
 .checkout-page__features li {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  font-size: 0.9rem;
+  gap: 0.4rem;
+  font-size: 0.8rem;
   color: #aaa;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.35rem;
 }
 
 .checkout-page__features li svg {
@@ -122,15 +122,15 @@
 }
 
 .checkout-page__note {
-  font-size: 0.75rem;
+  font-size: 0.7rem;
   color: #555;
-  margin-bottom: 1.5rem;
-  line-height: 1.5;
+  margin-bottom: 1rem;
+  line-height: 1.4;
 }
 
 /* ── FAQ ── */
 .checkout-page__faq {
-  padding-top: 1.25rem;
+  padding-top: 0.75rem;
   border-top: 1px solid #1e1e1e;
 }
 
@@ -139,16 +139,16 @@
   align-items: center;
   gap: 0.4rem;
   font-family: var(--font-mono);
-  font-size: 0.8rem;
+  font-size: 0.7rem;
   font-weight: 700;
   color: #888;
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  margin-bottom: 0.75rem;
+  margin-bottom: 0.5rem;
 }
 
 .checkout-page__faq-item {
-  padding: 0.75rem 0;
+  padding: 0.4rem 0;
   border-bottom: 1px solid #151515;
 }
 
@@ -158,34 +158,37 @@
 
 .checkout-page__faq-item strong {
   display: block;
-  font-size: 0.82rem;
-  color: #ccc;
-  margin-bottom: 0.25rem;
+  font-size: 0.75rem;
+  color: #bbb;
+  margin-bottom: 0.15rem;
 }
 
 .checkout-page__faq-item p {
-  font-size: 0.78rem;
+  font-size: 0.7rem;
   color: #666;
-  line-height: 1.5;
+  line-height: 1.4;
 }
 
 /* ── Columna derecha (Stripe) ── */
 .checkout-page__right {
-  min-height: 500px;
+  min-height: 400px;
 }
 
 .checkout-page__stripe {
-  background: #0a0a0a;
+  background: #0e0e0e;
   border: 1px solid #1e1e1e;
   border-radius: var(--radius-xl);
-  padding: 1.5rem;
-  min-height: 500px;
+  padding: 0.75rem;
+  min-height: 400px;
+  overflow: hidden;
 }
 
-/* Stripe iframe hereda estilos; asegurar que el contenedor tenga espacio */
+/* Forzar modo oscuro en el iframe de Stripe */
 .checkout-page__stripe iframe {
   border: none !important;
-  min-height: 450px;
+  border-radius: var(--radius-lg) !important;
+  filter: invert(0.88) hue-rotate(180deg);
+  min-height: 380px;
 }
 
 /* ── Error state ── */

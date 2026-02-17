@@ -33,8 +33,11 @@ serve(async (req) => {
         })
         const infoData = await infoRes.json()
         const inst = Array.isArray(infoData) ? infoData[0] : infoData
-        phoneNumber = inst?.instance?.owner?.replace('@s.whatsapp.net', '') || null
-      } catch {}
+        const ownerRaw = inst?.instance?.owner || inst?.instance?.wuid || inst?.instance?.profilePictureUrl || inst?.ownerJid || data?.instance?.ownerJid || ''
+        phoneNumber = ownerRaw.replace('@s.whatsapp.net', '').replace('@lid', '').replace(/[^0-9+]/g, '') || null
+        if (phoneNumber && phoneNumber.length < 8) phoneNumber = null
+        console.log('Status check - phone:', phoneNumber, 'raw owner:', ownerRaw?.substring(0, 30))
+      } catch (e) { console.log('fetchInstances error:', e) }
     }
 
     // Update Supabase

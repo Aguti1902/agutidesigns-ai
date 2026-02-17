@@ -94,9 +94,17 @@ export default function Billing() {
 
   return (
     <div className="page">
-      <div className="page__header">
-        <h1><CreditCard size={24} /> Suscripción</h1>
-        <p>Gestiona tu plan, métodos de pago y facturación.</p>
+      <div className="page__header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+        <div>
+          <h1><CreditCard size={24} /> Suscripción</h1>
+          <p>Gestiona tu plan, métodos de pago y facturación.</p>
+        </div>
+        {isSubscribed && profile?.stripe_customer_id && (
+          <button className="btn btn--outline btn--sm" onClick={handleManageSubscription} disabled={loadingPortal} style={{ marginTop: '0.25rem' }}>
+            {loadingPortal ? <Loader2 size={14} className="spin" /> : <ExternalLink size={14} />}
+            Gestionar facturación
+          </button>
+        )}
       </div>
 
       {showSuccess && (

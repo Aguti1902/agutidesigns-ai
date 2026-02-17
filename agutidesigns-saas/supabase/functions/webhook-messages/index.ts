@@ -23,8 +23,20 @@ serve(async (req) => {
         const state = body.data?.state || body.data?.status || ''
         const isConnected = state === 'open'
         const supabase = createClient(SUPABASE_URL, SUPABASE_KEY)
-        await supabase.from('agents').update({ whatsapp_connected: isConnected, is_active: isConnected }).eq('id', agentId)
-        console.log('Connection update:', agentId, isConnected)
+        const updates: any = { whatsapp_connected: isConnected, is_active: isConnected }
+
+        // Try to extract phone number from connection event
+        const ownerJid = body.data?.ownerJid || body.data?.owner || body.data?.wuid || ''
+        if (ownerJid) {
+          const phone = ownerJid.replace('@s.whatsapp.net', '').replace('@lid', '').replace(/[^0-9+]/g, '')
+          if (phone && phone.length >= 8) {
+            updates.whatsapp_number = phone
+            console.log('Phone detected from connection:', phone)
+          }
+        }
+
+        await supabase.from('agents').update(updates).eq('id', agentId)
+        console.log('Connection update:', agentId, isConnected, 'phone:', updates.whatsapp_number || 'none')
       }
       return new Response(JSON.stringify({ ok: true }))
     }
@@ -123,23 +135,38 @@ serve(async (req) => {
         } catch {}
 
         // Call OpenAI
-        console.log('Calling OpenAI...')
-        const openaiRes = await fetch('https://api.openai.com/v1/chat/completions', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${OPENAI_KEY}` },
-          body: JSON.stringify({
-            model: 'gpt-4o-mini',
-            messages: [
-              { role: 'system', content: systemPrompt },
-              ...(history || []).slice(-20),
-              { role: 'user', content: messageText }
-            ],
-            temperature: 0.7,
-            max_tokens: 500
+        const historyMsgs = (history || []).slice(-18)
+        console.log('Calling OpenAI... key starts with:', OPENAI_KEY?.substring(0, 12), 'history:', historyMsgs.length, 'prompt length:', systemPrompt.length)
+        
+        let aiResponse = ''
+        try {
+          const openaiRes = await fetch('https://api.openai.com/v1/chat/completions', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${OPENAI_KEY}` },
+            body: JSON.stringify({
+              model: 'gpt-4o-mini',
+              messages: [
+                { role: 'system', content: systemPrompt },
+                ...historyMsgs,
+              ],
+              temperature: 0.7,
+              max_tokens: 500
+            })
           })
-        })
-        const openaiData = await openaiRes.json()
-        const aiResponse = openaiData.choices?.[0]?.message?.content || 'Lo siento, no puedo responder ahora.'
+          const openaiData = await openaiRes.json()
+          console.log('OpenAI status:', openaiRes.status, 'error:', openaiData.error?.message || 'none')
+          aiResponse = openaiData.choices?.[0]?.message?.content || ''
+          
+          if (!aiResponse && openaiData.error) {
+            console.error('OpenAI error:', JSON.stringify(openaiData.error))
+            aiResponse = 'Disculpa, tengo un problema técnico. Por favor, inténtalo de nuevo en unos minutos.'
+          } else if (!aiResponse) {
+            aiResponse = 'Disculpa, no he podido procesar tu mensaje. ¿Podrías repetirlo?'
+          }
+        } catch (openaiErr) {
+          console.error('OpenAI fetch error:', openaiErr)
+          aiResponse = 'Disculpa, tengo un problema técnico temporal.'
+        }
         console.log('AI:', aiResponse.substring(0, 80))
 
         // Save AI response
