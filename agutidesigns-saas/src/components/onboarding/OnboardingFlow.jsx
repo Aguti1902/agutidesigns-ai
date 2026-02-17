@@ -48,13 +48,13 @@ export default function OnboardingFlow({ onComplete }) {
           </motion.div>
         </AnimatePresence>
 
-        <div className="onboard__actions">
+        <div className="onboard__actions" style={step === 0 ? { justifyContent: 'center' } : {}}>
           {step > 0 && (
             <button className="onboard__btn onboard__btn--ghost" onClick={() => setStep(s => s - 1)}>
               <ArrowLeft size={16} /> Anterior
             </button>
           )}
-          <div style={{ flex: 1 }} />
+          {step > 0 && <div style={{ flex: 1 }} />}
           {!isLast ? (
             <button className="onboard__btn onboard__btn--primary" onClick={() => setStep(s => s + 1)}>
               Siguiente <ArrowRight size={16} />
