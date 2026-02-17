@@ -43,6 +43,30 @@
   transition: width 0.4s ease, background-color 0.3s;
 }
 
+/* ── Banner agotado ── */
+.messages-exhausted {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.25rem 1.5rem;
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.25);
+  border-radius: var(--radius-xl);
+  margin-bottom: 1.5rem;
+}
+
+.messages-exhausted__icon {
+  width: 44px; height: 44px; min-width: 44px;
+  border-radius: var(--radius-full);
+  background: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
+  display: flex; align-items: center; justify-content: center;
+}
+
+.messages-exhausted__text { flex: 1; }
+.messages-exhausted__text h3 { font-family: var(--font-mono); font-size: 0.9rem; font-weight: 700; color: #ef4444; margin-bottom: 0.15rem; }
+.messages-exhausted__text p { font-size: 0.78rem; color: #999; line-height: 1.4; }
+
 /* ── Alertas ── */
 .messages-alert {
   display: flex;

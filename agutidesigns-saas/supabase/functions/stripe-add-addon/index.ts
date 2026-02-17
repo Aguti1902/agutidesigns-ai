@@ -86,8 +86,30 @@ serve(async (req) => {
       )
     }
 
+    // Get the amount from price to determine how many messages to add
+    const priceRes = await fetch(`https://api.stripe.com/v1/prices/${priceId}`, {
+      headers: { 'Authorization': `Bearer ${STRIPE_KEY}` },
+    })
+    const priceData = await priceRes.json()
+    const amountCents = priceData.unit_amount || 0
+
+    // Map price to messages: 900=500, 1500=1000, 2900=2500, 4900=5000, 7900=10000
+    const priceToMessages: Record<number, number> = { 900: 500, 1500: 1000, 2900: 2500, 4900: 5000, 7900: 10000 }
+    const extraMsgs = priceToMessages[amountCents] || 500
+
+    // Update extra_messages in profile
+    const currentExtra = profile.extra_messages || 0
+    await supabase.from('profiles').update({
+      extra_messages: currentExtra + extraMsgs,
+      updated_at: new Date().toISOString(),
+    }).eq('id', userId)
+    console.log('Updated extra_messages:', currentExtra, '->', currentExtra + extraMsgs)
+
+    // Reactivate agents if they were deactivated due to limit
+    await supabase.from('agents').update({ is_active: true }).eq('user_id', userId).eq('whatsapp_connected', true)
+
     return new Response(
-      JSON.stringify({ success: true, itemId: data.id }),
+      JSON.stringify({ success: true, itemId: data.id, extraMessages: extraMsgs }),
       { headers: { 'Content-Type': 'application/json', ...corsHeaders } }
     )
   } catch (error) {

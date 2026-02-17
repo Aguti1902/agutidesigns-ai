@@ -34,13 +34,15 @@ function formatDuration(messages = []) {
 /**
  * Obtiene el estilo del badge de estado
  */
+const STATUS_LABELS = { active: 'Activa', resolved: 'Resuelta', referred: 'Derivada' };
+
 function getStatusBadgeStyle(status) {
   switch (status?.toLowerCase()) {
-    case 'activa':
+    case 'active':
       return { background: 'rgba(var(--color-primary-rgb), 0.15)', color: 'var(--color-primary)' };
-    case 'resuelta':
+    case 'resolved':
       return { background: '#1a1a1a', color: '#888' };
-    case 'derivada':
+    case 'referred':
       return { background: 'rgba(245,158,11,0.1)', color: 'var(--color-warning)' };
     default:
       return { background: '#1a1a1a', color: '#888' };
@@ -94,18 +96,18 @@ export default function ChatDetail({
           </div>
         </div>
         <div style={styles.headerRight}>
-          <span style={{ ...styles.statusBadge, ...statusStyle }}>{conversation.status || 'Activa'}</span>
+          <span style={{ ...styles.statusBadge, ...statusStyle }}>{STATUS_LABELS[conversation.status] || 'Activa'}</span>
           <button onClick={onTagsOpen} className="btn btn--outline btn--sm" style={styles.tagsBtn}>
             <Tag size={14} /> Etiquetas
           </button>
           <select
-            value={conversation.status || 'activa'}
+            value={conversation.status || 'active'}
             onChange={(e) => onStatusChange?.(e.target.value)}
             style={styles.statusSelect}
           >
-            <option value="activa">Activa</option>
-            <option value="resuelta">Resuelta</option>
-            <option value="derivada">Derivada</option>
+            <option value="active">Activa</option>
+            <option value="resolved">Resuelta</option>
+            <option value="referred">Derivada</option>
           </select>
           <button style={styles.moreBtn} aria-label="Más opciones">
             <MoreVertical size={18} />

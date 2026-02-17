@@ -327,6 +327,7 @@ export default function WhatsAppConnect() {
               onStatusChange={(status) => handleStatusChange(selectedConvo.id, status)}
               onTagsOpen={() => setTagsConvo(selectedConvo)}
               onBack={() => setSelectedConvo(null)}
+              showBackButton={true}
             />
           ) : (
             <div className="wa-inbox__empty">

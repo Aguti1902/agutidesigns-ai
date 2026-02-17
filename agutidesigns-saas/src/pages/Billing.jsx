@@ -51,6 +51,8 @@ export default function Billing() {
   const [loadingPortal, setLoadingPortal] = useState(false);
   const [customerInfo, setCustomerInfo] = useState(null);
   const [loadingInfo, setLoadingInfo] = useState(false);
+  const [showCancelConfirm, setShowCancelConfirm] = useState(false);
+  const [cancellingSubscription, setCancellingSubscription] = useState(false);
 
   const trialDaysLeft = profile?.trial_ends_at
     ? Math.max(0, Math.ceil((new Date(profile.trial_ends_at) - new Date()) / 86400000))
@@ -87,6 +89,34 @@ export default function Billing() {
       else alert('Error: ' + (data.error || `Error ${res.status}`));
     } catch (err) { alert('Error: ' + err.message); }
     finally { setLoadingPortal(false); }
+  }
+
+  async function handleCancelSubscription() {
+    if (!profile?.stripe_subscription_id) return;
+    setCancellingSubscription(true);
+    try {
+      const STRIPE_KEY_CALL = `${API_URL}/stripe-cancel-subscription`;
+      const res = await fetch(STRIPE_KEY_CALL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          subscriptionId: profile.stripe_subscription_id,
+          customerId: profile.stripe_customer_id,
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && data.success) {
+        setShowCancelConfirm(false);
+        window.location.reload();
+      } else {
+        // Fallback: redirect to Stripe portal for cancellation
+        handleManageSubscription();
+      }
+    } catch {
+      handleManageSubscription();
+    } finally {
+      setCancellingSubscription(false);
+    }
   }
 
   const urlParams = new URLSearchParams(window.location.search);
@@ -224,6 +254,46 @@ export default function Billing() {
               <MessageCircle size={12} /> Ver uso de mensajes
             </Link>
           </div>
+        </div>
+      )}
+
+      {/* Cancel Subscription Confirmation */}
+      {isSubscribed && profile?.stripe_customer_id && !customerInfo?.subscription?.cancelAtPeriodEnd && (
+        <div style={{ marginBottom: '1.5rem' }}>
+          {!showCancelConfirm ? (
+            <button
+              className="btn btn--outline btn--sm"
+              onClick={() => setShowCancelConfirm(true)}
+              style={{ color: '#888', borderColor: '#333' }}
+            >
+              <XCircle size={12} /> Cancelar suscripción
+            </button>
+          ) : (
+            <div className="billing-status billing-status--expired" style={{ position: 'relative' }}>
+              <div className="billing-status__icon"><AlertTriangle size={20} /></div>
+              <div style={{ flex: 1 }}>
+                <h3>¿Seguro que quieres cancelar?</h3>
+                <p>Tu agente de WhatsApp IA dejará de funcionar al final del periodo de facturación actual.</p>
+                <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.75rem' }}>
+                  <button
+                    className="btn btn--outline btn--sm"
+                    onClick={() => setShowCancelConfirm(false)}
+                  >
+                    No, mantener plan
+                  </button>
+                  <button
+                    className="btn btn--sm"
+                    onClick={handleCancelSubscription}
+                    disabled={cancellingSubscription}
+                    style={{ background: 'var(--color-error)', color: '#fff' }}
+                  >
+                    {cancellingSubscription ? <Loader2 size={12} className="spin" /> : <XCircle size={12} />}
+                    Sí, cancelar
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       )}
 

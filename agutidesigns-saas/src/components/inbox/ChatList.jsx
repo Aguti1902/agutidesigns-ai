@@ -25,16 +25,18 @@ function formatTimeAgo(dateStr) {
  */
 function getStatusBadgeStyle(status) {
   switch (status?.toLowerCase()) {
-    case 'activa':
+    case 'active':
       return { background: 'rgba(var(--color-primary-rgb), 0.15)', color: 'var(--color-primary)', border: '1px solid rgba(var(--color-primary-rgb), 0.3)' };
-    case 'resuelta':
+    case 'resolved':
       return { background: '#1a1a1a', color: '#888', border: '1px solid #333' };
-    case 'derivada':
+    case 'referred':
       return { background: 'rgba(245,158,11,0.1)', color: 'var(--color-warning)', border: '1px solid rgba(245,158,11,0.25)' };
     default:
       return { background: '#1a1a1a', color: '#888', border: '1px solid #333' };
   }
 }
+
+const STATUS_LABELS = { active: 'Activa', resolved: 'Resuelta', referred: 'Derivada' };
 
 export default function ChatList({
   conversations = [],
@@ -46,10 +48,10 @@ export default function ChatList({
   onSearchChange,
 }) {
   const filters = [
-    { id: 'todas', label: 'Todas', icon: MessageCircle },
-    { id: 'activas', label: 'Activas', icon: Check },
-    { id: 'resueltas', label: 'Resueltas', icon: Check },
-    { id: 'derivadas', label: 'Derivadas', icon: ArrowUpRight },
+    { id: 'all', label: 'Todas', icon: MessageCircle },
+    { id: 'active', label: 'Activas', icon: Check },
+    { id: 'resolved', label: 'Resueltas', icon: Check },
+    { id: 'referred', label: 'Derivadas', icon: ArrowUpRight },
   ];
 
   return (
@@ -99,7 +101,7 @@ export default function ChatList({
             return (
               <button
                 key={conv.id}
-                onClick={() => onSelect?.(conv.id)}
+                onClick={() => onSelect?.(conv)}
                 style={{
                   ...styles.convItem,
                   borderColor: isSelected ? 'var(--color-primary)' : '#1e1e1e',
@@ -126,7 +128,7 @@ export default function ChatList({
                       ...statusStyle,
                     }}
                   >
-                    {conv.status || 'Activa'}
+                    {STATUS_LABELS[conv.status] || 'Activa'}
                   </span>
                   {Array.isArray(conv.tags) && conv.tags.length > 0 && (
                     <div style={styles.tagsRow}>

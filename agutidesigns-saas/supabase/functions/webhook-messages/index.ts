@@ -82,6 +82,24 @@ serve(async (req) => {
           continue
         }
 
+        // Check message limit
+        const { data: ownerProfile } = await supabase.from('profiles').select('message_limit, extra_messages').eq('id', agent.user_id).single()
+        const msgLimit = (ownerProfile?.message_limit || 500) + (ownerProfile?.extra_messages || 0)
+        if ((agent.total_messages || 0) >= msgLimit) {
+          console.log('Message limit reached:', agent.total_messages, '>=', msgLimit)
+          // Deactivate agent
+          await supabase.from('agents').update({ is_active: false }).eq('id', agentId)
+          // Send limit message to client
+          try {
+            await fetch(`${EVOLUTION_URL}/message/sendText/${body.instance}`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', 'apikey': EVOLUTION_KEY },
+              body: JSON.stringify({ number: remoteJid, text: 'Este servicio no está disponible en este momento. Por favor, contacta directamente con el negocio.' })
+            })
+          } catch {}
+          continue
+        }
+
         let systemPrompt = agent.system_prompt || 'Eres un asistente virtual amable. Responde en español.'
 
         // Load business data for context

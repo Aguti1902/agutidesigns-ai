@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { MessageCircle, Users, BarChart3, Zap, ArrowRight, TrendingUp, Wifi, WifiOff } from 'lucide-react';
+import { MessageCircle, Users, BarChart3, Zap, ArrowRight, TrendingUp, Wifi, WifiOff, AlertTriangle } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { useAgents } from '../hooks/useAgents';
@@ -24,14 +24,21 @@ export default function DashboardHome() {
       const today = new Date();
       today.setHours(0, 0, 0, 0);
 
+      // Get conversation IDs first to avoid issues with empty IN clause
+      const { data: agentConvos } = await supabase
+        .from('conversations')
+        .select('id')
+        .eq('agent_id', activeAgent.id);
+      const convoIds = (agentConvos || []).map(c => c.id);
+
       const [msgsRes, leadsRes, activesRes] = await Promise.all([
-        supabase
-          .from('messages')
-          .select('id', { count: 'exact', head: true })
-          .gte('created_at', today.toISOString())
-          .in('conversation_id',
-            (await supabase.from('conversations').select('id').eq('agent_id', activeAgent.id)).data?.map(c => c.id) || []
-          ),
+        convoIds.length > 0
+          ? supabase
+              .from('messages')
+              .select('id', { count: 'exact', head: true })
+              .gte('created_at', today.toISOString())
+              .in('conversation_id', convoIds)
+          : Promise.resolve({ count: 0 }),
         supabase
           .from('conversations')
           .select('id', { count: 'exact', head: true })
@@ -91,8 +98,20 @@ export default function DashboardHome() {
         ))}
       </div>
 
+      {/* Message exhausted banner */}
+      {profile && totalMessages >= ((profile.message_limit || 500) + (profile.extra_messages || 0)) && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '1rem 1.25rem', background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.25)', borderRadius: 'var(--radius-lg)', marginTop: '1rem' }}>
+          <WifiOff size={20} style={{ color: '#ef4444', flexShrink: 0 }} />
+          <div style={{ flex: 1 }}>
+            <strong style={{ fontSize: '0.85rem', color: '#ef4444', display: 'block' }}>Mensajes agotados — IA desconectada</strong>
+            <span style={{ fontSize: '0.75rem', color: '#999' }}>Amplía tus mensajes para reactivar la IA.</span>
+          </div>
+          <Link to="/app/mensajes" className="btn btn--primary btn--sm" style={{ flexShrink: 0 }}><Zap size={12} /> Ampliar</Link>
+        </div>
+      )}
+
       {/* Message usage mini */}
-      {profile && (
+      {profile && totalMessages < ((profile.message_limit || 500) + (profile.extra_messages || 0)) && (
         <div className="card" style={{ marginTop: '1rem', padding: '1.25rem' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
             <span style={{ fontSize: '0.82rem', color: '#999' }}><TrendingUp size={14} style={{ verticalAlign: 'middle' }} /> Uso de mensajes</span>
@@ -101,12 +120,12 @@ export default function DashboardHome() {
           <div style={{ background: '#1a1a1a', borderRadius: '6px', height: '8px', overflow: 'hidden' }}>
             <div style={{
               height: '100%', borderRadius: '6px', transition: 'width 0.5s',
-              width: `${Math.min(100, (totalMessages / (profile.message_limit || 500)) * 100)}%`,
-              background: (totalMessages / (profile.message_limit || 500)) > 0.95 ? '#ef4444' : (totalMessages / (profile.message_limit || 500)) > 0.8 ? '#f59e0b' : '#25D366',
+              width: `${Math.min(100, (totalMessages / ((profile.message_limit || 500) + (profile.extra_messages || 0))) * 100)}%`,
+              background: (totalMessages / ((profile.message_limit || 500) + (profile.extra_messages || 0))) > 0.95 ? '#ef4444' : (totalMessages / ((profile.message_limit || 500) + (profile.extra_messages || 0))) > 0.8 ? '#f59e0b' : '#25D366',
             }} />
           </div>
           <p style={{ fontSize: '0.72rem', color: '#666', marginTop: '0.3rem' }}>
-            {totalMessages.toLocaleString('es-ES')} de {(profile.message_limit || 500).toLocaleString('es-ES')} mensajes usados
+            {totalMessages.toLocaleString('es-ES')} de {((profile.message_limit || 500) + (profile.extra_messages || 0)).toLocaleString('es-ES')} mensajes usados
           </p>
         </div>
       )}

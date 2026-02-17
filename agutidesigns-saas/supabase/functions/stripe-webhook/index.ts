@@ -38,7 +38,35 @@ serve(async (req) => {
 
     const SUPABASE_URL = Deno.env.get('SUPABASE_URL') || ''
     const SUPABASE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || ''
+    const STRIPE_KEY = Deno.env.get('STRIPE_SECRET_KEY') || ''
     const supabase = createClient(SUPABASE_URL, SUPABASE_KEY)
+
+    // Map plan price IDs to message limits
+    const PLAN_LIMITS: Record<string, number> = {
+      'price_1T0RlfC3QI1AmukvNi6TCABc': 500,    // Starter
+      'price_1T0RlgC3QI1Amukv4Pq4kpBh': 5000,   // Pro
+      'price_1T0RliC3QI1AmukvBqxU8Qnu': 20000,   // Business
+    }
+
+    // Helper: get message_limit from a Stripe subscription's items
+    async function getMessageLimitFromSubscription(subscriptionId: string): Promise<number | null> {
+      if (!STRIPE_KEY || !subscriptionId) return null
+      try {
+        const res = await fetch(`https://api.stripe.com/v1/subscriptions/${subscriptionId}`, {
+          headers: { 'Authorization': `Bearer ${STRIPE_KEY}` },
+        })
+        const sub = await res.json()
+        for (const item of (sub.items?.data || [])) {
+          const priceId = item.price?.id
+          if (priceId && PLAN_LIMITS[priceId] != null) {
+            return PLAN_LIMITS[priceId]
+          }
+        }
+      } catch (err) {
+        console.error('Error fetching subscription for limit:', err)
+      }
+      return null
+    }
 
     // Checkout completed - subscription or one-time payment
     if (event === 'checkout.session.completed') {
@@ -49,12 +77,18 @@ serve(async (req) => {
       if (userId && customerId) {
         if (subscriptionId) {
           console.log('Subscription activated for user:', userId)
-          await supabase.from('profiles').update({
+          const messageLimit = await getMessageLimitFromSubscription(subscriptionId)
+          const updates: Record<string, unknown> = {
             subscription_status: 'active',
             stripe_customer_id: customerId,
             stripe_subscription_id: subscriptionId,
             updated_at: new Date().toISOString(),
-          }).eq('id', userId)
+          }
+          if (messageLimit != null) {
+            updates.message_limit = messageLimit
+            console.log('Setting message_limit:', messageLimit)
+          }
+          await supabase.from('profiles').update(updates).eq('id', userId)
         } else {
           console.log('One-time payment (pack) for user:', userId, '- saving customer_id')
           await supabase.from('profiles').update({
@@ -65,7 +99,7 @@ serve(async (req) => {
       }
     }
 
-    // Subscription updated
+    // Subscription updated (plan change, addon added/removed, cancellation scheduled)
     if (event === 'customer.subscription.updated') {
       const status = data.status // active, past_due, canceled, unpaid
       const customerId = data.customer
@@ -75,10 +109,23 @@ serve(async (req) => {
       if (profile) {
         const mappedStatus = status === 'active' ? 'active' : status === 'canceled' ? 'cancelled' : 'expired'
         console.log('Updating subscription status:', profile.id, mappedStatus)
-        await supabase.from('profiles').update({
+
+        const updates: Record<string, unknown> = {
           subscription_status: mappedStatus,
           updated_at: new Date().toISOString(),
-        }).eq('id', profile.id)
+        }
+
+        // Check if plan changed and update message_limit
+        for (const item of (data.items?.data || [])) {
+          const priceId = item.price?.id
+          if (priceId && PLAN_LIMITS[priceId] != null) {
+            updates.message_limit = PLAN_LIMITS[priceId]
+            console.log('Updating message_limit to:', PLAN_LIMITS[priceId])
+            break
+          }
+        }
+
+        await supabase.from('profiles').update(updates).eq('id', profile.id)
       }
     }
 
@@ -95,16 +142,25 @@ serve(async (req) => {
       }
     }
 
-    // Invoice paid (renewal)
+    // Invoice paid (renewal) - reset message counters for new billing cycle
     if (event === 'invoice.paid') {
       const customerId = data.customer
+      const billingReason = data.billing_reason
       const { data: profile } = await supabase.from('profiles').select('id').eq('stripe_customer_id', customerId).single()
       if (profile) {
-        console.log('Invoice paid, keeping active:', profile.id)
+        console.log('Invoice paid for:', profile.id, 'reason:', billingReason)
         await supabase.from('profiles').update({
           subscription_status: 'active',
           updated_at: new Date().toISOString(),
         }).eq('id', profile.id)
+
+        // Reset message counters on subscription renewal (not first payment)
+        if (billingReason === 'subscription_cycle' || billingReason === 'subscription_update') {
+          console.log('Resetting message counters for user:', profile.id)
+          await supabase.from('agents').update({ total_messages: 0 }).eq('user_id', profile.id)
+          // Reactivate agents that were deactivated due to limit
+          await supabase.from('agents').update({ is_active: true }).eq('user_id', profile.id).eq('whatsapp_connected', true)
+        }
       }
     }
 
