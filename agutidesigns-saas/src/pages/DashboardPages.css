@@ -443,6 +443,21 @@
 .cal-grid__cell--closed { background: rgba(255,255,255,0.008); }
 .cal-grid__cell--open::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 1px; background: rgba(37,211,102,0.08); }
 
+/* AI Booking Toggle */
+.cal-booking-toggle { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 1rem 1.25rem; background: #111; border: 2px solid #222; border-radius: var(--radius-xl); margin-bottom: 0.75rem; transition: all 0.25s; }
+.cal-booking-toggle--on { background: rgba(37,211,102,0.04); border-color: rgba(37,211,102,0.25); }
+.cal-booking-toggle__info { display: flex; align-items: center; gap: 0.75rem; flex: 1; }
+.cal-booking-toggle__icon { width: 44px; height: 44px; min-width: 44px; border-radius: var(--radius-lg); background: #1a1a1a; display: flex; align-items: center; justify-content: center; color: #555; transition: all 0.25s; }
+.cal-booking-toggle--on .cal-booking-toggle__icon { background: rgba(37,211,102,0.12); color: var(--color-primary); }
+.cal-booking-toggle__info h3 { font-family: var(--font-mono); font-size: 0.88rem; font-weight: 700; color: #ccc; margin-bottom: 0.15rem; }
+.cal-booking-toggle--on .cal-booking-toggle__info h3 { color: #eee; }
+.cal-booking-toggle__info p { font-size: 0.75rem; color: #555; line-height: 1.4; }
+.cal-booking-toggle--on .cal-booking-toggle__info p { color: #888; }
+.cal-booking-toggle__switch { display: flex; align-items: center; gap: 0.4rem; padding: 0.5rem 1.1rem; border-radius: var(--radius-full); font-family: var(--font-mono); font-size: 0.75rem; font-weight: 700; cursor: pointer; transition: all 0.2s; border: 1px solid #333; background: #1a1a1a; color: #666; flex-shrink: 0; }
+.cal-booking-toggle__switch:hover { border-color: #555; color: #aaa; }
+.cal-booking-toggle__switch--on { background: var(--color-primary); color: #000; border-color: var(--color-primary); }
+.cal-booking-toggle__switch--on:hover { box-shadow: 0 0 12px rgba(37,211,102,0.3); }
+
 /* Google Calendar "Próximamente" badge */
 .cal-gcal-badge { display: flex; align-items: center; gap: 0.5rem; padding: 0.6rem 1rem; background: #151515; border: 1px solid #2a2a2a; border-radius: var(--radius-lg); margin-bottom: 1rem; color: #666; }
 .cal-gcal-badge svg { color: #555; flex-shrink: 0; }

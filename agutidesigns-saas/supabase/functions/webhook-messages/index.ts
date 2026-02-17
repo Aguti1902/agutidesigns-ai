@@ -249,8 +249,12 @@ serve(async (req) => {
           if (ctx.length) systemPrompt += '\n\n═══ INFORMACIÓN DEL NEGOCIO ═══\n' + ctx.join('\n\n')
         }
 
-        // Build an explicit day-by-day calendar for the next 7 days
+        // Only build calendar context if booking is enabled
+        const bookingEnabled = !!agent.booking_enabled
         const todayStr = now.toISOString().split('T')[0]
+
+        if (bookingEnabled) {
+        // Build an explicit day-by-day calendar for the next 7 days
         const next7: { date: Date, dateStr: string, label: string, dayOfWeek: number }[] = []
         for (let i = 0; i < 7; i++) {
           const d = new Date(now)
@@ -333,6 +337,7 @@ serve(async (req) => {
 - El campo appointment_date debe ser formato YYYY-MM-DD (usa las fechas entre paréntesis del calendario).`
 
         systemPrompt += calendarContext
+        } // end if (bookingEnabled)
 
         // Add enhanced behavioral instructions if the prompt doesn't already include them
         if (!systemPrompt.includes('FLUJO DE CONVERSACIÓN') && !systemPrompt.includes('TÉCNICAS DE VENTA')) {
@@ -370,8 +375,8 @@ serve(async (req) => {
           })
         } catch {}
 
-        // Define function tools for OpenAI
-        const tools = [
+        // Define function tools for OpenAI (only if booking enabled)
+        const tools = bookingEnabled ? [
           {
             type: 'function',
             function: {
@@ -391,30 +396,33 @@ serve(async (req) => {
               },
             },
           },
-        ]
+        ] : []
 
-        // Call OpenAI with function calling
+        // Call OpenAI
         const historyMsgs = (history || []).slice(-20)
-        console.log('Calling OpenAI... key starts with:', OPENAI_KEY?.substring(0, 12), 'history:', historyMsgs.length, 'prompt length:', systemPrompt.length)
+        console.log('Calling OpenAI... booking:', bookingEnabled, 'history:', historyMsgs.length, 'prompt length:', systemPrompt.length)
         
         let aiResponse = ''
         try {
+          const openaiBody: any = {
+            model: 'gpt-4o-mini',
+            messages: [
+              { role: 'system', content: systemPrompt },
+              ...historyMsgs,
+            ],
+            temperature: 0.65,
+            max_tokens: 600,
+            presence_penalty: 0.1,
+            frequency_penalty: 0.15
+          }
+          if (tools.length > 0) {
+            openaiBody.tools = tools
+            openaiBody.tool_choice = 'auto'
+          }
           const openaiRes = await fetch('https://api.openai.com/v1/chat/completions', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${OPENAI_KEY}` },
-            body: JSON.stringify({
-              model: 'gpt-4o-mini',
-              messages: [
-                { role: 'system', content: systemPrompt },
-                ...historyMsgs,
-              ],
-              tools,
-              tool_choice: 'auto',
-              temperature: 0.65,
-              max_tokens: 600,
-              presence_penalty: 0.1,
-              frequency_penalty: 0.15
-            })
+            body: JSON.stringify(openaiBody)
           })
           const openaiData = await openaiRes.json()
           console.log('OpenAI status:', openaiRes.status, 'error:', openaiData.error?.message || 'none')

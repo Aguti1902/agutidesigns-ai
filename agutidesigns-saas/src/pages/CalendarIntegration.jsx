@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Calendar, Check, Loader2, X, RefreshCw, ChevronLeft, ChevronRight, Clock, MapPin, FileText, User, Plus, Phone, Trash2, Edit3, Lock } from 'lucide-react';
+import { Calendar, Check, Loader2, X, RefreshCw, ChevronLeft, ChevronRight, Clock, MapPin, FileText, User, Plus, Phone, Trash2, Edit3, Lock, Bot, Power } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { useAgents } from '../hooks/useAgents';
 import { supabase } from '../lib/supabase';
@@ -59,7 +59,7 @@ function toDateStr(d) {
 
 export default function CalendarIntegration() {
   const { user } = useAuth();
-  const { activeAgent } = useAgents();
+  const { activeAgent, refreshAgents } = useAgents();
   const [loading, setLoading] = useState(true);
   const [appointments, setAppointments] = useState([]);
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -68,6 +68,8 @@ export default function CalendarIntegration() {
   const [showForm, setShowForm] = useState(false);
   const [editingAppt, setEditingAppt] = useState(null);
   const [saving, setSaving] = useState(false);
+  const [bookingEnabled, setBookingEnabled] = useState(false);
+  const [togglingBooking, setTogglingBooking] = useState(false);
   const popupRef = useRef(null);
   const formRef = useRef(null);
 
@@ -78,6 +80,19 @@ export default function CalendarIntegration() {
 
   useEffect(() => { if (user) { loadAppointments(); loadBusinessSchedule(); } }, [user]);
   useEffect(() => { if (user) loadAppointments(); }, [currentDate]);
+  useEffect(() => { if (activeAgent) setBookingEnabled(!!activeAgent.booking_enabled); }, [activeAgent]);
+
+  async function toggleBooking() {
+    if (!activeAgent) return;
+    setTogglingBooking(true);
+    const newVal = !bookingEnabled;
+    try {
+      await supabase.from('agents').update({ booking_enabled: newVal, updated_at: new Date().toISOString() }).eq('id', activeAgent.id);
+      setBookingEnabled(newVal);
+      refreshAgents();
+    } catch (err) { alert('Error: ' + err.message); }
+    finally { setTogglingBooking(false); }
+  }
 
   useEffect(() => {
     function handleClickOutside(e) {
@@ -227,6 +242,30 @@ export default function CalendarIntegration() {
             {loading ? <Loader2 size={12} className="spin" /> : <RefreshCw size={12} />} Actualizar
           </button>
         </div>
+      </div>
+
+      {/* AI Booking Toggle - Prominent */}
+      <div className={`cal-booking-toggle ${bookingEnabled ? 'cal-booking-toggle--on' : ''}`}>
+        <div className="cal-booking-toggle__info">
+          <div className="cal-booking-toggle__icon">
+            <Bot size={22} />
+          </div>
+          <div>
+            <h3>Agendamiento automático por IA</h3>
+            <p>{bookingEnabled
+              ? 'La IA puede agendar citas desde WhatsApp consultando tu disponibilidad.'
+              : 'Activa para que la IA agende citas automáticamente cuando un cliente lo solicite.'
+            }</p>
+          </div>
+        </div>
+        <button
+          className={`cal-booking-toggle__switch ${bookingEnabled ? 'cal-booking-toggle__switch--on' : ''}`}
+          onClick={toggleBooking}
+          disabled={togglingBooking || !activeAgent}
+        >
+          {togglingBooking ? <Loader2 size={14} className="spin" /> : <Power size={14} />}
+          {bookingEnabled ? 'Activado' : 'Desactivado'}
+        </button>
       </div>
 
       {/* Google Calendar - Próximamente */}

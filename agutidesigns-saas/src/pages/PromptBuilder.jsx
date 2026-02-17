@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
-import { Brain, Sparkles, Save, Check, Copy, RefreshCw, AlertCircle, Edit3, Zap, Info, Loader2 } from 'lucide-react';
+import { Brain, Sparkles, Save, Check, Copy, RefreshCw, AlertCircle, Edit3, Zap, Info, Loader2, Bot, Power, Calendar } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../hooks/useAuth';
+import { useAgents } from '../hooks/useAgents';
 import './DashboardPages.css';
 
 const PERSONALITIES = [
@@ -23,7 +24,6 @@ const LANGUAGES = [
 
 const CAPABILITIES = [
   { id: 'faq', label: 'Responder preguntas frecuentes', desc: 'Horarios, ubicación, servicios...' },
-  { id: 'citas', label: 'Gestionar citas y reservas', desc: 'Proponer huecos, confirmar y agendar' },
   { id: 'leads', label: 'Captar datos de contacto', desc: 'Nombre, email, teléfono del interesado' },
   { id: 'precios', label: 'Informar sobre precios', desc: 'Responder cuánto cuesta cada servicio' },
   { id: 'ventas', label: 'Vender activamente', desc: 'Detectar oportunidades de venta y cerrar' },
@@ -51,6 +51,7 @@ const RESTRICTIONS = [
 
 export default function PromptBuilder() {
   const { user } = useAuth();
+  const { activeAgent, refreshAgents } = useAgents();
   const [mode, setMode] = useState('manual'); // 'manual' | 'generator'
   const [manualPrompt, setManualPrompt] = useState('');
   const [businessData, setBusinessData] = useState(null);
@@ -69,6 +70,8 @@ export default function PromptBuilder() {
 
   const [saved, setSaved] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [bookingEnabled, setBookingEnabled] = useState(false);
+  const [togglingBooking, setTogglingBooking] = useState(false);
 
   // Load business data from Supabase
   useEffect(() => {
@@ -79,6 +82,22 @@ export default function PromptBuilder() {
   useEffect(() => {
     if (user) loadExistingAgent();
   }, [user]);
+
+  useEffect(() => {
+    if (activeAgent) setBookingEnabled(!!activeAgent.booking_enabled);
+  }, [activeAgent]);
+
+  async function toggleBooking() {
+    if (!activeAgent) return;
+    setTogglingBooking(true);
+    const newVal = !bookingEnabled;
+    try {
+      await supabase.from('agents').update({ booking_enabled: newVal, updated_at: new Date().toISOString() }).eq('id', activeAgent.id);
+      setBookingEnabled(newVal);
+      refreshAgents();
+    } catch (err) { alert('Error: ' + err.message); }
+    finally { setTogglingBooking(false); }
+  }
 
   async function loadBusinessData() {
     setLoadingBusiness(true);
@@ -156,7 +175,7 @@ export default function PromptBuilder() {
     const restLabels = restrictions.map(r => RESTRICTIONS.find(x => x.id === r)).filter(Boolean);
     const businessContext = buildBusinessContext();
 
-    const hasCitas = capabilities.includes('citas');
+    const hasCitas = bookingEnabled;
     const hasVentas = capabilities.includes('ventas');
     const hasUpselling = capabilities.includes('upselling');
     const hasLeads = capabilities.includes('leads');
@@ -370,6 +389,30 @@ Tu objetivo principal es que cada cliente que te escriba se sienta BIEN ATENDIDO
         </button>
         <button className={`prompt-tab ${mode === 'generator' ? 'prompt-tab--active' : ''}`} onClick={() => setMode('generator')}>
           <Sparkles size={14} /> Generar con IA
+        </button>
+      </div>
+
+      {/* AI Booking Toggle - PROMINENT */}
+      <div className={`cal-booking-toggle ${bookingEnabled ? 'cal-booking-toggle--on' : ''}`} style={{ marginBottom: '1rem' }}>
+        <div className="cal-booking-toggle__info">
+          <div className="cal-booking-toggle__icon">
+            <Calendar size={22} />
+          </div>
+          <div>
+            <h3>Agendamiento automático por IA</h3>
+            <p>{bookingEnabled
+              ? 'La IA agenda citas automáticamente cuando un cliente lo solicita por WhatsApp.'
+              : 'Activa para que la IA pueda agendar citas y reservas desde las conversaciones de WhatsApp.'
+            }</p>
+          </div>
+        </div>
+        <button
+          className={`cal-booking-toggle__switch ${bookingEnabled ? 'cal-booking-toggle__switch--on' : ''}`}
+          onClick={toggleBooking}
+          disabled={togglingBooking || !activeAgent}
+        >
+          {togglingBooking ? <Loader2 size={14} className="spin" /> : <Power size={14} />}
+          {bookingEnabled ? 'Activado' : 'Desactivado'}
         </button>
       </div>
 
