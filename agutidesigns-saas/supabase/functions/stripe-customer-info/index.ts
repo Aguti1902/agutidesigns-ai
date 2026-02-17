@@ -26,12 +26,11 @@ serve(async (req) => {
       )
     }
 
-    // Fetch payment methods
-    const pmRes = await fetch(`https://api.stripe.com/v1/payment_methods?customer=${customerId}&type=card&limit=5`, {
-      headers: { 'Authorization': `Bearer ${STRIPE_KEY}` },
-    })
-    const pmData = await pmRes.json()
+    const h = { 'Authorization': `Bearer ${STRIPE_KEY}` }
 
+    // Fetch payment methods
+    const pmRes = await fetch(`https://api.stripe.com/v1/payment_methods?customer=${customerId}&type=card&limit=5`, { headers: h })
+    const pmData = await pmRes.json()
     const paymentMethods = (pmData.data || []).map((pm: any) => ({
       id: pm.id,
       brand: pm.card?.brand || 'unknown',
@@ -40,22 +39,27 @@ serve(async (req) => {
       expYear: pm.card?.exp_year,
     }))
 
-    // Fetch all recent invoices (paid + open) to include subscription + addon charges
+    // Fetch ALL invoices with line items expanded
     const [invPaidRes, invOpenRes] = await Promise.all([
-      fetch(`https://api.stripe.com/v1/invoices?customer=${customerId}&limit=20&status=paid`, {
-        headers: { 'Authorization': `Bearer ${STRIPE_KEY}` },
-      }),
-      fetch(`https://api.stripe.com/v1/invoices?customer=${customerId}&limit=5&status=open`, {
-        headers: { 'Authorization': `Bearer ${STRIPE_KEY}` },
-      }),
+      fetch(`https://api.stripe.com/v1/invoices?customer=${customerId}&limit=25&expand[]=data.lines&status=paid`, { headers: h }),
+      fetch(`https://api.stripe.com/v1/invoices?customer=${customerId}&limit=10&expand[]=data.lines&status=open`, { headers: h }),
     ])
     const invPaidData = await invPaidRes.json()
     const invOpenData = await invOpenRes.json()
     const allInvoices = [...(invOpenData.data || []), ...(invPaidData.data || [])]
 
     const invoices = allInvoices.map((inv: any) => {
-      // Build description from line items
-      const lines = (inv.lines?.data || []).map((line: any) => line.description || line.price?.nickname || '').filter(Boolean)
+      const lines = (inv.lines?.data || [])
+        .map((line: any) => line.description || line.price?.nickname || '')
+        .filter(Boolean)
+      const reason = inv.billing_reason
+      let description = lines.join(' · ')
+      if (!description) {
+        if (reason === 'subscription_create') description = 'Alta de suscripción'
+        else if (reason === 'subscription_cycle') description = 'Renovación mensual'
+        else if (reason === 'subscription_update') description = 'Cambio de plan / Addon'
+        else description = 'Factura'
+      }
       return {
         id: inv.id,
         number: inv.number,
@@ -63,18 +67,21 @@ serve(async (req) => {
         currency: inv.currency,
         date: inv.created,
         pdfUrl: inv.invoice_pdf,
-        hostedUrl: inv.hosted_invoice_url,
         status: inv.status,
-        description: lines.join(', ') || (inv.billing_reason === 'subscription_create' ? 'Suscripción' : inv.billing_reason === 'subscription_cycle' ? 'Renovación' : inv.billing_reason === 'subscription_update' ? 'Actualización de plan' : 'Factura'),
+        description,
       }
     })
 
-    // Fetch subscription details
+    // Fetch subscription (active OR with cancel_at_period_end)
     let subscription = null
-    const subRes = await fetch(`https://api.stripe.com/v1/subscriptions?customer=${customerId}&limit=1&status=active`, {
-      headers: { 'Authorization': `Bearer ${STRIPE_KEY}` },
-    })
-    const subData = await subRes.json()
+    // Try active first
+    let subRes = await fetch(`https://api.stripe.com/v1/subscriptions?customer=${customerId}&limit=1&status=active`, { headers: h })
+    let subData = await subRes.json()
+    // If no active, try all statuses (to catch cancelling-at-period-end which is still "active" in Stripe)
+    if (!subData.data?.length) {
+      subRes = await fetch(`https://api.stripe.com/v1/subscriptions?customer=${customerId}&limit=1`, { headers: h })
+      subData = await subRes.json()
+    }
     if (subData.data?.[0]) {
       const sub = subData.data[0]
       subscription = {

@@ -6,14 +6,13 @@ import {
   Zap, Check, AlertTriangle, ArrowRight, MessageCircle,
   Smartphone, Loader2, CreditCard, Shield,
   Star, Sparkles, FileText, Download, Calendar, XCircle,
-  BarChart3, X, Lock
+  BarChart3, Lock, Clock
 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { supabase } from '../lib/supabase';
 import './DashboardPages.css';
 
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || '');
-
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || '';
 const API_URL = import.meta.env.VITE_API_URL || (SUPABASE_URL ? `${SUPABASE_URL.replace(/\/$/, '')}/functions/v1` : '');
 
@@ -42,15 +41,18 @@ function formatDate(ts) {
   if (!ts) return '—';
   return new Date(ts * 1000).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' });
 }
-
 function formatAmount(cents, currency = 'eur') {
   if (!cents && cents !== 0) return '—';
   return (cents / 100).toLocaleString('es-ES', { style: 'currency', currency: currency.toUpperCase() });
 }
+function daysUntil(ts) {
+  if (!ts) return 0;
+  return Math.max(0, Math.ceil((ts * 1000 - Date.now()) / 86400000));
+}
 
 const STATUS_MAP = { paid: 'Pagada', open: 'Pendiente', draft: 'Borrador', void: 'Anulada', uncollectible: 'Impagada' };
 
-/* ── Card Update Form (inside Elements provider) ── */
+/* ── Card Update Form ── */
 function CardUpdateForm({ customerId, subscriptionId, onSuccess, onCancel }) {
   const stripe = useStripe();
   const elements = useElements();
@@ -62,36 +64,23 @@ function CardUpdateForm({ customerId, subscriptionId, onSuccess, onCancel }) {
     if (!stripe || !elements) return;
     setLoading(true);
     setError(null);
-
     try {
-      // 1. Create SetupIntent
       const siRes = await fetch(`${API_URL}/stripe-create-setup-intent`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ customerId }),
       });
       const siData = await siRes.json();
       if (!siRes.ok || !siData.clientSecret) throw new Error(siData.error || 'Error creando setup');
-
-      // 2. Confirm card setup with Stripe.js
       const { error: stripeError, setupIntent } = await stripe.confirmCardSetup(siData.clientSecret, {
         payment_method: { card: elements.getElement(CardElement) },
       });
       if (stripeError) throw new Error(stripeError.message);
-
-      // 3. Set as default payment method
       const pmRes = await fetch(`${API_URL}/stripe-update-payment-method`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          customerId,
-          paymentMethodId: setupIntent.payment_method,
-          subscriptionId,
-        }),
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ customerId, paymentMethodId: setupIntent.payment_method, subscriptionId }),
       });
       const pmData = await pmRes.json();
       if (!pmRes.ok || !pmData.success) throw new Error(pmData.error || 'Error actualizando tarjeta');
-
       onSuccess(pmData.card);
     } catch (err) {
       setError(err.message);
@@ -103,19 +92,7 @@ function CardUpdateForm({ customerId, subscriptionId, onSuccess, onCancel }) {
   return (
     <form onSubmit={handleSubmit} className="card-update-form">
       <div className="card-update-form__field">
-        <CardElement
-          options={{
-            style: {
-              base: {
-                fontSize: '15px',
-                color: '#e4e4e7',
-                fontFamily: 'IBM Plex Sans, system-ui, sans-serif',
-                '::placeholder': { color: '#555' },
-              },
-              invalid: { color: '#ef4444' },
-            },
-          }}
-        />
+        <CardElement options={{ style: { base: { fontSize: '15px', color: '#e4e4e7', fontFamily: 'IBM Plex Sans, system-ui, sans-serif', '::placeholder': { color: '#555' } }, invalid: { color: '#ef4444' } } }} />
       </div>
       {error && <p className="card-update-form__error"><AlertTriangle size={12} /> {error}</p>}
       <div className="card-update-form__actions">
@@ -139,6 +116,16 @@ export default function Billing() {
   const [cancellingSubscription, setCancellingSubscription] = useState(false);
   const [showCardForm, setShowCardForm] = useState(false);
   const [cardSuccess, setCardSuccess] = useState(false);
+  const [justCancelled, setJustCancelled] = useState(false);
+
+  // Persist status banner dismiss in localStorage
+  const [statusDismissed, setStatusDismissed] = useState(() => {
+    try { return localStorage.getItem('billing_status_dismissed') === 'true'; } catch { return false; }
+  });
+  function dismissStatus() {
+    setStatusDismissed(true);
+    try { localStorage.setItem('billing_status_dismissed', 'true'); } catch {}
+  }
 
   const trialDaysLeft = profile?.trial_ends_at
     ? Math.max(0, Math.ceil((new Date(profile.trial_ends_at) - new Date()) / 86400000))
@@ -148,8 +135,7 @@ export default function Billing() {
     if (!isSubscribed || !profile?.stripe_customer_id || !API_URL) return;
     setLoadingInfo(true);
     fetch(`${API_URL}/stripe-customer-info`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ customerId: profile.stripe_customer_id }),
     })
       .then(r => r.json())
@@ -165,13 +151,13 @@ export default function Billing() {
     setCancellingSubscription(true);
     try {
       const res = await fetch(`${API_URL}/stripe-cancel-subscription`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ subscriptionId: profile.stripe_subscription_id }),
       });
       const data = await res.json().catch(() => ({}));
       if (res.ok && data.success) {
         setShowCancelConfirm(false);
+        setJustCancelled(true);
         loadCustomerInfo();
       } else {
         alert('Error: ' + (data.error || 'No se pudo cancelar'));
@@ -183,16 +169,16 @@ export default function Billing() {
     }
   }
 
-  function handleCardUpdated(card) {
+  function handleCardUpdated() {
     setShowCardForm(false);
     setCardSuccess(true);
     setTimeout(() => setCardSuccess(false), 4000);
     loadCustomerInfo();
   }
 
+  // Handle ?success=true from checkout return
   const urlParams = new URLSearchParams(window.location.search);
   const [showSuccess, setShowSuccess] = useState(urlParams.get('success') === 'true');
-  const [showStatus, setShowStatus] = useState(true);
   const activatedRef = useRef(false);
 
   useEffect(() => {
@@ -206,12 +192,17 @@ export default function Billing() {
         const { data } = await supabase.from('profiles').select('subscription_status').eq('id', user.id).single();
         if (data?.subscription_status === 'active') {
           clearInterval(poll);
+          // Clear the dismissed flag so the success banner shows
+          try { localStorage.removeItem('billing_status_dismissed'); } catch {}
           window.location.href = '/app/billing?success=true';
         }
       }
     }, 2000);
     return () => clearInterval(poll);
   }, [showSuccess, isSubscribed, user?.id]);
+
+  const isCancelling = customerInfo?.subscription?.cancelAtPeriodEnd;
+  const cancelDaysLeft = isCancelling ? daysUntil(customerInfo.subscription.currentPeriodEnd) : 0;
 
   return (
     <div className="page">
@@ -220,42 +211,56 @@ export default function Billing() {
         <p>Gestiona tu plan, métodos de pago y facturación.</p>
       </div>
 
-      {/* Notification banners */}
-      {showStatus && (() => {
-        if (showSuccess && !isSubscribed) return (
-          <div className="billing-status billing-status--trial" style={{ position: 'relative' }}>
-            <div className="billing-status__icon"><Loader2 size={20} className="spin" /></div>
-            <div><h3>Activando tu suscripción...</h3><p>Estamos procesando tu pago. Esto puede tardar unos segundos.</p></div>
-            <button onClick={() => { setShowStatus(false); setShowSuccess(false); }} className="billing-status__close"><XCircle size={18} /></button>
+      {/* ── PERMANENT banner: subscription cancelling (NOT dismissable) ── */}
+      {isCancelling && (
+        <div className="billing-status billing-status--expired">
+          <div className="billing-status__icon"><Clock size={20} /></div>
+          <div>
+            <h3>Tu plan se cancela en {cancelDaysLeft} día{cancelDaysLeft !== 1 ? 's' : ''}</h3>
+            <p>Tienes acceso hasta el {formatDate(customerInfo.subscription.currentPeriodEnd)}. Después tu agente se desactivará.</p>
           </div>
-        );
-        if (showSuccess && isSubscribed) return (
-          <div className="billing-status billing-status--active" style={{ position: 'relative' }}>
-            <div className="billing-status__icon"><Check size={20} /></div>
-            <div><h3>¡Suscripción activada!</h3><p>Tu plan está activo. Ya puedes disfrutar de todas las funcionalidades.</p></div>
-            <button onClick={() => { setShowStatus(false); setShowSuccess(false); }} className="billing-status__close"><XCircle size={18} /></button>
+        </div>
+      )}
+
+      {/* ── One-time banner: just cancelled successfully (dismissable, once) ── */}
+      {justCancelled && (
+        <div className="billing-status billing-status--active" style={{ position: 'relative' }}>
+          <div className="billing-status__icon"><Check size={20} /></div>
+          <div><h3>Suscripción cancelada</h3><p>Tu plan seguirá activo hasta el final del periodo de facturación.</p></div>
+          <button onClick={() => setJustCancelled(false)} className="billing-status__close"><XCircle size={18} /></button>
+        </div>
+      )}
+
+      {/* ── Activation processing banner ── */}
+      {showSuccess && !isSubscribed && (
+        <div className="billing-status billing-status--trial" style={{ position: 'relative' }}>
+          <div className="billing-status__icon"><Loader2 size={20} className="spin" /></div>
+          <div><h3>Activando tu suscripción...</h3><p>Estamos procesando tu pago. Esto puede tardar unos segundos.</p></div>
+        </div>
+      )}
+
+      {/* ── Activation success banner (dismissable once, then gone forever) ── */}
+      {showSuccess && isSubscribed && !statusDismissed && (
+        <div className="billing-status billing-status--active" style={{ position: 'relative' }}>
+          <div className="billing-status__icon"><Check size={20} /></div>
+          <div><h3>¡Suscripción activada!</h3><p>Tu plan está activo. Ya puedes disfrutar de todas las funcionalidades.</p></div>
+          <button onClick={() => { setShowSuccess(false); dismissStatus(); }} className="billing-status__close"><XCircle size={18} /></button>
+        </div>
+      )}
+
+      {/* ── Trial / expired banner (dismissable forever) ── */}
+      {!showSuccess && !statusDismissed && !isCancelling && (isTrialActive || !isSubscribed) && (
+        <div className={`billing-status ${isTrialActive ? 'billing-status--trial' : 'billing-status--expired'}`} style={{ position: 'relative' }}>
+          <div className="billing-status__icon">
+            {isTrialActive ? <Zap size={20} /> : <AlertTriangle size={20} />}
           </div>
-        );
-        return (
-          <div className={`billing-status ${isTrialActive ? 'billing-status--trial' : isSubscribed ? 'billing-status--active' : 'billing-status--expired'}`} style={{ position: 'relative' }}>
-            <div className="billing-status__icon">
-              {isTrialActive ? <Zap size={20} /> : isSubscribed ? <Check size={20} /> : <AlertTriangle size={20} />}
-            </div>
-            <div>
-              <h3>
-                {isTrialActive ? `Periodo de prueba — ${trialDaysLeft} día${trialDaysLeft !== 1 ? 's' : ''} restante${trialDaysLeft !== 1 ? 's' : ''}` :
-                 isSubscribed ? 'Suscripción activa' : 'Suscripción expirada'}
-              </h3>
-              <p>
-                {isTrialActive ? 'Disfruta de todas las funcionalidades. Elige un plan antes de que acabe.' :
-                 isSubscribed ? 'Tienes acceso completo a todas las funcionalidades.' :
-                 'Tu periodo de prueba ha terminado. Elige un plan para continuar.'}
-              </p>
-            </div>
-            <button onClick={() => setShowStatus(false)} className="billing-status__close"><XCircle size={18} /></button>
+          <div>
+            <h3>{isTrialActive ? `Periodo de prueba — ${trialDaysLeft} día${trialDaysLeft !== 1 ? 's' : ''} restante${trialDaysLeft !== 1 ? 's' : ''}` : 'Suscripción expirada'}</h3>
+            <p>{isTrialActive ? 'Disfruta de todas las funcionalidades. Elige un plan antes de que acabe.' : 'Tu periodo de prueba ha terminado. Elige un plan para continuar.'}</p>
           </div>
-        );
-      })()}
+          <button onClick={dismissStatus} className="billing-status__close"><XCircle size={18} /></button>
+        </div>
+      )}
 
       {/* Card success banner */}
       {cardSuccess && (
@@ -269,24 +274,20 @@ export default function Billing() {
       {/* Subscription & Payment Management */}
       {isSubscribed && profile?.stripe_customer_id && (
         <div className="billing-cards-grid">
-          {/* Subscription details */}
           <div className="billing-card">
             <h4><Calendar size={15} /> Tu plan actual</h4>
             {customerInfo?.subscription ? (
               <>
                 <div className="billing-card__detail">
                   <span>Estado</span>
-                  <strong className={`billing-card__badge ${customerInfo.subscription.cancelAtPeriodEnd ? 'billing-card__badge--yellow' : 'billing-card__badge--green'}`}>
-                    {customerInfo.subscription.cancelAtPeriodEnd ? 'Cancela pronto' : 'Activo'}
+                  <strong className={`billing-card__badge ${isCancelling ? 'billing-card__badge--yellow' : 'billing-card__badge--green'}`}>
+                    {isCancelling ? 'Cancela pronto' : 'Activo'}
                   </strong>
                 </div>
                 <div className="billing-card__detail">
-                  <span>Próxima factura</span>
+                  <span>{isCancelling ? 'Activo hasta' : 'Próxima factura'}</span>
                   <strong>{formatDate(customerInfo.subscription.currentPeriodEnd)}</strong>
                 </div>
-                {customerInfo.subscription.cancelAtPeriodEnd && (
-                  <div className="billing-card__alert"><AlertTriangle size={13} /> Se cancela al final del periodo</div>
-                )}
               </>
             ) : loadingInfo ? (
               <div className="billing-card__loading"><Loader2 size={16} className="spin" /></div>
@@ -295,7 +296,6 @@ export default function Billing() {
             )}
           </div>
 
-          {/* Payment methods */}
           <div className="billing-card">
             <h4><CreditCard size={15} /> Método de pago</h4>
             {customerInfo?.paymentMethods?.length > 0 ? (
@@ -318,18 +318,12 @@ export default function Billing() {
             ) : (
               <div style={{ marginTop: '0.75rem' }}>
                 <Elements stripe={stripePromise}>
-                  <CardUpdateForm
-                    customerId={profile.stripe_customer_id}
-                    subscriptionId={profile.stripe_subscription_id}
-                    onSuccess={handleCardUpdated}
-                    onCancel={() => setShowCardForm(false)}
-                  />
+                  <CardUpdateForm customerId={profile.stripe_customer_id} subscriptionId={profile.stripe_subscription_id} onSuccess={handleCardUpdated} onCancel={() => setShowCardForm(false)} />
                 </Elements>
               </div>
             )}
           </div>
 
-          {/* Usage link */}
           <div className="billing-card">
             <h4><BarChart3 size={15} /> Mensajes</h4>
             <p className="billing-card__desc">Consulta tu uso de mensajes y añade packs extra.</p>
@@ -340,8 +334,8 @@ export default function Billing() {
         </div>
       )}
 
-      {/* Cancel Subscription */}
-      {isSubscribed && profile?.stripe_customer_id && !customerInfo?.subscription?.cancelAtPeriodEnd && (
+      {/* Cancel Subscription button (only if NOT already cancelling) */}
+      {isSubscribed && profile?.stripe_customer_id && !isCancelling && (
         <div style={{ marginBottom: '1.5rem' }}>
           {!showCancelConfirm ? (
             <button className="btn btn--outline btn--sm" onClick={() => setShowCancelConfirm(true)} style={{ color: '#888', borderColor: '#333' }}>
@@ -379,13 +373,9 @@ export default function Billing() {
                   {inv.description && <span className="invoice-row__desc">{inv.description}</span>}
                 </div>
                 <div className="invoice-row__right">
-                  <span className={`invoice-row__status invoice-row__status--${inv.status}`}>
-                    {STATUS_MAP[inv.status] || inv.status}
-                  </span>
+                  <span className={`invoice-row__status invoice-row__status--${inv.status}`}>{STATUS_MAP[inv.status] || inv.status}</span>
                   <span className="invoice-row__amount">{formatAmount(inv.amount, inv.currency)}</span>
-                  {inv.pdfUrl && (
-                    <a href={inv.pdfUrl} target="_blank" rel="noopener" className="btn btn--outline btn--xs"><Download size={12} /> PDF</a>
-                  )}
+                  {inv.pdfUrl && <a href={inv.pdfUrl} target="_blank" rel="noopener" className="btn btn--outline btn--xs"><Download size={12} /> PDF</a>}
                 </div>
               </div>
             ))}
@@ -417,9 +407,7 @@ export default function Billing() {
               </div>
               <ul>{plan.features.map((f, i) => (<li key={i}><Check size={14} /> {f}</li>))}</ul>
               {isCurrent ? (
-                <button className="btn btn--primary btn--full" disabled style={{ opacity: 0.6 }}>
-                  <Check size={14} /> Plan activo
-                </button>
+                <button className="btn btn--primary btn--full" disabled style={{ opacity: 0.6 }}><Check size={14} /> Plan activo</button>
               ) : (
                 <button className="btn btn--outline btn--full" onClick={() => navigate(`/app/checkout?plan=${plan.id}&mode=subscription`)}>
                   Elegir {plan.name} <ArrowRight size={14} />
