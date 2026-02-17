@@ -23,7 +23,7 @@ export default function AdminDashboard() {
 
       const [usersRes, subsRes, ticketsRes, newUsersRes, messagesRes] = await Promise.all([
         supabase.from('profiles').select('id', { count: 'exact', head: true }),
-        supabase.from('profiles').select('id', { count: 'exact', head: true }).eq('subscription_status', 'active'),
+        supabase.from('profiles').select('message_limit, extra_messages').eq('subscription_status', 'active'),
         supabase.from('support_tickets').select('id', { count: 'exact', head: true }).in('status', ['open', 'in_progress']),
         supabase.from('profiles').select('id', { count: 'exact', head: true }).gte('created_at', thisMonth.toISOString()),
         supabase.from('agents').select('total_messages'),
@@ -31,10 +31,22 @@ export default function AdminDashboard() {
 
       const totalMessages = (messagesRes.data || []).reduce((sum, a) => sum + (a.total_messages || 0), 0);
 
+      // Calculate MRR based on message_limit (500=29€, 5000=79€, 20000=199€)
+      const LIMIT_TO_PRICE = { 500: 29, 5000: 79, 20000: 199 };
+      const EXTRA_MSG_TO_PRICE = { 500: 9, 1000: 15, 2500: 29, 5000: 49, 10000: 79 };
+      let mrr = 0;
+      for (const sub of (subsRes.data || [])) {
+        const basePrice = LIMIT_TO_PRICE[sub.message_limit] || 29;
+        mrr += basePrice;
+        // Add addon prices (simplified - assuming 9€ per 500 extra)
+        const extraPacks = Math.ceil((sub.extra_messages || 0) / 500);
+        mrr += extraPacks * 9;
+      }
+
       setStats({
         totalUsers: usersRes.count || 0,
-        activeSubscriptions: subsRes.count || 0,
-        totalRevenue: 0, // TODO: calculate from Stripe invoices
+        activeSubscriptions: subsRes.data?.length || 0,
+        totalRevenue: mrr,
         totalMessages,
         openTickets: ticketsRes.count || 0,
         newUsersThisMonth: newUsersRes.count || 0,
@@ -58,7 +70,7 @@ export default function AdminDashboard() {
     { label: 'Mensajes procesados', value: stats.totalMessages.toLocaleString('es-ES'), icon: <MessageCircle size={20} />, color: '#EC6746' },
     { label: 'Tickets abiertos', value: stats.openTickets, icon: <MessageSquare size={20} />, color: '#f59e0b' },
     { label: 'Nuevos este mes', value: stats.newUsersThisMonth, icon: <Calendar size={20} />, color: '#a855f7' },
-    { label: 'Revenue (MRR)', value: `${(stats.activeSubscriptions * 60).toLocaleString('es-ES')}€`, icon: <DollarSign size={20} />, color: '#10b981' },
+    { label: 'Revenue (MRR)', value: `${stats.totalRevenue.toLocaleString('es-ES')}€`, icon: <DollarSign size={20} />, color: '#10b981' },
   ];
 
   if (loading) {
