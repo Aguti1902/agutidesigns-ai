@@ -184,6 +184,27 @@ serve(async (req) => {
 
         let systemPrompt = agent.system_prompt || 'Eres un asistente virtual amable. Responde en español.'
 
+        // Load calendar events if enabled
+        if (agent.calendar_enabled) {
+          try {
+            const calRes = await fetch(`${SUPABASE_URL}/functions/v1/google-calendar-events?userId=${agent.user_id}&action=list`, {
+              headers: { 'Authorization': `Bearer ${SUPABASE_KEY}` }
+            })
+            const calData = await calRes.json()
+            if (calData.events?.length > 0) {
+              const eventsText = calData.events.map((e: any) => {
+                const start = new Date(e.start).toLocaleString('es-ES', { dateStyle: 'short', timeStyle: 'short' })
+                return `- ${start}: ${e.summary || 'Ocupado'}`
+              }).join('\n')
+              systemPrompt += `\n\nCALENDARIO (próximos 7 días):\n${eventsText}\n\nPuedes proponer horarios libres basándote en estos eventos. Si el cliente quiere agendar, confirma fecha/hora y yo lo añadiré al calendario.`
+            } else {
+              systemPrompt += `\n\nCALENDARIO: No hay eventos programados en los próximos 7 días. Puedes ofrecer horarios disponibles.`
+            }
+          } catch (e) {
+            console.warn('Calendar fetch error (non-fatal):', e)
+          }
+        }
+
         // Load business data for context
         const { data: business } = await supabase.from('businesses').select('*').eq('user_id', agent.user_id).single()
         if (business) {

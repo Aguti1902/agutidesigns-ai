@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { NavLink, Outlet, useNavigate, Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, MessageCircle, Building, Brain, BookOpen, CreditCard, LogOut, Zap, HelpCircle, Clock, AlertTriangle, ArrowRight, Lock, BarChart3, Shield } from 'lucide-react';
+import { LayoutDashboard, MessageCircle, Building, Brain, BookOpen, CreditCard, LogOut, Zap, HelpCircle, Clock, AlertTriangle, ArrowRight, Lock, BarChart3, Shield, Calendar } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { supabase } from '../../lib/supabase';
 import AgentSelector from '../dashboard/AgentSelector';
@@ -11,6 +11,7 @@ const navItems = [
   { to: '/app/whatsapp', icon: <MessageCircle size={18} />, label: 'WhatsApp' },
   { to: '/app/negocio', icon: <Building size={18} />, label: 'Mi Negocio' },
   { to: '/app/agente', icon: <Brain size={18} />, label: 'Prompt IA' },
+  { to: '/app/calendario', icon: <Calendar size={18} />, label: 'Calendario' },
   { to: '/app/tutoriales', icon: <BookOpen size={18} />, label: 'Tutoriales' },
   { to: '/app/billing', icon: <CreditCard size={18} />, label: 'Suscripción' },
   { to: '/app/mensajes', icon: <BarChart3 size={18} />, label: 'Mensajes' },

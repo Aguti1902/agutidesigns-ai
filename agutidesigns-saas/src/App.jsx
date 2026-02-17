@@ -21,6 +21,7 @@ import AdminDashboard from './pages/AdminDashboard';
 import AdminTickets from './pages/AdminTickets';
 import AdminUsers from './pages/AdminUsers';
 import EmailConfirmed from './pages/EmailConfirmed';
+import CalendarIntegration from './pages/CalendarIntegration';
 
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth();
@@ -80,6 +81,7 @@ export default function App() {
         <Route path="facturacion" element={<BillingDetails />} />
         <Route path="checkout" element={<Checkout />} />
         <Route path="mensajes" element={<Messages />} />
+        <Route path="calendario" element={<CalendarIntegration />} />
         <Route path="soporte" element={<Support />} />
       </Route>
       
