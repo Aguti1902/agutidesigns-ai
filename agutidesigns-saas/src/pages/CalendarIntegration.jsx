@@ -107,16 +107,21 @@ export default function CalendarIntegration() {
     if (!activeAgent) return;
     setCalendarEnabled(enabled);
     try {
-      const { error } = await supabase.from('agents').update({ calendar_enabled: enabled }).eq('id', activeAgent.id);
-      if (error) throw error;
+      const res = await fetch(`${API_URL}/toggle-calendar`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ agentId: activeAgent.id, enabled }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) throw new Error(data.error || 'Error');
       await refreshAgents();
       if (enabled) {
         loadEvents();
       }
     } catch (err) {
       console.error('Toggle error:', err);
-      setCalendarEnabled(!enabled); // Revert on error
-      alert('Error al activar: ' + err.message + '. Asegúrate de haber ejecutado la migración SQL 003_google_calendar.sql');
+      setCalendarEnabled(!enabled);
+      alert('Error: ' + err.message);
     }
   }
 
