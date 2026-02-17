@@ -71,6 +71,16 @@ export function AuthProvider({ children }) {
     setProfile(null);
   }
 
+  async function signInWithGoogle() {
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: `${window.location.origin}/email-confirmado`,
+      }
+    });
+    if (error) throw error;
+  }
+
   async function updateProfile(updates) {
     const { data, error } = await supabase
       .from('profiles')
@@ -90,7 +100,7 @@ export function AuthProvider({ children }) {
 
   return (
     <AuthContext.Provider value={{
-      user, profile, loading, signUp, signIn, signOut, updateProfile, fetchProfile,
+      user, profile, loading, signUp, signIn, signOut, signInWithGoogle, updateProfile, fetchProfile,
       checkPhoneAvailable, registerTrialPhone, isTrialActive, isSubscribed, hasAccess
     }}>
       {children}
