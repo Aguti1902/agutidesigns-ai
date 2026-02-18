@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { MessageCircle, Mail, Lock, User, ArrowRight, Eye, EyeOff, Zap, CheckCircle, Phone } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
+import { supabase } from '../../lib/supabase';
 import './AuthPage.css';
 
 export default function AuthPage() {
@@ -32,9 +33,17 @@ export default function AuthPage() {
 
         const data = await signUp(form.email, form.password, form.name);
 
-        // Register the phone for the trial
+        // Wait for profile to be created by trigger, then register phone
         if (data?.user?.id) {
-          await registerTrialPhone(form.phone, data.user.id);
+          let profileReady = false;
+          for (let i = 0; i < 8; i++) {
+            await new Promise(r => setTimeout(r, 500));
+            const { data: p } = await supabase.from('profiles').select('id').eq('id', data.user.id).single();
+            if (p) { profileReady = true; break; }
+          }
+          if (profileReady) {
+            try { await registerTrialPhone(form.phone, data.user.id); } catch (e) { console.warn('Phone registration:', e.message); }
+          }
         }
 
         setEmailSent(true);

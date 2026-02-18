@@ -24,10 +24,35 @@ export function AuthProvider({ children }) {
     return () => subscription.unsubscribe();
   }, []);
 
-  async function fetchProfile(userId) {
+  async function fetchProfile(userId, retries = 0) {
     const { data } = await supabase.from('profiles').select('*').eq('id', userId).single();
-    setProfile(data);
-    setLoading(false);
+    if (data) {
+      setProfile(data);
+      setLoading(false);
+    } else if (retries < 5) {
+      // Profile might not exist yet (trigger delay, Google OAuth). Retry with backoff.
+      await new Promise(r => setTimeout(r, 500 * (retries + 1)));
+      return fetchProfile(userId, retries + 1);
+    } else {
+      // After retries, create profile manually as fallback
+      try {
+        const { data: session } = await supabase.auth.getUser();
+        const fullName = session?.user?.user_metadata?.full_name || session?.user?.email?.split('@')[0] || '';
+        await supabase.from('profiles').upsert({
+          id: userId,
+          full_name: fullName,
+          onboarding_completed: false,
+          subscription_status: 'trial',
+          trial_started_at: new Date().toISOString(),
+          trial_ends_at: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString(),
+        }, { onConflict: 'id' });
+        const { data: newProfile } = await supabase.from('profiles').select('*').eq('id', userId).single();
+        setProfile(newProfile);
+      } catch (e) {
+        console.error('Failed to create profile fallback:', e);
+      }
+      setLoading(false);
+    }
   }
 
   async function checkPhoneAvailable(phone) {
