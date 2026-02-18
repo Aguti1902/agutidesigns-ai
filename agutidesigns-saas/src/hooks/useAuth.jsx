@@ -97,10 +97,13 @@ export function AuthProvider({ children }) {
   }
 
   async function signInWithGoogle() {
+    const appOrigin = window.location.hostname === 'localhost'
+      ? window.location.origin
+      : 'https://app.agutidesigns.io';
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: window.location.origin,
+        redirectTo: appOrigin,
       }
     });
     if (error) throw error;
