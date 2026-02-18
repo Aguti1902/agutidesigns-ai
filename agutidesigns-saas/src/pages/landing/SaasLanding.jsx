@@ -1,62 +1,98 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useInView } from 'react-intersection-observer';
 import { Link } from 'react-router-dom';
 import {
   MessageCircle, Zap, Clock, Users, TrendingUp, CheckCircle,
-  ArrowRight, X, Star, Shield, Smartphone, Brain, BarChart3,
-  DollarSign, Lock, Play, ChevronDown, AlertCircle, Sparkles
+  ArrowRight, Star, Shield, Smartphone, Brain, BarChart3,
+  DollarSign, Lock, ChevronDown, Sparkles, Bot, CalendarCheck,
+  ShoppingCart, HeadphonesIcon
 } from 'lucide-react';
 import './SaasLanding.css';
 
-const benefits = [
-  {
-    icon: <Clock size={24} />,
-    title: 'Atiende 24/7',
-    desc: 'Tu agente IA responde a cualquier hora. Nunca pierdas un cliente por no estar disponible.',
-    pain: '¿Pierdes clientes porque no puedes atender fuera de horario?',
-  },
-  {
-    icon: <Users size={24} />,
-    title: 'Capta leads automáticamente',
-    desc: 'Recopila nombre, email y teléfono de cada persona interesada sin que muevas un dedo.',
-    pain: '¿Olvidas pedir datos de contacto a clientes potenciales?',
-  },
-  {
-    icon: <TrendingUp size={24} />,
-    title: 'Cierra más ventas',
-    desc: 'Respuestas instantáneas = más conversiones. El que responde primero, gana el cliente.',
-    pain: '¿Tus clientes se van con la competencia porque tardas en responder?',
-  },
-  {
-    icon: <Brain size={24} />,
-    title: 'Conoce tu negocio',
-    desc: 'Entrenas al agente con tu info: servicios, precios, horarios. Responde como tú lo harías.',
-    pain: '¿Necesitas contratar a alguien solo para responder WhatsApp?',
-  },
+const DEMO_MESSAGES = [
+  { from: 'user', text: 'Hola, quiero pedir cita para mañana' },
+  { from: 'bot', text: '¡Hola! 👋 Claro, tengo disponible mañana:\n\n• *10:00*\n• *12:30*\n• *16:00*\n\n¿Cuál te viene mejor?' },
+  { from: 'user', text: 'A las 16:00 perfecto' },
+  { from: 'bot', text: '¡Listo! ✅ Tu cita queda *confirmada* para mañana a las *16:00*.\n\nSi necesitas cambiarla, avísame. ¡Te esperamos!' },
 ];
 
-const objections = [
-  { q: '¿Es difícil de configurar?', a: 'No. Sin código, en 5 minutos está funcionando. Nosotros te guiamos paso a paso.' },
-  { q: '¿Qué pasa si la IA responde mal?', a: 'La entrenas tú con la info de tu negocio. Solo responde lo que tú le digas. Si no sabe algo, deriva a ti.' },
-  { q: '¿Es caro?', a: 'Desde 29€/mes. Mucho más barato que contratar a alguien. Y tienes 2 días gratis para probar sin tarjeta.' },
-  { q: '¿Funciona con mi tipo de negocio?', a: 'Funciona con cualquier negocio que use WhatsApp: restaurantes, clínicas, tiendas, servicios... Si atiendes clientes, te sirve.' },
-  { q: '¿Puedo seguir usando WhatsApp yo?', a: 'Sí. Si tú respondes manualmente, el agente se quita de en medio. Solo actúa cuando no estás.' },
+const USE_CASES = [
+  { icon: <CalendarCheck size={22} />, title: 'Agenda citas', desc: 'La IA propone horarios libres y confirma reservas automáticamente.', tag: 'AUTOMÁTICO' },
+  { icon: <HeadphonesIcon size={22} />, title: 'Atiende clientes', desc: 'Responde preguntas sobre servicios, precios y horarios al instante.', tag: '24/7' },
+  { icon: <ShoppingCart size={22} />, title: 'Cierra ventas', desc: 'Recomienda servicios, supera objeciones y facilita la compra.', tag: '+VENTAS' },
+  { icon: <Users size={22} />, title: 'Capta leads', desc: 'Recoge nombre y teléfono de cada persona interesada sin esfuerzo.', tag: 'LEADS' },
 ];
 
-const features = [
-  { icon: <Smartphone size={18} />, text: 'Multi-dispositivo: varios números WhatsApp' },
-  { icon: <BarChart3 size={18} />, text: 'Dashboard con estadísticas en tiempo real' },
-  { icon: <Brain size={18} />, text: 'Personaliza la personalidad de tu agente' },
-  { icon: <Shield size={18} />, text: 'Tus datos y los de tus clientes 100% seguros' },
-  { icon: <MessageCircle size={18} />, text: 'Historial completo de conversaciones' },
-  { icon: <Lock size={18} />, text: 'Sin permanencia, cancela cuando quieras' },
+const STEPS = [
+  { num: '1', title: 'Conecta tu WhatsApp', desc: 'Escaneas un QR code. 10 segundos.', time: '10 seg' },
+  { num: '2', title: 'Entrena a la IA', desc: 'Dale tus servicios, precios y horarios. Aprende al instante.', time: '3 min' },
+  { num: '3', title: 'Activa y listo', desc: 'Tu agente empieza a atender clientes automáticamente.', time: '¡Ya!' },
 ];
+
+const FEATURES = [
+  { icon: <Smartphone size={18} />, text: 'Funciona con tu WhatsApp actual' },
+  { icon: <Brain size={18} />, text: 'IA que aprende de TU negocio' },
+  { icon: <CalendarCheck size={18} />, text: 'Agenda citas automáticamente' },
+  { icon: <BarChart3 size={18} />, text: 'Dashboard con estadísticas' },
+  { icon: <MessageCircle size={18} />, text: 'Historial de conversaciones' },
+  { icon: <Shield size={18} />, text: 'Datos 100% seguros' },
+  { icon: <Lock size={18} />, text: 'Sin permanencia' },
+  { icon: <Bot size={18} />, text: 'Personalidad configurable' },
+];
+
+const FAQ = [
+  { q: '¿Es difícil de configurar?', a: 'No. Sin código, en 5 minutos está funcionando. Te guiamos paso a paso.' },
+  { q: '¿Qué pasa si la IA responde mal?', a: 'Solo responde con la información de TU negocio. Si no sabe algo, deriva a ti directamente.' },
+  { q: '¿Funciona con mi tipo de negocio?', a: 'Si atiendes clientes por WhatsApp, te sirve. Restaurantes, clínicas, peluquerías, tiendas, servicios...' },
+  { q: '¿Puedo seguir usando WhatsApp yo?', a: 'Sí. Si tú respondes manualmente, el agente se quita de en medio.' },
+  { q: '¿Cuánto cuesta?', a: 'Desde 29€/mes. 2 días gratis sin tarjeta para que lo pruebes.' },
+];
+
+function ChatDemo() {
+  const [visibleMsgs, setVisibleMsgs] = useState(0);
+  useEffect(() => {
+    if (visibleMsgs < DEMO_MESSAGES.length) {
+      const timer = setTimeout(() => setVisibleMsgs(v => v + 1), visibleMsgs === 0 ? 800 : 1200);
+      return () => clearTimeout(timer);
+    }
+  }, [visibleMsgs]);
+
+  return (
+    <div className="chat-demo">
+      <div className="chat-demo__header">
+        <div className="chat-demo__avatar"><Bot size={18} /></div>
+        <div>
+          <span className="chat-demo__name">Tu Negocio IA</span>
+          <span className="chat-demo__status">en línea</span>
+        </div>
+      </div>
+      <div className="chat-demo__body">
+        {DEMO_MESSAGES.slice(0, visibleMsgs).map((msg, i) => (
+          <motion.div
+            key={i}
+            className={`chat-demo__msg chat-demo__msg--${msg.from}`}
+            initial={{ opacity: 0, y: 10, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            transition={{ duration: 0.3 }}
+          >
+            <span dangerouslySetInnerHTML={{ __html: msg.text.replace(/\*(.*?)\*/g, '<strong>$1</strong>').replace(/\n/g, '<br/>') }} />
+          </motion.div>
+        ))}
+        {visibleMsgs < DEMO_MESSAGES.length && (
+          <div className="chat-demo__typing">
+            <span /><span /><span />
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
 
 export default function SaasLanding() {
   const [faqOpen, setFaqOpen] = useState(null);
-  const [heroRef, heroInView] = useInView({ threshold: 0.1, triggerOnce: true });
-  const [painRef, painInView] = useInView({ threshold: 0.1, triggerOnce: true });
+  const [casesRef, casesInView] = useInView({ threshold: 0.1, triggerOnce: true });
+  const [stepsRef, stepsInView] = useInView({ threshold: 0.1, triggerOnce: true });
   const [faqRef, faqInView] = useInView({ threshold: 0.05, triggerOnce: true });
 
   return (
@@ -68,142 +104,115 @@ export default function SaasLanding() {
           <span className="landing-nav__badge">IA</span>
         </div>
         <div className="landing-nav__right">
-          <div className="landing-nav__links">
-            <a href="https://agutidesigns.io/privacidad.html" target="_blank" rel="noopener">Privacidad</a>
-            <a href="https://agutidesigns.io/terminos.html" target="_blank" rel="noopener">Términos</a>
-          </div>
+          <Link to="/auth" className="landing-nav__login">Iniciar sesión</Link>
           <Link to="/auth" className="landing-nav__cta">
-            <Zap size={14} /> Probar gratis 2 días
+            <Zap size={14} /> Prueba gratis
           </Link>
         </div>
       </nav>
 
-      {/* Hero */}
-      <section className="landing-hero" ref={heroRef}>
+      {/* ═══ HERO ═══ */}
+      <section className="landing-hero">
         <div className="landing-container">
-          <motion.div
-            className="landing-hero__content"
-            initial={{ opacity: 0, y: 30 }}
-            animate={heroInView ? { opacity: 1, y: 0 } : {}}
-            transition={{ duration: 0.7 }}
-          >
-            <span className="landing-badge">
-              <Sparkles size={12} /> Agente WhatsApp IA
-            </span>
+          <div className="landing-hero__content">
+            <div className="landing-hero__trust-bar">
+              <CheckCircle size={14} /> 2 días gratis · Sin tarjeta · Activo en 5 min
+            </div>
             <h1 className="landing-hero__title">
-              Tu negocio atendido
-              <span className="landing-highlight"> 24/7</span>
-              <br />
-              sin contratar a nadie
+              Automatiza tu WhatsApp
+              <span className="landing-highlight"> en 5 minutos</span>
             </h1>
             <p className="landing-hero__subtitle">
-              Crea un agente de WhatsApp con IA que responde a tus clientes automáticamente,
-              capta leads y cierra ventas. <strong>Sin código. En 5 minutos.</strong>
+              Un agente IA que atiende clientes, agenda citas y cierra ventas por WhatsApp. <strong>24 horas, 7 días.</strong> Sin código.
             </p>
             <div className="landing-hero__ctas">
-              <Link to="/auth" className="landing-btn landing-btn--primary landing-btn--lg">
-                <Zap size={18} /> Empezar prueba gratis <ArrowRight size={16} />
+              <Link to="/auth" className="landing-btn landing-btn--primary landing-btn--xl">
+                <Zap size={18} /> Empezar gratis ahora <ArrowRight size={16} />
               </Link>
-              <button className="landing-btn landing-btn--outline landing-btn--lg">
-                <Play size={16} /> Ver cómo funciona
-              </button>
             </div>
-            <div className="landing-hero__trust">
-              <CheckCircle size={14} /> 2 días gratis · Sin tarjeta · Cancela cuando quieras
-            </div>
-          </motion.div>
-
-          <motion.div
-            className="landing-hero__image"
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={heroInView ? { opacity: 1, scale: 1 } : {}}
-            transition={{ duration: 0.7, delay: 0.2 }}
-          >
-            <div className="landing-hero__image-wrapper">
-              <img src="/images/ImagenGuti.png" alt="Guti - Creador de Agutidesigns" />
-              <div className="landing-hero__image-badge">
-                <span className="landing-hero__image-dot" />
-                Creado por Guti
+            <div className="landing-hero__proof">
+              <div className="landing-hero__proof-item">
+                <span className="landing-hero__proof-num">5 min</span>
+                <span>configuración</span>
+              </div>
+              <div className="landing-hero__proof-sep" />
+              <div className="landing-hero__proof-item">
+                <span className="landing-hero__proof-num">24/7</span>
+                <span>atención</span>
+              </div>
+              <div className="landing-hero__proof-sep" />
+              <div className="landing-hero__proof-item">
+                <span className="landing-hero__proof-num">29€</span>
+                <span>/mes después</span>
               </div>
             </div>
-          </motion.div>
+          </div>
+
+          <div className="landing-hero__demo">
+            <ChatDemo />
+          </div>
         </div>
       </section>
 
-      {/* Pain Points */}
-      <section className="landing-pain" ref={painRef}>
+      {/* ═══ USE CASES ═══ */}
+      <section className="landing-cases" ref={casesRef}>
         <div className="landing-container">
-          <motion.h2
-            className="landing-section__title"
-            initial={{ opacity: 0, y: 20 }}
-            animate={painInView ? { opacity: 1, y: 0 } : {}}
-          >
-            ¿Te suena familiar?
-          </motion.h2>
-          <div className="landing-pain__grid">
-            {benefits.map((b, i) => (
+          <h2 className="landing-section__title">¿Qué hace tu agente IA?</h2>
+          <div className="landing-cases__grid">
+            {USE_CASES.map((uc, i) => (
               <motion.div
                 key={i}
-                className="landing-pain__card"
+                className="landing-case"
                 initial={{ opacity: 0, y: 20 }}
-                animate={painInView ? { opacity: 1, y: 0 } : {}}
+                animate={casesInView ? { opacity: 1, y: 0 } : {}}
                 transition={{ delay: i * 0.1 }}
               >
-                <div className="landing-pain__card-icon">{b.icon}</div>
-                <h3 className="landing-pain__card-pain"><AlertCircle size={14} /> {b.pain}</h3>
-                <div className="landing-pain__card-divider" />
-                <h4>{b.title}</h4>
-                <p>{b.desc}</p>
+                <div className="landing-case__top">
+                  <div className="landing-case__icon">{uc.icon}</div>
+                  <span className="landing-case__tag">{uc.tag}</span>
+                </div>
+                <h3>{uc.title}</h3>
+                <p>{uc.desc}</p>
               </motion.div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* How it Works */}
-      <section className="landing-how">
+      {/* ═══ HOW IT WORKS ═══ */}
+      <section className="landing-how" ref={stepsRef}>
         <div className="landing-container">
           <h2 className="landing-section__title">Activo en <span className="landing-highlight">3 pasos</span></h2>
           <div className="landing-how__grid">
-            {['Conectas tu WhatsApp', 'Entrenas al agente', 'Activas y listo'].map((step, i) => (
-              <div key={i} className="landing-how__step">
-                <div className="landing-how__step-number">{i + 1}</div>
-                <h3>{step}</h3>
-                <p>{i === 0 ? 'Escaneas un QR. Tarda 10 segundos.' : i === 1 ? 'Le das tus servicios, precios y horarios. La IA aprende al instante.' : 'Tu agente empieza a responder automáticamente. Tú solo supervisa.'}</p>
-              </div>
+            {STEPS.map((step, i) => (
+              <motion.div
+                key={i}
+                className="landing-how__step"
+                initial={{ opacity: 0, y: 20 }}
+                animate={stepsInView ? { opacity: 1, y: 0 } : {}}
+                transition={{ delay: i * 0.15 }}
+              >
+                <div className="landing-how__step-num">{step.num}</div>
+                <h3>{step.title}</h3>
+                <p>{step.desc}</p>
+                <span className="landing-how__step-time">{step.time}</span>
+              </motion.div>
             ))}
           </div>
-        </div>
-      </section>
-
-      {/* Social Proof */}
-      <section className="landing-social">
-        <div className="landing-container">
-          <div className="landing-stats">
-            <div className="landing-stat">
-              <span className="landing-stat__number">95%</span>
-              <span className="landing-stat__label">Respuestas correctas</span>
-            </div>
-            <div className="landing-stat__sep" />
-            <div className="landing-stat">
-              <span className="landing-stat__number">24/7</span>
-              <span className="landing-stat__label">Siempre disponible</span>
-            </div>
-            <div className="landing-stat__sep" />
-            <div className="landing-stat">
-              <span className="landing-stat__number">5 min</span>
-              <span className="landing-stat__label">Setup completo</span>
-            </div>
+          <div className="landing-how__cta">
+            <Link to="/auth" className="landing-btn landing-btn--primary landing-btn--lg">
+              <Zap size={16} /> Empezar ahora — Es gratis <ArrowRight size={14} />
+            </Link>
           </div>
         </div>
       </section>
 
-      {/* Features */}
+      {/* ═══ FEATURES ═══ */}
       <section className="landing-features">
         <div className="landing-container">
-          <h2 className="landing-section__title">Todo lo que incluye</h2>
+          <h2 className="landing-section__title">Todo incluido</h2>
           <div className="landing-features__grid">
-            {features.map((f, i) => (
+            {FEATURES.map((f, i) => (
               <div key={i} className="landing-feature">
                 {f.icon}
                 <span>{f.text}</span>
@@ -213,36 +222,43 @@ export default function SaasLanding() {
         </div>
       </section>
 
-      {/* Pricing */}
+      {/* ═══ PRICING ═══ */}
       <section className="landing-pricing">
         <div className="landing-container">
-          <div style={{ textAlign: 'center' }}>
-            <span className="landing-badge"><DollarSign size={12} /> Precios claros</span>
-          </div>
-          <h2 className="landing-section__title">Empieza gratis. Sin trampa.</h2>
+          <h2 className="landing-section__title">Precio claro. Sin sorpresas.</h2>
           <div className="landing-pricing__card">
-            <div className="landing-pricing__trial">
-              <Zap size={20} />
+            <div className="landing-pricing__free">
+              <Sparkles size={20} />
               <div>
-                <h3>2 días de prueba gratis</h3>
+                <h3>2 días gratis</h3>
                 <p>Todo incluido. Sin tarjeta. Sin compromiso.</p>
               </div>
             </div>
             <div className="landing-pricing__divider" />
-            <p className="landing-pricing__then">Después, desde <strong>29€/mes</strong>. Cancela cuando quieras.</p>
-            <Link to="/" className="landing-btn landing-btn--primary landing-btn--xl landing-btn--full">
-              <Zap size={18} /> Empezar mi prueba gratis ahora
+            <div className="landing-pricing__price">
+              <span className="landing-pricing__amount">29€</span>
+              <span className="landing-pricing__period">/mes</span>
+            </div>
+            <ul className="landing-pricing__includes">
+              <li><CheckCircle size={14} /> Agente IA para WhatsApp</li>
+              <li><CheckCircle size={14} /> Agendamiento automático de citas</li>
+              <li><CheckCircle size={14} /> Dashboard con estadísticas</li>
+              <li><CheckCircle size={14} /> Soporte incluido</li>
+              <li><CheckCircle size={14} /> Cancela cuando quieras</li>
+            </ul>
+            <Link to="/auth" className="landing-btn landing-btn--primary landing-btn--xl landing-btn--full">
+              <Zap size={18} /> Empezar prueba gratis
             </Link>
           </div>
         </div>
       </section>
 
-      {/* FAQ */}
+      {/* ═══ FAQ ═══ */}
       <section className="landing-faq" ref={faqRef}>
         <div className="landing-container">
           <h2 className="landing-section__title">Preguntas frecuentes</h2>
           <div className="landing-faq__list">
-            {objections.map((item, i) => (
+            {FAQ.map((item, i) => (
               <motion.div
                 key={i}
                 className={`landing-faq__item ${faqOpen === i ? 'landing-faq__item--open' : ''}`}
@@ -254,32 +270,28 @@ export default function SaasLanding() {
                   <span>{item.q}</span>
                   <ChevronDown size={18} className={faqOpen === i ? 'rotate' : ''} />
                 </button>
-                {faqOpen === i && (
-                  <div className="landing-faq__answer">
-                    <p>{item.a}</p>
-                  </div>
-                )}
+                {faqOpen === i && <div className="landing-faq__answer"><p>{item.a}</p></div>}
               </motion.div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Final CTA */}
+      {/* ═══ FINAL CTA ═══ */}
       <section className="landing-final">
         <div className="landing-container">
-          <h2>¿Listo para que tu negocio<br />atienda clientes mientras duermes?</h2>
-          <p>Únete a cientos de negocios que ya usan IA para crecer más rápido.</p>
-            <Link to="/auth" className="landing-btn landing-btn--primary landing-btn--xl">
-            <Zap size={20} /> Probar gratis 2 días <ArrowRight size={18} />
+          <h2>Tu competencia ya usa IA.<br />¿Y tú?</h2>
+          <p>Empieza gratis en 5 minutos. Sin tarjeta. Sin riesgo.</p>
+          <Link to="/auth" className="landing-btn landing-btn--primary landing-btn--xl">
+            <Zap size={20} /> Automatizar mi WhatsApp ahora <ArrowRight size={18} />
           </Link>
-          <span className="landing-final__note">No se requiere tarjeta de crédito</span>
+          <span className="landing-final__note">2 días gratis · Sin tarjeta de crédito · Cancela cuando quieras</span>
         </div>
       </section>
 
       {/* Footer */}
       <footer className="landing-footer">
-        <p>© 2026 Agutidesigns IA · Hecho con Inteligencia Artificial</p>
+        <p>© 2026 Agutidesigns IA</p>
         <div className="landing-footer__links">
           <a href="https://agutidesigns.io/privacidad.html" target="_blank" rel="noopener">Privacidad</a>
           <span>·</span>
