@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
+import { useSearchParams } from 'react-router-dom';
 import { MessageCircle, Mail, Lock, User, ArrowRight, Eye, EyeOff, Zap, CheckCircle, Phone } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { supabase } from '../../lib/supabase';
@@ -7,7 +8,8 @@ import './AuthPage.css';
 
 export default function AuthPage() {
   const { signIn, signUp, signInWithGoogle, checkPhoneAvailable, registerTrialPhone } = useAuth();
-  const [mode, setMode] = useState('login');
+  const [searchParams] = useSearchParams();
+  const [mode, setMode] = useState(searchParams.get('mode') === 'register' ? 'register' : 'login');
   const [form, setForm] = useState({ name: '', email: '', password: '', phone: '' });
   const [showPw, setShowPw] = useState(false);
   const [loading, setLoading] = useState(false);

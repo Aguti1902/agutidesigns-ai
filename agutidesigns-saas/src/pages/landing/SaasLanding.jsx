@@ -105,7 +105,7 @@ export default function SaasLanding() {
         </div>
         <div className="landing-nav__right">
           <Link to="/auth" className="landing-nav__login">Iniciar sesión</Link>
-          <Link to="/auth" className="landing-nav__cta">
+          <Link to="/auth?mode=register" className="landing-nav__cta">
             <Zap size={14} /> Prueba gratis
           </Link>
         </div>
@@ -126,7 +126,7 @@ export default function SaasLanding() {
               Un agente IA que atiende clientes, agenda citas y cierra ventas por WhatsApp. <strong>24 horas, 7 días.</strong> Sin código.
             </p>
             <div className="landing-hero__ctas">
-              <Link to="/auth" className="landing-btn landing-btn--primary landing-btn--xl">
+              <Link to="/auth?mode=register" className="landing-btn landing-btn--primary landing-btn--xl">
                 <Zap size={18} /> Empezar gratis ahora <ArrowRight size={16} />
               </Link>
             </div>
@@ -200,7 +200,7 @@ export default function SaasLanding() {
             ))}
           </div>
           <div className="landing-how__cta">
-            <Link to="/auth" className="landing-btn landing-btn--primary landing-btn--lg">
+            <Link to="/auth?mode=register" className="landing-btn landing-btn--primary landing-btn--lg">
               <Zap size={16} /> Empezar ahora — Es gratis <ArrowRight size={14} />
             </Link>
           </div>
@@ -246,7 +246,7 @@ export default function SaasLanding() {
               <li><CheckCircle size={14} /> Soporte incluido</li>
               <li><CheckCircle size={14} /> Cancela cuando quieras</li>
             </ul>
-            <Link to="/auth" className="landing-btn landing-btn--primary landing-btn--xl landing-btn--full">
+            <Link to="/auth?mode=register" className="landing-btn landing-btn--primary landing-btn--xl landing-btn--full">
               <Zap size={18} /> Empezar prueba gratis
             </Link>
           </div>
@@ -282,7 +282,7 @@ export default function SaasLanding() {
         <div className="landing-container">
           <h2>Tu competencia ya usa IA.<br />¿Y tú?</h2>
           <p>Empieza gratis en 5 minutos. Sin tarjeta. Sin riesgo.</p>
-          <Link to="/auth" className="landing-btn landing-btn--primary landing-btn--xl">
+          <Link to="/auth?mode=register" className="landing-btn landing-btn--primary landing-btn--xl">
             <Zap size={20} /> Automatizar mi WhatsApp ahora <ArrowRight size={18} />
           </Link>
           <span className="landing-final__note">2 días gratis · Sin tarjeta de crédito · Cancela cuando quieras</span>
