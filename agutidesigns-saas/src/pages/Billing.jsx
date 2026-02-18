@@ -204,6 +204,22 @@ export default function Billing() {
   const urlParams = new URLSearchParams(window.location.search);
   const [showSuccess, setShowSuccess] = useState(urlParams.get('success') === 'true');
   const activatedRef = useRef(false);
+  const conversionFiredRef = useRef(false);
+
+  // Fire Google Ads conversion on successful purchase
+  useEffect(() => {
+    if (showSuccess && isSubscribed && !conversionFiredRef.current) {
+      conversionFiredRef.current = true;
+      if (typeof window.gtag === 'function') {
+        window.gtag('event', 'conversion', {
+          send_to: 'AW-17960619497/JBIpCN6ayPobEOmbpfRC',
+          value: 1.0,
+          currency: 'EUR',
+          transaction_id: user?.id || '',
+        });
+      }
+    }
+  }, [showSuccess, isSubscribed]);
 
   useEffect(() => {
     if (!showSuccess || isSubscribed || activatedRef.current) return;
