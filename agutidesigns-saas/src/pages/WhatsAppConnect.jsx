@@ -157,6 +157,7 @@ export default function WhatsAppConnect() {
   function startPolling(agentId) {
     if (pollRef.current) clearInterval(pollRef.current);
     let attempts = 0;
+    let sawPhoneConnected = false;
     pollRef.current = setInterval(async () => {
       attempts++;
       try {
@@ -165,11 +166,13 @@ export default function WhatsAppConnect() {
         if (data.connected) {
           setQrCode(null); clearInterval(pollRef.current);
           refreshAgents();
+          return;
         }
-        // Check if agent was deactivated (phone already used for trial)
-        const { data: agentData } = await supabase.from('agents').select('is_active, whatsapp_connected').eq('id', agentId).single();
-        if (agentData && !agentData.is_active && !agentData.whatsapp_connected) {
-          // Only show trial error if user is actually on trial
+        // Only check for trial abuse AFTER the QR was scanned (a phone number appeared)
+        const { data: agentData } = await supabase.from('agents').select('is_active, whatsapp_connected, whatsapp_number').eq('id', agentId).single();
+        if (agentData?.whatsapp_number) sawPhoneConnected = true;
+        // Only show error if a phone was detected during THIS session and then got deactivated
+        if (sawPhoneConnected && agentData && !agentData.is_active && !agentData.whatsapp_connected) {
           const { data: profile } = await supabase.from('profiles').select('subscription_status').eq('id', user.id).single();
           if (profile?.subscription_status === 'trial') {
             setQrCode(null);
@@ -179,8 +182,7 @@ export default function WhatsAppConnect() {
           }
         }
       } catch {}
-      // Stop polling after 2 minutes
-      if (attempts > 24) clearInterval(pollRef.current);
+      if (attempts > 24) { clearInterval(pollRef.current); setConnecting(false); }
     }, 5000);
   }
 
