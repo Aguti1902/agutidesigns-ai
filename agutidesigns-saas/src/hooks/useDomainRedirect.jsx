@@ -29,7 +29,9 @@ export function useDomainRedirect(user) {
     }
 
     // Si estás en app.agutidesigns.io SIN login y NO estás en auth/email-confirmado → redirect a auth
-    if (isAppDomain && !user && !location.pathname.includes('/auth') && !location.pathname.includes('/email-confirmado')) {
+    // BUT: don't redirect if there's an OAuth callback hash (access_token, refresh_token)
+    const hasAuthCallback = window.location.hash.includes('access_token') || window.location.hash.includes('refresh_token') || window.location.search.includes('code=');
+    if (isAppDomain && !user && !hasAuthCallback && !location.pathname.includes('/auth') && !location.pathname.includes('/email-confirmado')) {
       navigate('/auth', { replace: true });
       return;
     }
