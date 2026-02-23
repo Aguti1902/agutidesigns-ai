@@ -404,6 +404,7 @@ export default function SaasLanding() {
         <div className="lcontainer">
           <div className="section-header">
             <h2>El antes y después con Wasapy</h2>
+            <p className="section-sub">Compara cómo funciona tu negocio sin automatizar frente a lo que consigues con un agente IA atendiendo por ti.</p>
           </div>
           <div className="compare__table">
             <div className="compare__header">
