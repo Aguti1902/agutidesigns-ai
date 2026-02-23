@@ -7,14 +7,14 @@
   --color-warning: #F59E0B;
 
   /* Semantic theme tokens (light by default) */
-  --bg-body: #f5f6f8;
+  --bg-body: #ffffff;
   --bg-primary: #ffffff;
-  --bg-secondary: #f8f9fa;
-  --bg-tertiary: #f0f1f3;
+  --bg-secondary: #f3f4f6;
+  --bg-tertiary: #e8eaed;
   --bg-card: #ffffff;
-  --bg-card-hover: #fafafa;
-  --bg-input: #f5f5f7;
-  --bg-sidebar: #ffffff;
+  --bg-card-hover: #f9fafb;
+  --bg-input: #f3f4f6;
+  --bg-sidebar: #fafbfc;
   --bg-overlay: rgba(0,0,0,0.3);
   --border-color: #e2e4e8;
   --border-light: #eef0f2;

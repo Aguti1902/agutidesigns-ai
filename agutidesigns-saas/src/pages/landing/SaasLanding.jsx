@@ -165,7 +165,12 @@ function MockDashboard() {
       <div className="smk__inner smk__inner--dash">
         <div className="smk-d__side">
           <div className="smk-d__logo">wasap<em>y</em></div>
-          <div className="smk-d__nav"><div className="smk-d__ni smk-d__ni--on" /><div className="smk-d__ni" /><div className="smk-d__ni" /><div className="smk-d__ni" /><div className="smk-d__ni" /></div>
+          <div className="smk-d__nav">
+            <div className="smk-d__ni smk-d__ni--on"><BarChart3 size={10} /> Dashboard</div>
+            <div className="smk-d__ni"><MessageCircle size={10} /> WhatsApp</div>
+            <div className="smk-d__ni"><Brain size={10} /> Prompt IA</div>
+            <div className="smk-d__ni"><CalendarCheck size={10} /> Citas</div>
+          </div>
         </div>
         <div className="smk-d__main">
           <div className="smk-d__stats">
@@ -174,8 +179,11 @@ function MockDashboard() {
             <div className="smk-d__st"><strong>12</strong><span>Citas</span></div>
             <div className="smk-d__st"><strong>95%</strong><span>Precisión</span></div>
           </div>
-          <div className="smk-d__row"><div className="smk-d__card" /><div className="smk-d__card" /></div>
-          <div className="smk-d__row"><div className="smk-d__card smk-d__card--wide" /></div>
+          <div className="smk-d__convos">
+            <div className="smk-d__convo"><div className="smk-d__convo-dot" /><div><b>María G.</b><span>¿Tienen disponibilidad ma...</span></div><small>14:32</small></div>
+            <div className="smk-d__convo"><div className="smk-d__convo-dot smk-d__convo-dot--new" /><div><b>Carlos R.</b><span>Perfecto, a las 16:00 me...</span></div><small>14:28</small></div>
+            <div className="smk-d__convo"><div className="smk-d__convo-dot" /><div><b>Ana M.</b><span>¿Cuánto cuesta el trata...</span></div><small>13:15</small></div>
+          </div>
         </div>
       </div>
     </div>
