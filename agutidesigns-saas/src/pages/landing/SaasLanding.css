@@ -6,7 +6,7 @@
 .sp { font-size: 1.05rem; color: var(--text-secondary); max-width: 580px; margin: 0 auto; line-height: 1.6; }
 .grad { background: linear-gradient(135deg, #25D366, #0af); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
 .sec { padding: 5.5rem 0; }
-.sec--a { background: var(--bg-secondary); }
+.sec--a { }
 
 /* Logo */
 .lt { font-family: var(--font-display); font-size: 1.6rem; font-weight: 800; color: var(--text-primary); letter-spacing: -0.03em; }
@@ -79,7 +79,7 @@
 
 /* ═══ PRODUCT SECTIONS ═══ */
 .psec { padding: 5rem 0; }
-.psec--alt { background: var(--bg-secondary); }
+.psec--alt { }
 .psec__header { text-align: center; margin-bottom: 3rem; }
 .psec__tag { display: inline-block; font-family: var(--font-mono); font-size: 0.68rem; font-weight: 700; color: #25D366; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 0.75rem; }
 .psec__header h2 { font-family: var(--font-display); font-size: clamp(1.6rem, 3vw, 2.2rem); font-weight: 700; margin-bottom: 0.75rem; letter-spacing: -0.02em; }
@@ -227,7 +227,7 @@
 .fi__a p { padding: 0 1.25rem 1.1rem; font-size: 0.88rem; color: var(--text-secondary); line-height: 1.65; }
 
 /* ═══ FINAL CTA ═══ */
-.fcta { padding: 6rem 0; text-align: center; background: var(--bg-secondary); position: relative; }
+.fcta { padding: 6rem 0; text-align: center; position: relative; }
 .fcta h2 { font-family: var(--font-display); font-size: clamp(1.8rem, 3.5vw, 2.6rem); font-weight: 700; margin-bottom: 0.75rem; line-height: 1.12; letter-spacing: -0.02em; }
 .fcta > div > p { font-size: 1.05rem; color: var(--text-secondary); margin-bottom: 2rem; }
 .fcta__n { display: block; margin-top: 1rem; font-family: var(--font-mono); font-size: 0.7rem; color: var(--text-tertiary); }
