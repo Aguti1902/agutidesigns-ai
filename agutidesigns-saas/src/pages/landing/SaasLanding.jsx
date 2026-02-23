@@ -221,8 +221,126 @@ export default function SaasLanding() {
         </div>
       </section>
 
+      {/* ═══ FEATURE SHOWCASES WITH MOCKUPS ═══ */}
+      <section className="showcases" id="features">
+        <div className="lcontainer">
+          {/* Showcase 1: Conversaciones IA */}
+          <div className="showcase">
+            <div className="showcase__text">
+              <span className="showcase__tag"><Bot size={14} /> Asistente IA</span>
+              <h2>Tu agente IA atiende como si fueras tú</h2>
+              <p>Entrena a la IA con la informacion de tu negocio: servicios, precios, horarios, FAQ. Responde a tus clientes de forma natural, con la personalidad que elijas.</p>
+              <ul className="showcase__list">
+                <li><CheckCircle size={14} /> Respuestas instantaneas 24/7</li>
+                <li><CheckCircle size={14} /> Solo usa datos reales de tu negocio</li>
+                <li><CheckCircle size={14} /> Deriva a humano si no sabe responder</li>
+                <li><CheckCircle size={14} /> Personalidad configurable</li>
+              </ul>
+            </div>
+            <div className="showcase__visual">
+              <div className="showcase-mock showcase-mock--chat">
+                <div className="showcase-mock__bar"><div className="showcase-mock__dot" /><div className="showcase-mock__dot" /><div className="showcase-mock__dot" /></div>
+                <div className="showcase-mock__content">
+                  <div className="smock-msg smock-msg--in">Hola, ¿cuanto cuesta un corte de pelo?</div>
+                  <div className="smock-msg smock-msg--out">¡Hola! El corte de caballero es <strong>15€</strong> y el de señora <strong>20€</strong>. ¿Te gustaría reservar cita?</div>
+                  <div className="smock-msg smock-msg--in">Si, para mañana por la tarde</div>
+                  <div className="smock-msg smock-msg--out">Tengo disponible mañana a las <strong>16:00</strong> y a las <strong>17:30</strong>. ¿Cual prefieres?</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Showcase 2: Calendario de citas */}
+          <div className="showcase showcase--reverse">
+            <div className="showcase__text">
+              <span className="showcase__tag"><CalendarCheck size={14} /> Citas automaticas</span>
+              <h2>La IA agenda citas por ti</h2>
+              <p>Tu agente ve la disponibilidad real de tu agenda, propone horarios libres al cliente y confirma la cita automaticamente. Todo sin que toques el telefono.</p>
+              <ul className="showcase__list">
+                <li><CheckCircle size={14} /> Ve tu calendario en tiempo real</li>
+                <li><CheckCircle size={14} /> Propone 2-3 horarios disponibles</li>
+                <li><CheckCircle size={14} /> Confirma y guarda la cita sola</li>
+                <li><CheckCircle size={14} /> Respeta tus horarios de apertura</li>
+              </ul>
+            </div>
+            <div className="showcase__visual">
+              <div className="showcase-mock showcase-mock--calendar">
+                <div className="showcase-mock__bar"><div className="showcase-mock__dot" /><div className="showcase-mock__dot" /><div className="showcase-mock__dot" /></div>
+                <div className="showcase-mock__content">
+                  <div className="smock-cal__header">
+                    <span>Febrero 2026</span>
+                  </div>
+                  <div className="smock-cal__days">
+                    <span>LUN</span><span>MAR</span><span>MIE</span><span>JUE</span><span>VIE</span>
+                  </div>
+                  <div className="smock-cal__grid">
+                    <div className="smock-cal__day">17</div>
+                    <div className="smock-cal__day smock-cal__day--today">18</div>
+                    <div className="smock-cal__day">19</div>
+                    <div className="smock-cal__day">20</div>
+                    <div className="smock-cal__day">21</div>
+                  </div>
+                  <div className="smock-cal__events">
+                    <div className="smock-cal__event"><span>10:00</span> Maria G. - Corte</div>
+                    <div className="smock-cal__event smock-cal__event--ai"><span>14:00</span> Carlos R. - Tinte</div>
+                    <div className="smock-cal__event"><span>16:30</span> Ana M. - Mechas</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Showcase 3: Dashboard */}
+          <div className="showcase">
+            <div className="showcase__text">
+              <span className="showcase__tag"><BarChart3 size={14} /> Dashboard</span>
+              <h2>Todo tu negocio en un vistazo</h2>
+              <p>Visualiza mensajes, leads, citas y conversaciones desde un panel intuitivo. Estadisticas en tiempo real para que sepas exactamente como rinde tu agente IA.</p>
+              <ul className="showcase__list">
+                <li><CheckCircle size={14} /> Estadisticas de mensajes y leads</li>
+                <li><CheckCircle size={14} /> Historial completo de conversaciones</li>
+                <li><CheckCircle size={14} /> Configuracion del prompt IA</li>
+                <li><CheckCircle size={14} /> Gestion de citas y reservas</li>
+              </ul>
+            </div>
+            <div className="showcase__visual">
+              <div className="showcase-mock showcase-mock--dash">
+                <div className="showcase-mock__bar"><div className="showcase-mock__dot" /><div className="showcase-mock__dot" /><div className="showcase-mock__dot" /></div>
+                <div className="showcase-mock__content">
+                  <div className="smock-dash__sidebar">
+                    <div className="smock-dash__logo">wasap<span>y</span></div>
+                    <div className="smock-dash__nav"><div className="smock-dash__nav-item smock-dash__nav-item--active" /><div className="smock-dash__nav-item" /><div className="smock-dash__nav-item" /><div className="smock-dash__nav-item" /></div>
+                  </div>
+                  <div className="smock-dash__main">
+                    <div className="smock-dash__stats">
+                      <div className="smock-dash__stat"><strong>247</strong><span>Mensajes</span></div>
+                      <div className="smock-dash__stat"><strong>18</strong><span>Leads</span></div>
+                      <div className="smock-dash__stat"><strong>12</strong><span>Citas</span></div>
+                    </div>
+                    <div className="smock-dash__cards"><div className="smock-dash__card" /><div className="smock-dash__card" /></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ═══ GREEN CTA BANNER ═══ */}
+      <section className="green-cta">
+        <div className="lcontainer green-cta__inner">
+          <div className="green-cta__content">
+            <h2>Empieza a automatizar tu WhatsApp hoy</h2>
+            <p>2 dias gratis. Sin tarjeta. Sin compromiso. Configura tu agente IA en menos de 5 minutos y empieza a atender clientes automaticamente.</p>
+          </div>
+          <Link to="/auth?mode=register" className="lbtn lbtn--white lbtn--xl">
+            <Zap size={18} /> Prueba gratis ahora <ArrowRight size={16} />
+          </Link>
+        </div>
+      </section>
+
       {/* FEATURES GRID */}
-      <section className="feat-grid" id="features" ref={featRef}>
+      <section className="feat-grid" ref={featRef}>
         <div className="lcontainer">
           <div className="section-header">
             <h2>Todo lo que necesitas para automatizar tu WhatsApp</h2>
@@ -296,6 +414,32 @@ export default function SaasLanding() {
               <motion.div key={i} className="compare__row" initial={{ opacity: 0, x: -10 }} animate={compInView ? { opacity: 1, x: 0 } : {}} transition={{ delay: i * 0.08 }}>
                 <span className="compare__cell compare__cell--bad"><X size={14} /> {c.without}</span>
                 <span className="compare__cell compare__cell--good"><Check size={14} /> {c.with}</span>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ═══ REVIEWS ═══ */}
+      <section className="reviews">
+        <div className="lcontainer">
+          <div className="section-header">
+            <h2>Lo que dicen nuestros usuarios</h2>
+            <p className="section-sub">Negocios reales que ya automatizan su WhatsApp con Wasapy.</p>
+          </div>
+          <div className="reviews__grid">
+            {[
+              { quote: 'Desde que activamos Wasapy, no perdemos ni una consulta fuera de horario. Las citas se agendan solas y mis clientes estan encantados.', name: 'Laura M.', role: 'Clinica dental', stars: 5 },
+              { quote: 'Mis clientes no notan que hablan con una IA. Responde con mis precios, mis horarios, todo perfecto. Me ahorra 3 horas al dia.', name: 'Carlos R.', role: 'Peluqueria', stars: 5 },
+              { quote: 'En la primera semana ya se agendaron 12 citas sin que yo tocara el telefono. El ROI es brutal para lo que cuesta.', name: 'Ana G.', role: 'Estudio de yoga', stars: 5 },
+            ].map((r, i) => (
+              <motion.div key={i} className="review-card" initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.1 }}>
+                <div className="review-card__stars">{Array.from({ length: r.stars }).map((_, si) => <Star key={si} size={15} />)}</div>
+                <p className="review-card__quote">"{r.quote}"</p>
+                <div className="review-card__author">
+                  <div className="review-card__avatar">{r.name[0]}</div>
+                  <div><span className="review-card__name">{r.name}</span><span className="review-card__role">{r.role}</span></div>
+                </div>
               </motion.div>
             ))}
           </div>
