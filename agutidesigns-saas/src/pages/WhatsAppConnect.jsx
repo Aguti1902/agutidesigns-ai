@@ -25,6 +25,9 @@ export default function WhatsAppConnect() {
 
   // Connection state
   const [qrCode, setQrCode] = useState(null);
+  const [pairingCode, setPairingCode] = useState(null);
+  const [connectMethod, setConnectMethod] = useState('qr'); // 'qr' | 'code'
+  const [phoneInput, setPhoneInput] = useState('');
   const [connecting, setConnecting] = useState(false);
   const [error, setError] = useState('');
   const [editingName, setEditingName] = useState(false);
@@ -138,6 +141,24 @@ export default function WhatsAppConnect() {
       const qr = data.qrcode?.base64 || data.base64 || null;
       if (qr) { setQrCode(qr); setConnecting(false); startPolling(agent.id); }
       else { await refreshAgents(); setConnecting(false); }
+    } catch (err) { setError(err.message); setConnecting(false); }
+  }
+
+  async function handleConnectPairing() {
+    if (!phoneInput.trim()) { setError('Introduce tu número de teléfono'); return; }
+    setConnecting(true); setError(''); setPairingCode(null);
+    try {
+      let agent = activeAgent;
+      if (!agent) { agent = await createAgent('Mi Agente IA'); if (!agent) throw new Error('No se pudo crear el agente'); }
+      const cleanNumber = phoneInput.replace(/[^0-9]/g, '');
+      const res = await fetch(`${API_URL}/evolution-create`, {
+        method: 'POST', headers: getHeaders(),
+        body: JSON.stringify({ agentId: agent.id, userId: user?.id, number: cleanNumber }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Error');
+      if (data.pairingCode) { setPairingCode(data.pairingCode); setConnecting(false); startPolling(agent.id); }
+      else { setError('No se pudo obtener el código. Prueba con el método QR.'); setConnecting(false); }
     } catch (err) { setError(err.message); setConnecting(false); }
   }
 
@@ -275,18 +296,52 @@ export default function WhatsAppConnect() {
                     )}
                     <button className="btn btn--outline btn--xs" onClick={handleDisconnect}><Power size={12} /> Desconectar</button>
                   </div>
-                ) : connecting && !qrCode ? (
-                  <div className="wa-loading"><Loader2 size={32} className="spin" /><p>Generando QR...</p></div>
-                ) : qrCode ? (
-                  <div className="wa-qr-mini">
-                    <img src={qrCode} alt="QR" className="wa-qr-mini__img" />
-                    <button className="btn btn--outline btn--xs" onClick={refreshQR}><RefreshCw size={12} /> Actualizar</button>
-                    <p className="wa-qr-mini__hint"><Loader2 size={11} className="spin" /> Esperando escaneo...</p>
+                ) : connecting && !qrCode && !pairingCode ? (
+                  <div className="wa-loading"><Loader2 size={32} className="spin" /><p>{connectMethod === 'code' ? 'Generando código...' : 'Generando QR...'}</p></div>
+                ) : qrCode || pairingCode ? (
+                  <div>
+                    {qrCode && (
+                      <div className="wa-qr-mini">
+                        <img src={qrCode} alt="QR" className="wa-qr-mini__img" />
+                        <button className="btn btn--outline btn--xs" onClick={refreshQR}><RefreshCw size={12} /> Actualizar</button>
+                        <p className="wa-qr-mini__hint"><Loader2 size={11} className="spin" /> Esperando escaneo...</p>
+                      </div>
+                    )}
+                    {pairingCode && (
+                      <div className="wa-pairing">
+                        <div className="wa-pairing__code">{pairingCode}</div>
+                        <div className="wa-pairing__steps">
+                          <p><strong>1.</strong> Abre WhatsApp en tu móvil</p>
+                          <p><strong>2.</strong> Ve a Ajustes → Dispositivos vinculados</p>
+                          <p><strong>3.</strong> Toca "Vincular con número de teléfono"</p>
+                          <p><strong>4.</strong> Introduce el código de arriba</p>
+                        </div>
+                        <p className="wa-qr-mini__hint"><Loader2 size={11} className="spin" /> Esperando vinculación...</p>
+                      </div>
+                    )}
                   </div>
                 ) : (
                   <div className="wa-connect-cta">
-                    <QrCode size={32} />
-                    <button className="btn btn--primary btn--sm" onClick={handleConnect}><Smartphone size={14} /> Conectar WhatsApp</button>
+                    <div className="wa-connect-tabs">
+                      <button className={`wa-connect-tab ${connectMethod === 'qr' ? 'wa-connect-tab--active' : ''}`} onClick={() => setConnectMethod('qr')}>
+                        <QrCode size={14} /> Escanear QR
+                      </button>
+                      <button className={`wa-connect-tab ${connectMethod === 'code' ? 'wa-connect-tab--active' : ''}`} onClick={() => setConnectMethod('code')}>
+                        <Phone size={14} /> Código de vinculación
+                      </button>
+                    </div>
+                    {connectMethod === 'qr' ? (
+                      <div className="wa-connect-method">
+                        <QrCode size={32} style={{ color: 'var(--text-tertiary)', margin: '0 auto 0.75rem' }} />
+                        <button className="btn btn--primary btn--sm" onClick={handleConnect}><Smartphone size={14} /> Generar código QR</button>
+                      </div>
+                    ) : (
+                      <div className="wa-connect-method">
+                        <p className="wa-connect-method__hint">Introduce tu número de WhatsApp con código de país</p>
+                        <input type="tel" className="wa-phone-input" value={phoneInput} onChange={e => setPhoneInput(e.target.value)} placeholder="34600000000" />
+                        <button className="btn btn--primary btn--sm" onClick={handleConnectPairing}><Phone size={14} /> Obtener código</button>
+                      </div>
+                    )}
                     {error && <p className="wa-error">{error}</p>}
                   </div>
                 )}

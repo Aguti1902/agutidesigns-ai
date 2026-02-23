@@ -15,13 +15,16 @@ serve(async (req) => {
     const SUPABASE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || ''
     const WEBHOOK_URL = `${SUPABASE_URL}/functions/v1/webhook-messages`
 
-    const { agentId } = await req.json()
+    const body = await req.json()
+    const { agentId, number } = body
     if (!agentId) return new Response(JSON.stringify({ error: 'agentId required' }), { status: 400, headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' } })
 
     const instanceName = `agent-${agentId}`
-    console.log('=== Evolution Create ===', instanceName)
+    const usePairingCode = !!number
+    console.log('=== Evolution Create ===', instanceName, usePairingCode ? `(pairing: ${number})` : '(QR)')
 
     let qrResult = null
+    let pairingCode = null
 
     // Step 1: Check if instance exists
     let instanceExists = false
@@ -49,15 +52,22 @@ serve(async (req) => {
       if (checkRes.status === 200) instanceExists = true
     } catch { }
 
-    // Step 2: If instance exists but not connected, try to get QR via connect
+    // Step 2: If instance exists but not connected, try to connect (QR or pairing code)
     if (instanceExists) {
       try {
-        console.log('Instance exists, trying connect for QR...')
+        console.log('Instance exists, trying connect...', usePairingCode ? 'with pairing code' : 'for QR')
+        const connectBody: any = {}
+        if (usePairingCode) connectBody.number = number.replace(/[^0-9]/g, '')
         const connectRes = await fetch(`${EVOLUTION_URL}/instance/connect/${instanceName}`, {
-          headers: { 'apikey': EVOLUTION_KEY }
+          method: usePairingCode ? 'POST' : 'GET',
+          headers: { 'Content-Type': 'application/json', 'apikey': EVOLUTION_KEY },
+          ...(usePairingCode ? { body: JSON.stringify(connectBody) } : {})
         })
         const connectData = await connectRes.json()
-        if (connectData.base64) {
+        if (usePairingCode && connectData.pairingCode) {
+          pairingCode = connectData.pairingCode
+          console.log('Pairing code:', pairingCode)
+        } else if (connectData.base64) {
           qrResult = { base64: connectData.base64, code: connectData.code }
           console.log('QR from connect: YES')
         } else {
@@ -76,8 +86,8 @@ serve(async (req) => {
       }
     }
 
-    // Step 3: Create fresh instance if needed (WITHOUT webhook in body - v2.3.7 crashes with it)
-    if (!qrResult && !instanceExists) {
+    // Step 3: Create fresh instance if needed
+    if (!qrResult && !pairingCode && !instanceExists) {
       console.log('Creating fresh instance...')
       const createRes = await fetch(`${EVOLUTION_URL}/instance/create`, {
         method: 'POST',
@@ -85,20 +95,39 @@ serve(async (req) => {
         body: JSON.stringify({
           instanceName,
           integration: 'WHATSAPP-BAILEYS',
-          qrcode: true,
+          qrcode: !usePairingCode,
+          ...(usePairingCode ? { number: number.replace(/[^0-9]/g, '') } : {}),
         })
       })
       const createData = await createRes.json()
       console.log('Create status:', createRes.status)
 
-      if (createData.qrcode?.base64) {
+      if (usePairingCode && createData.pairingCode) {
+        pairingCode = createData.pairingCode
+        console.log('Pairing code from create:', pairingCode)
+      } else if (createData.qrcode?.base64) {
         qrResult = createData.qrcode
         console.log('QR from create: YES')
       } else if (createData.base64) {
         qrResult = { base64: createData.base64 }
         console.log('QR from create (flat): YES')
       } else {
-        console.log('No QR from create, response:', JSON.stringify(createData).substring(0, 200))
+        console.log('No QR/pairing from create, response:', JSON.stringify(createData).substring(0, 200))
+        // If pairing was requested but create didn't return it, try connect with number
+        if (usePairingCode) {
+          try {
+            const pairRes = await fetch(`${EVOLUTION_URL}/instance/connect/${instanceName}`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', 'apikey': EVOLUTION_KEY },
+              body: JSON.stringify({ number: number.replace(/[^0-9]/g, '') })
+            })
+            const pairData = await pairRes.json()
+            if (pairData.pairingCode) {
+              pairingCode = pairData.pairingCode
+              console.log('Pairing code from connect after create:', pairingCode)
+            }
+          } catch (e) { console.log('Pairing fallback error:', e) }
+        }
       }
     }
 
@@ -125,10 +154,10 @@ serve(async (req) => {
       } catch {}
     }
 
-    console.log('Final QR:', qrResult ? 'YES' : 'NO')
+    console.log('Final:', qrResult ? 'QR' : pairingCode ? `Pairing: ${pairingCode}` : 'NONE')
 
     return new Response(
-      JSON.stringify({ success: true, instanceName, qrcode: qrResult || {} }),
+      JSON.stringify({ success: true, instanceName, qrcode: qrResult || {}, pairingCode: pairingCode || null }),
       { headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' } }
     )
   } catch (error) {

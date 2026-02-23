@@ -38,10 +38,27 @@
 .wa-qr-mini__hint { font-size: 0.7rem; color: var(--text-tertiary); display: flex; align-items: center; gap: 0.3rem; }
 
 /* Connect CTA */
-.wa-connect-cta { display: flex; flex-direction: column; align-items: center; gap: 0.75rem; padding: 1rem 0; color: var(--text-tertiary); }
+.wa-connect-cta { display: flex; flex-direction: column; align-items: center; gap: 0.75rem; padding: 0.5rem 0; color: var(--text-tertiary); width: 100%; }
 .wa-loading { display: flex; flex-direction: column; align-items: center; gap: 0.75rem; padding: 1rem 0; color: var(--color-primary); }
 .wa-loading p { color: var(--text-secondary); font-size: 0.82rem; }
 .wa-error { color: #f44; font-size: 0.78rem; text-align: center; }
+
+/* Connect tabs */
+.wa-connect-tabs { display: flex; gap: 0.35rem; margin-bottom: 1rem; width: 100%; }
+.wa-connect-tab { flex: 1; display: flex; align-items: center; justify-content: center; gap: 0.35rem; padding: 0.55rem 0.75rem; border-radius: var(--radius-md); border: 1px solid var(--border-color); background: none; color: var(--text-secondary); font-family: var(--font-mono); font-size: 0.72rem; font-weight: 600; cursor: pointer; transition: all 0.15s; }
+.wa-connect-tab:hover { border-color: var(--border-hover); }
+.wa-connect-tab--active { border-color: var(--color-primary); color: var(--color-primary); background: rgba(37,211,102,0.06); }
+.wa-connect-method { display: flex; flex-direction: column; align-items: center; gap: 0.65rem; width: 100%; }
+.wa-connect-method__hint { font-size: 0.75rem; color: var(--text-secondary); text-align: center; }
+.wa-phone-input { width: 100%; max-width: 220px; padding: 0.55rem 0.85rem; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-md); color: var(--text-primary); font-family: var(--font-mono); font-size: 0.9rem; text-align: center; outline: none; }
+.wa-phone-input:focus { border-color: var(--color-primary); }
+.wa-phone-input::placeholder { color: var(--text-tertiary); }
+
+/* Pairing code display */
+.wa-pairing { display: flex; flex-direction: column; align-items: center; gap: 0.75rem; padding: 0.5rem 0; }
+.wa-pairing__code { font-family: var(--font-mono); font-size: 2rem; font-weight: 800; letter-spacing: 0.15em; color: var(--color-primary); background: rgba(37,211,102,0.06); border: 2px solid rgba(37,211,102,0.2); border-radius: var(--radius-lg); padding: 0.75rem 1.5rem; }
+.wa-pairing__steps { display: flex; flex-direction: column; gap: 0.35rem; font-size: 0.75rem; color: var(--text-secondary); line-height: 1.5; }
+.wa-pairing__steps strong { color: var(--color-primary); }
 
 /* Handoff */
 .wa-card-desc { font-size: 0.78rem; color: var(--text-secondary); line-height: 1.5; margin-bottom: 0.75rem; }
