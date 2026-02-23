@@ -43,6 +43,11 @@ export default function App() {
   const [onboardingDone, setOnboardingDone] = useState(false);
   const { isAppDomain, isMainDomain } = useDomainRedirect(user);
 
+  useEffect(() => {
+    const saved = localStorage.getItem('theme');
+    if (saved) document.documentElement.setAttribute('data-theme', saved);
+  }, []);
+
   if (loading) {
     return (
       <div className="loading-screen">

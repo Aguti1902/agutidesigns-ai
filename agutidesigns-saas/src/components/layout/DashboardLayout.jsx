@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { NavLink, Outlet, useNavigate, Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, MessageCircle, Building, Brain, BookOpen, CreditCard, LogOut, Zap, HelpCircle, Clock, AlertTriangle, ArrowRight, Lock, BarChart3, Shield, Calendar } from 'lucide-react';
+import { LayoutDashboard, MessageCircle, Building, Brain, BookOpen, CreditCard, LogOut, Zap, HelpCircle, Clock, AlertTriangle, ArrowRight, Lock, BarChart3, Shield, Calendar, Sun, Moon } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { supabase } from '../../lib/supabase';
 import AgentSelector from '../dashboard/AgentSelector';
@@ -185,9 +185,22 @@ export default function DashboardLayout() {
                 <span className="dash__user-plan">{isSubscribed ? 'Pro' : isTrialActive ? 'Trial' : 'Expirado'}</span>
               </div>
             </div>
-            <button className="dash__logout" onClick={handleLogout}>
-              <LogOut size={16} /> Cerrar sesión
-            </button>
+            <div className="dash__bottom-actions">
+              <button className="dash__theme-toggle" onClick={() => {
+                const curr = document.documentElement.getAttribute('data-theme');
+                const next = curr === 'dark' ? 'light' : 'dark';
+                document.documentElement.setAttribute('data-theme', next === 'light' ? '' : next);
+                if (next === 'light') document.documentElement.removeAttribute('data-theme');
+                else document.documentElement.setAttribute('data-theme', 'dark');
+                localStorage.setItem('theme', next === 'light' ? '' : 'dark');
+              }}>
+                <Sun size={14} className="dash__theme-icon--light" />
+                <Moon size={14} className="dash__theme-icon--dark" />
+              </button>
+              <button className="dash__logout" onClick={handleLogout}>
+                <LogOut size={16} /> Cerrar sesión
+              </button>
+            </div>
           </div>
         </aside>
 

@@ -2,7 +2,7 @@
 
 .auth__left {
   flex: 1;
-  background: linear-gradient(135deg, #0d1f17, #0a0a0a);
+  background: var(--bg-secondary);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -34,7 +34,7 @@
   font-family: var(--font-display);
   font-size: 1.8rem;
   font-weight: 800;
-  color: white;
+  color: var(--text-primary);
   letter-spacing: -0.02em;
 }
 .auth__logo-y { color: #25D366; }
@@ -62,7 +62,7 @@
 }
 
 .auth__left-content p {
-  color: #888;
+  color: var(--text-secondary);
   font-size: 1rem;
   line-height: 1.7;
   margin-bottom: 2rem;
@@ -89,7 +89,7 @@
   align-items: center;
   justify-content: center;
   padding: 3rem;
-  background: var(--color-black);
+  background: var(--bg-primary);
 }
 
 .auth__form {
@@ -106,7 +106,7 @@
 
 .auth__form-sub {
   font-size: 0.85rem;
-  color: #666;
+  color: var(--text-tertiary);
   margin-bottom: 1.75rem;
 }
 
@@ -119,29 +119,29 @@
   font-family: var(--font-mono);
   font-size: 0.8rem;
   font-weight: 600;
-  color: #999;
+  color: var(--text-secondary);
   margin-bottom: 0.4rem;
 }
 
 .auth__field input {
   width: 100%;
   padding: 0.7rem 1rem;
-  background: #151515;
-  border: 1px solid #2a2a2a;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
   border-radius: var(--radius-md);
-  color: white;
+  color: var(--text-primary);
   font-size: 0.95rem;
   outline: none;
   transition: border-color 0.2s;
 }
 
 .auth__field input:focus { border-color: var(--color-primary); }
-.auth__field input::placeholder { color: #444; }
+.auth__field input::placeholder { color: var(--text-tertiary); }
 
 .auth__field-hint {
   display: block;
   font-size: 0.68rem;
-  color: #555;
+  color: var(--text-tertiary);
   margin-top: 0.3rem;
   font-family: var(--font-mono);
 }
@@ -156,7 +156,7 @@
   transform: translateY(-50%);
   background: none;
   border: none;
-  color: #555;
+  color: var(--text-tertiary);
   cursor: pointer;
 }
 
@@ -196,7 +196,7 @@
 .auth__switch {
   text-align: center;
   font-size: 0.8rem;
-  color: #666;
+  color: var(--text-tertiary);
 }
 
 .auth__switch button {
@@ -230,7 +230,7 @@
 }
 
 .auth__verify-text {
-  color: #888;
+  color: var(--text-secondary);
   font-size: 0.95rem;
   margin-bottom: 0.25rem;
 }
@@ -245,14 +245,14 @@
 
 .auth__verify-hint {
   font-size: 0.85rem;
-  color: #666;
+  color: var(--text-tertiary);
   line-height: 1.6;
   margin-bottom: 1.5rem;
 }
 
 .auth__verify-tips {
-  background: #111;
-  border: 1px solid #222;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
   border-radius: var(--radius-md);
   padding: 1rem;
   text-align: left;
@@ -263,7 +263,7 @@
   font-family: var(--font-mono);
   font-size: 0.75rem;
   font-weight: 600;
-  color: #888;
+  color: var(--text-secondary);
   display: block;
   margin-bottom: 0.5rem;
 }
@@ -277,7 +277,7 @@
 
 .auth__verify-tips li {
   font-size: 0.8rem;
-  color: #666;
+  color: var(--text-tertiary);
   padding-left: 1rem;
   position: relative;
 }
@@ -313,7 +313,7 @@
 .auth__verify-resend {
   background: none;
   border: none;
-  color: #555;
+  color: var(--text-tertiary);
   font-family: var(--font-mono);
   font-size: 0.75rem;
   cursor: pointer;
@@ -369,15 +369,15 @@
   top: 50%;
   width: 100%;
   height: 1px;
-  background: #222;
+  background: var(--border-color);
 }
 
 .auth__divider span {
   position: relative;
   display: inline-block;
   padding: 0 1rem;
-  background: var(--color-black);
-  color: #666;
+  background: var(--bg-primary);
+  color: var(--text-tertiary);
   font-size: 0.8rem;
   font-family: var(--font-mono);
 }
@@ -385,14 +385,14 @@
 /* ── Terms ── */
 .auth__terms {
   font-size: 0.72rem;
-  color: #666;
+  color: var(--text-tertiary);
   line-height: 1.5;
   text-align: center;
   margin-bottom: 1rem;
 }
 
 .auth__terms a {
-  color: #888;
+  color: var(--text-secondary);
   text-decoration: underline;
 }
 

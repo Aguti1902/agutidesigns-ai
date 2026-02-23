@@ -10,8 +10,8 @@
 .onboard__card {
   width: 100%;
   max-width: 480px;
-  background: #111;
-  border: 1px solid #222;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
   border-radius: var(--radius-xl);
   padding: 2.5rem;
   text-align: center;
@@ -28,7 +28,7 @@
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: #333;
+  background: var(--border-color);
   transition: all 0.3s;
 }
 
@@ -61,7 +61,7 @@
 
 .onboard__step p {
   font-size: 0.9rem;
-  color: #888;
+  color: var(--text-secondary);
   line-height: 1.7;
   max-width: 360px;
 }
@@ -97,21 +97,21 @@
 
 .onboard__btn--ghost {
   background: none;
-  color: #777;
-  border: 1px solid #333;
+  color: var(--text-secondary);
+  border: 1px solid var(--border-color);
 }
 
-.onboard__btn--ghost:hover { border-color: #555; color: #ccc; }
+.onboard__btn--ghost:hover { border-color: var(--text-tertiary); color: var(--text-primary); }
 
 .onboard__skip {
   display: block;
   margin: 1.25rem auto 0;
   background: none;
   border: none;
-  color: #555;
+  color: var(--text-tertiary);
   font-size: 0.75rem;
   font-family: var(--font-mono);
   cursor: pointer;
 }
 
-.onboard__skip:hover { color: #999; }
+.onboard__skip:hover { color: var(--text-secondary); }
