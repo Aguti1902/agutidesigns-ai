@@ -36,24 +36,30 @@ const PRODUCT_SECTIONS = [
     id: 'ai-chat',
     tag: 'ASISTENTE IA',
     title: 'Tu agente IA responde como tú, pero 24/7',
-    desc: 'Entrena a la IA con la información real de tu negocio. Servicios, precios, horarios, FAQ... Responde a cada cliente de forma natural, con el tono que tú elijas. Si no sabe algo, deriva a ti.',
-    bullets: ['Respuestas instantáneas en segundos', 'Personalidad configurable: cercano, profesional, divertido', 'Solo usa datos reales de tu negocio, nunca inventa', 'Detecta intención de compra y facilita la venta'],
+    desc: 'Entrena a la IA con la información real de tu negocio. Servicios, precios, horarios, FAQ... Responde a cada cliente de forma natural, con el tono que tú elijas.',
+    cardTitle: 'Atención inteligente por WhatsApp',
+    cardDesc: 'Tu agente entiende lo que el cliente necesita y responde con información real de tu negocio. Sin intervención, sin errores.',
+    bullets: ['Respuestas instantáneas en segundos', 'Personalidad configurable: cercano, profesional, divertido', 'Solo usa datos reales de tu negocio, nunca inventa', 'Detecta intención de compra y facilita la venta', 'Deriva a humano cuando no sabe la respuesta', 'Funciona con tu WhatsApp actual'],
     mockup: 'chat',
   },
   {
     id: 'calendar',
     tag: 'CITAS AUTOMÁTICAS',
     title: 'Todo tu calendario en un solo panel',
-    desc: 'La IA ve tu disponibilidad en tiempo real, propone horarios libres al cliente y confirma la reserva automáticamente. Tú solo miras el calendario y te presentas a la cita.',
-    bullets: ['Vista semanal con horarios de apertura', 'La IA propone 2-3 opciones disponibles', 'Confirma y guarda la cita sin intervención', 'Diferencia citas manuales de las creadas por IA', 'Respeta tus horarios y dias de cierre'],
+    desc: 'La IA ve tu disponibilidad en tiempo real, propone horarios libres al cliente y confirma la reserva automáticamente.',
+    cardTitle: 'Gestión completa de reservas',
+    cardDesc: 'Vista semanal real con todas las citas de tu negocio. La IA agenda por ti y tú solo te presentas.',
+    bullets: ['Vista semanal con horarios de apertura', 'La IA propone 2-3 opciones disponibles', 'Confirma y guarda la cita sin intervención', 'Diferencia citas manuales de las creadas por IA', 'Respeta tus horarios y días de cierre', 'Control de cancelaciones y huecos libres'],
     mockup: 'calendar',
   },
   {
     id: 'dashboard',
     tag: 'DASHBOARD',
     title: 'Estadísticas, conversaciones y control total',
-    desc: 'Visualiza mensajes enviados, leads captados, citas agendadas y conversaciones activas. Revisa cada chat que la IA ha tenido con tus clientes. Todo en tiempo real.',
-    bullets: ['Métricas: mensajes, leads, citas, precisión', 'Historial completo de conversaciones', 'Configuración del prompt IA', 'Gestión de suscripción y facturación'],
+    desc: 'Visualiza mensajes enviados, leads captados, citas agendadas y conversaciones activas. Todo en tiempo real.',
+    cardTitle: 'Todo tu negocio en un vistazo',
+    cardDesc: 'Panel intuitivo con métricas en tiempo real para que sepas exactamente cómo rinde tu agente IA.',
+    bullets: ['Métricas: mensajes, leads, citas, precisión', 'Historial completo de cada conversación', 'Configuración del prompt y personalidad IA', 'Gestión de suscripción y facturación', 'Soporte integrado desde la plataforma'],
     mockup: 'dashboard',
   },
 ];
@@ -359,6 +365,8 @@ function ProductSection({ sec, idx, Mk }) {
         <motion.div className={`psec__grid ${rev ? 'psec__grid--rev' : ''}`} initial={{ opacity: 0, y: 40 }} animate={inView ? { opacity: 1, y: 0 } : {}} transition={{ duration: 0.5 }}>
           <div className="psec__visual"><Mk /></div>
           <div className="psec__bullets">
+            <h3 className="psec__bullets-title">{sec.cardTitle}</h3>
+            <p className="psec__bullets-desc">{sec.cardDesc}</p>
             <ul>{sec.bullets.map((b, i) => <li key={i}><CheckCircle size={16} /><span>{b}</span></li>)}</ul>
           </div>
         </motion.div>
