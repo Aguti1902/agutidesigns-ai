@@ -5,436 +5,364 @@ import { Link } from 'react-router-dom';
 import {
   MessageCircle, Zap, Clock, Users, TrendingUp, CheckCircle,
   ArrowRight, Shield, Brain, BarChart3, ChevronDown, Bot,
-  CalendarCheck, ShoppingCart, Smartphone, Lock,
-  Star, Play, Sparkles, Sun, Moon, X, Check,
-  Scissors, Stethoscope, UtensilsCrossed, Dumbbell, Store, Briefcase, GraduationCap, Wrench,
-  Send, Phone, Globe
+  CalendarCheck, ShoppingCart, Smartphone, Lock, Star, Sparkles,
+  Sun, Moon, X, Check, Send, ChevronRight,
+  Scissors, Stethoscope, UtensilsCrossed, Dumbbell, Store, Briefcase, GraduationCap, Wrench
 } from 'lucide-react';
 import './SaasLanding.css';
 
-/* ── Animated counter ── */
 function CountUp({ end, suffix = '' }) {
   const [count, setCount] = useState(0);
   const [ref, inView] = useInView({ threshold: 0.5, triggerOnce: true });
   useEffect(() => {
     if (!inView) return;
-    let start = 0;
-    const step = end / 60;
-    const timer = setInterval(() => { start += step; if (start >= end) { setCount(end); clearInterval(timer); } else setCount(Math.floor(start)); }, 16);
-    return () => clearInterval(timer);
+    let n = 0; const step = end / 50;
+    const t = setInterval(() => { n += step; if (n >= end) { setCount(end); clearInterval(t); } else setCount(Math.floor(n)); }, 20);
+    return () => clearInterval(t);
   }, [inView, end]);
   return <span ref={ref}>{count}{suffix}</span>;
 }
 
-/* ── WhatsApp chat demo ── */
-function ChatDemo() {
-  const msgs = [
-    { from: 'user', text: 'Hola, quiero reservar para mañana' },
-    { from: 'bot', text: '¡Hola! Tengo disponible mañana:\n\n• *10:00*\n• *12:30*\n• *16:00*\n\n¿Cuál te viene mejor?' },
-    { from: 'user', text: 'A las 16:00' },
-    { from: 'bot', text: '✅ Cita *confirmada* para mañana a las *16:00*. ¡Te esperamos!' },
-  ];
-  const [vis, setVis] = useState(0);
-  useEffect(() => { if (vis < msgs.length) { const t = setTimeout(() => setVis(v => v + 1), vis === 0 ? 1000 : 1400); return () => clearTimeout(t); } }, [vis]);
-  return (
-    <div className="wd">
-      <div className="wd__top"><div className="wd__dot wd__dot--r" /><div className="wd__dot wd__dot--y" /><div className="wd__dot wd__dot--g" /></div>
-      <div className="wd__head"><div className="wd__av"><Bot size={16} /></div><div><b className="wd__name">Tu Negocio IA</b><span className="wd__on">en línea</span></div></div>
-      <div className="wd__body">
-        {msgs.slice(0, vis).map((m, i) => (
-          <motion.div key={i} className={`wd__m wd__m--${m.from}`} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }}>
-            <span dangerouslySetInnerHTML={{ __html: m.text.replace(/\*(.*?)\*/g, '<b>$1</b>').replace(/\n/g, '<br/>') }} />
-          </motion.div>
-        ))}
-        {vis < msgs.length && <div className="wd__typing"><span /><span /><span /></div>}
-      </div>
-    </div>
-  );
-}
+const HERO_FEATURES = [
+  { icon: <Bot size={18} />, text: 'IA en WhatsApp' },
+  { icon: <CalendarCheck size={18} />, text: 'Reservas inteligentes' },
+  { icon: <ShoppingCart size={18} />, text: 'Ventas automaticas' },
+  { icon: <BarChart3 size={18} />, text: 'Dashboard y analytics' },
+  { icon: <Brain size={18} />, text: 'Prompt personalizable' },
+];
 
-/* ── Data ── */
-const SHOWCASES = [
+const PRODUCT_SECTIONS = [
   {
-    tag: 'Asistente IA',
-    tagIcon: <Bot size={14} />,
-    title: 'Responde como tú, pero 24 horas al día',
-    desc: 'Tu agente IA aprende de la información de tu negocio — servicios, precios, horarios, FAQ — y responde a cada cliente de forma natural, con la personalidad que tú elijas. Como si fueras tú, pero sin descansar.',
-    bullets: ['Respuestas instantáneas en segundos', 'Solo usa datos reales de tu negocio', 'Personalidad configurable: cercano, formal, divertido...', 'Si no sabe algo, avisa y deriva a ti'],
+    id: 'ai-chat',
+    tag: 'ASISTENTE IA',
+    title: 'Tu agente IA responde como tú, pero 24/7',
+    desc: 'Entrena a la IA con la información real de tu negocio. Servicios, precios, horarios, FAQ... Responde a cada cliente de forma natural, con el tono que tú elijas. Si no sabe algo, deriva a ti.',
+    bullets: ['Respuestas instantáneas en segundos', 'Personalidad configurable: cercano, profesional, divertido', 'Solo usa datos reales de tu negocio, nunca inventa', 'Detecta intención de compra y facilita la venta'],
     mockup: 'chat',
   },
   {
-    tag: 'Citas automáticas',
-    tagIcon: <CalendarCheck size={14} />,
-    title: 'La IA agenda citas mientras tú trabajas',
-    desc: 'Tu agente ve la disponibilidad real de tu agenda, propone horarios libres al cliente y confirma la reserva automáticamente. Todo por WhatsApp, sin que toques el teléfono.',
-    bullets: ['Ve tu calendario en tiempo real', 'Propone 2-3 opciones disponibles', 'Confirma y guarda la cita automáticamente', 'Respeta tus horarios de apertura'],
+    id: 'calendar',
+    tag: 'CITAS AUTOMÁTICAS',
+    title: 'Todo tu calendario en un solo panel',
+    desc: 'La IA ve tu disponibilidad en tiempo real, propone horarios libres al cliente y confirma la reserva automáticamente. Tú solo miras el calendario y te presentas a la cita.',
+    bullets: ['Vista semanal con horarios de apertura', 'La IA propone 2-3 opciones disponibles', 'Confirma y guarda la cita sin intervención', 'Diferencia citas manuales de las creadas por IA', 'Respeta tus horarios y dias de cierre'],
     mockup: 'calendar',
   },
   {
-    tag: 'Ventas inteligentes',
-    tagIcon: <ShoppingCart size={14} />,
-    title: 'Vende más sin mover un dedo',
-    desc: 'La IA detecta oportunidades de venta en cada conversación. Recomienda servicios, hace upselling y supera objeciones de forma natural — como lo haría tu mejor vendedor.',
-    bullets: ['Recomienda el servicio ideal para cada cliente', 'Upselling y cross-selling inteligente', 'Supera objeciones con datos reales', 'Facilita el siguiente paso: reservar, comprar, visitar'],
+    id: 'dashboard',
+    tag: 'DASHBOARD',
+    title: 'Estadísticas, conversaciones y control total',
+    desc: 'Visualiza mensajes enviados, leads captados, citas agendadas y conversaciones activas. Revisa cada chat que la IA ha tenido con tus clientes. Todo en tiempo real.',
+    bullets: ['Métricas: mensajes, leads, citas, precisión', 'Historial completo de conversaciones', 'Configuración del prompt IA', 'Gestión de suscripción y facturación'],
     mockup: 'dashboard',
   },
 ];
 
-const STATS = [
-  { num: 5, suffix: ' min', label: 'Configuración completa' },
-  { num: 95, suffix: '%', label: 'Respuestas correctas' },
-  { num: 24, suffix: '/7', label: 'Atención automática' },
-  { num: 29, suffix: '€', label: '/mes todo incluido' },
-];
-
 const SECTORS = [
-  { icon: <Scissors size={20} />, name: 'Peluquerías' },
-  { icon: <Stethoscope size={20} />, name: 'Clínicas' },
-  { icon: <UtensilsCrossed size={20} />, name: 'Restaurantes' },
-  { icon: <Dumbbell size={20} />, name: 'Gimnasios' },
-  { icon: <Store size={20} />, name: 'Tiendas' },
-  { icon: <Briefcase size={20} />, name: 'Consultorías' },
-  { icon: <GraduationCap size={20} />, name: 'Academias' },
-  { icon: <Wrench size={20} />, name: 'Servicios' },
+  { icon: <Scissors size={20} />, name: 'Peluquerías', desc: 'Citas, precios, horarios' },
+  { icon: <Stethoscope size={20} />, name: 'Clínicas', desc: 'Reservas de consultas' },
+  { icon: <UtensilsCrossed size={20} />, name: 'Restaurantes', desc: 'Reservas de mesa' },
+  { icon: <Dumbbell size={20} />, name: 'Gimnasios', desc: 'Clases y membresías' },
+  { icon: <Store size={20} />, name: 'Tiendas', desc: 'Info y disponibilidad' },
+  { icon: <Briefcase size={20} />, name: 'Consultorías', desc: 'Agendar reuniones' },
+  { icon: <GraduationCap size={20} />, name: 'Academias', desc: 'Matrículas y horarios' },
+  { icon: <Wrench size={20} />, name: 'Servicios', desc: 'Presupuestos y citas' },
 ];
 
 const REVIEWS = [
-  { quote: 'Desde que activamos Wasapy, no perdemos ni una consulta fuera de horario. Las citas se agendan solas y mis clientes están encantados con la rapidez.', name: 'Laura M.', role: 'Clínica dental', stars: 5 },
-  { quote: 'Mis clientes no notan que hablan con una IA. Responde con mis precios, mis horarios, todo perfecto. Me ahorra al menos 3 horas al día.', name: 'Carlos R.', role: 'Peluquería', stars: 5 },
-  { quote: 'En la primera semana ya se agendaron 12 citas sin que yo tocara el teléfono. El retorno de inversión es brutal para lo que cuesta.', name: 'Ana G.', role: 'Estudio de yoga', stars: 5 },
-];
-
-const COMPARE = [
-  { without: 'Pierdes clientes fuera de horario', withText: 'Atención automática 24/7' },
-  { without: 'Tardas horas en responder', withText: 'Respuesta en segundos' },
-  { without: 'Agendas citas a mano', withText: 'La IA agenda citas sola' },
-  { without: 'Olvidas recoger datos', withText: 'Captación de leads automática' },
-  { without: 'Pierdes ventas por no responder', withText: 'La IA recomienda y vende' },
+  { quote: 'Desde que activamos Wasapy, no perdemos ni una consulta fuera de horario. Las citas se agendan solas.', name: 'Laura M.', role: 'Clínica dental' },
+  { quote: 'Mis clientes no notan que hablan con una IA. Me ahorra al menos 3 horas al día.', name: 'Carlos R.', role: 'Peluquería' },
+  { quote: 'En la primera semana se agendaron 12 citas sin que tocara el teléfono. El ROI es brutal.', name: 'Ana G.', role: 'Estudio de yoga' },
 ];
 
 const FAQ = [
-  { q: '¿Es difícil de configurar?', a: 'No. Sin código, en 5 minutos está funcionando. Te guiamos paso a paso con tutoriales incluidos en la plataforma.' },
-  { q: '¿Qué pasa si la IA responde mal?', a: 'Solo responde con la información de TU negocio. Si no sabe algo, avisa y deriva a ti directamente. Nunca inventa datos.' },
-  { q: '¿Funciona con mi tipo de negocio?', a: 'Si atiendes clientes por WhatsApp, te sirve. Restaurantes, clínicas, peluquerías, tiendas, servicios, consultorías, academias...' },
-  { q: '¿Puedo seguir usando WhatsApp yo?', a: 'Sí. Si tú respondes manualmente, el agente se quita de en medio. Solo actúa cuando no estás.' },
-  { q: '¿Cuánto cuesta?', a: 'Desde 29€/mes. Tienes 2 días gratis sin tarjeta para probarlo sin ningún riesgo.' },
-  { q: '¿Necesito la API de WhatsApp Business?', a: 'No. Funciona con tu WhatsApp normal. Solo escaneas un QR y listo.' },
-  { q: '¿Puedo cancelar cuando quiera?', a: 'Sí. Sin permanencia, sin penalizaciones, sin letra pequeña. Cancelas y listo.' },
+  { q: '¿Es difícil de configurar?', a: 'No. Sin código, en 5 minutos está funcionando. Te guiamos paso a paso con tutoriales dentro de la plataforma.' },
+  { q: '¿Y si la IA responde mal?', a: 'Solo responde con la información de TU negocio. Nunca inventa. Si no sabe algo, avisa y deriva a ti directamente.' },
+  { q: '¿Funciona con mi tipo de negocio?', a: 'Si atiendes clientes por WhatsApp, sí. Restaurantes, clínicas, peluquerías, tiendas, servicios, consultorías...' },
+  { q: '¿Puedo seguir usando mi WhatsApp?', a: 'Sí. Si respondes manualmente, el agente se aparta. Solo actúa cuando no estás.' },
+  { q: '¿Cuánto cuesta?', a: '29€/mes con todo incluido. 2 días gratis sin tarjeta para que lo pruebes sin riesgo.' },
+  { q: '¿Puedo cancelar cuando quiera?', a: 'Sí. Sin permanencia, sin penalizaciones, sin letra pequeña.' },
 ];
 
-/* ── Showcase Mockups ── */
+/* ── MOCKUPS ── */
 function MockChat() {
   return (
-    <div className="smk">
-      <div className="smk__bar"><span /><span /><span /></div>
-      <div className="smk__inner smk__inner--chat">
-        <div className="smk-m smk-m--in">Hola, ¿cuánto cuesta un corte?</div>
-        <div className="smk-m smk-m--out">¡Hola! El corte caballero es <b>15€</b> y señora <b>20€</b>. ¿Reservamos cita?</div>
-        <div className="smk-m smk-m--in">Sí, para mañana tarde</div>
-        <div className="smk-m smk-m--out">Perfecto, te puedo ofrecer las <b>16:00</b> o las <b>17:30</b>. ¿Cuál prefieres?</div>
-        <div className="smk-m smk-m--in">A las 16</div>
-        <div className="smk-m smk-m--out">✅ Cita confirmada mañana a las <b>16:00</b>. ¡Te esperamos!</div>
+    <div className="mk">
+      <div className="mk__bar"><span /><span /><span /></div>
+      <div className="mk__head"><div className="mk__av"><Bot size={14} /></div><div><b>Tu Negocio IA</b><small>en línea</small></div></div>
+      <div className="mk__chat">
+        <div className="mk__m mk__m--in">Hola, ¿cuánto cuesta un corte de pelo?</div>
+        <div className="mk__m mk__m--out">¡Hola! El corte caballero es <b>15€</b> y señora <b>20€</b>. ¿Te gustaría reservar cita?</div>
+        <div className="mk__m mk__m--in">Sí, para mañana por la tarde</div>
+        <div className="mk__m mk__m--out">Tengo disponible mañana a las <b>16:00</b> o <b>17:30</b>. ¿Cuál prefieres?</div>
+        <div className="mk__m mk__m--in">A las 16:00</div>
+        <div className="mk__m mk__m--out">✅ Cita <b>confirmada</b> mañana a las <b>16:00</b>. ¡Te esperamos!</div>
       </div>
+      <div className="mk__input"><span>Escribe un mensaje...</span><Send size={14} /></div>
     </div>
   );
 }
+
 function MockCalendar() {
   return (
-    <div className="smk">
-      <div className="smk__bar"><span /><span /><span /></div>
-      <div className="smk__inner">
-        <div className="smk-cal__head"><strong>Febrero 2026</strong></div>
-        <div className="smk-cal__days"><span>LUN</span><span>MAR</span><span>MIÉ</span><span>JUE</span><span>VIE</span></div>
-        <div className="smk-cal__grid">
-          <div>17</div><div className="smk-cal__today">18</div><div>19</div><div>20</div><div>21</div>
+    <div className="mk mk--lg">
+      <div className="mk__bar"><span /><span /><span /></div>
+      <div className="mk-cal">
+        <div className="mk-cal__top">
+          <div><b>Calendario de Reservas</b><small>Gestiona todas las citas de tu negocio</small></div>
+          <span className="mk-cal__badge">+ Nueva Reserva</span>
         </div>
-        <div className="smk-cal__events">
-          <div className="smk-cal__ev"><b>10:00</b> María G. — Corte</div>
-          <div className="smk-cal__ev smk-cal__ev--ai"><b>14:00</b> Carlos R. — Tinte</div>
-          <div className="smk-cal__ev"><b>16:30</b> Ana M. — Mechas</div>
-          <div className="smk-cal__ev smk-cal__ev--ai"><b>18:00</b> Pedro L. — Barba</div>
-        </div>
-      </div>
-    </div>
-  );
-}
-function MockDashboard() {
-  return (
-    <div className="smk smk--wide">
-      <div className="smk__bar"><span /><span /><span /></div>
-      <div className="smk__inner smk__inner--dash">
-        <div className="smk-d__side">
-          <div className="smk-d__logo">wasap<em>y</em></div>
-          <div className="smk-d__nav">
-            <div className="smk-d__ni smk-d__ni--on"><BarChart3 size={10} /> Dashboard</div>
-            <div className="smk-d__ni"><MessageCircle size={10} /> WhatsApp</div>
-            <div className="smk-d__ni"><Brain size={10} /> Prompt IA</div>
-            <div className="smk-d__ni"><CalendarCheck size={10} /> Citas</div>
-          </div>
-        </div>
-        <div className="smk-d__main">
-          <div className="smk-d__stats">
-            <div className="smk-d__st"><strong>247</strong><span>Mensajes</span></div>
-            <div className="smk-d__st"><strong>18</strong><span>Leads</span></div>
-            <div className="smk-d__st"><strong>12</strong><span>Citas</span></div>
-            <div className="smk-d__st"><strong>95%</strong><span>Precisión</span></div>
-          </div>
-          <div className="smk-d__convos">
-            <div className="smk-d__convo"><div className="smk-d__convo-dot" /><div><b>María G.</b><span>¿Tienen disponibilidad ma...</span></div><small>14:32</small></div>
-            <div className="smk-d__convo"><div className="smk-d__convo-dot smk-d__convo-dot--new" /><div><b>Carlos R.</b><span>Perfecto, a las 16:00 me...</span></div><small>14:28</small></div>
-            <div className="smk-d__convo"><div className="smk-d__convo-dot" /><div><b>Ana M.</b><span>¿Cuánto cuesta el trata...</span></div><small>13:15</small></div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-const MOCKUP_MAP = { chat: MockChat, calendar: MockCalendar, dashboard: MockDashboard };
-
-/* ══════════════════════════════════
-   MAIN COMPONENT
-   ══════════════════════════════════ */
-export default function SaasLanding() {
-  const [faqOpen, setFaqOpen] = useState(null);
-
-  function toggleTheme() {
-    const d = document.documentElement;
-    if (d.getAttribute('data-theme') === 'dark') { d.removeAttribute('data-theme'); localStorage.setItem('theme', ''); }
-    else { d.setAttribute('data-theme', 'dark'); localStorage.setItem('theme', 'dark'); }
-  }
-
-  return (
-    <div className="lp">
-
-      {/* ═══ NAV ═══ */}
-      <nav className="ln">
-        <div className="lc ln__inner">
-          <Link to="/" className="ln__logo"><span className="logo-t">wasap<span className="logo-g">y</span></span><span className="logo-badge">.io</span></Link>
-          <div className="ln__links">
-            <a href="#product">Producto</a>
-            <a href="#pricing">Precios</a>
-            <a href="#faq">FAQ</a>
-          </div>
-          <div className="ln__right">
-            <button className="ln__theme" onClick={toggleTheme} aria-label="Toggle theme"><Sun size={15} className="ln__ico--l" /><Moon size={15} className="ln__ico--d" /></button>
-            <Link to="/auth" className="ln__login">Entrar</Link>
-            <Link to="/auth?mode=register" className="ln__cta"><Zap size={14} /> Prueba gratis</Link>
-          </div>
-        </div>
-      </nav>
-
-      {/* ═══ HERO ═══ */}
-      <section className="hero">
-        <div className="hero__bg" />
-        <div className="lc hero__inner">
-          <motion.div className="hero__txt" initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
-            <motion.span className="hero__pill" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.1 }}>
-              <Sparkles size={12} /> Agente WhatsApp IA para negocios
-            </motion.span>
-            <motion.h1 initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
-              Automatiza tu WhatsApp.<br /><span className="grad">Crece sin límites.</span>
-            </motion.h1>
-            <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.35 }}>
-              Un agente de inteligencia artificial que atiende a tus clientes, agenda citas y cierra ventas por WhatsApp. <strong>24 horas al día, 7 días a la semana.</strong> Sin código. Sin complicaciones.
-            </motion.p>
-            <motion.div className="hero__acts" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.45 }}>
-              <Link to="/auth?mode=register" className="btn btn--p btn--xl"><Zap size={18} /> Empezar gratis <ArrowRight size={16} /></Link>
-              <a href="#product" className="btn btn--o btn--xl"><Play size={16} /> Ver cómo funciona</a>
-            </motion.div>
-            <motion.span className="hero__note" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.55 }}>
-              <CheckCircle size={13} /> 2 días gratis · Sin tarjeta · Cancela cuando quieras
-            </motion.span>
-          </motion.div>
-          <motion.div className="hero__visual" initial={{ opacity: 0, scale: 0.9, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} transition={{ duration: 0.7, delay: 0.3 }}>
-            <ChatDemo />
-          </motion.div>
-        </div>
-      </section>
-
-      {/* ═══ STATS STRIP ═══ */}
-      <section className="strip">
-        <div className="lc strip__inner">
-          {STATS.map((s, i) => (
-            <div key={i} className="strip__item">
-              <span className="strip__num"><CountUp end={s.num} suffix={s.suffix} /></span>
-              <span className="strip__label">{s.label}</span>
-            </div>
+        <div className="mk-cal__week">
+          <div className="mk-cal__wh"><small>Hora</small></div>
+          {['Lun 17', 'Mar 18', 'Mié 19', 'Jue 20', 'Vie 21'].map((d, i) => (
+            <div key={i} className={`mk-cal__wd ${i === 1 ? 'mk-cal__wd--today' : ''}`}><small>{d}</small></div>
           ))}
         </div>
-      </section>
-
-      {/* ═══ PRODUCT SHOWCASES ═══ */}
-      <section className="showcases" id="product">
-        <div className="lc">
-          <div className="sh"><h2>Lo que Wasapy hace por tu negocio</h2><p className="sp">Tres funciones que convierten tu WhatsApp en una máquina de atender, vender y agendar. Sin esfuerzo.</p></div>
-          {SHOWCASES.map((s, i) => {
-            const Mockup = MOCKUP_MAP[s.mockup];
-            const reverse = i % 2 !== 0;
-            return <ShowcaseRow key={i} s={s} reverse={reverse} Mockup={Mockup} />;
-          })}
-        </div>
-      </section>
-
-      {/* ═══ GREEN CTA ═══ */}
-      <section className="gcta">
-        <div className="lc gcta__inner">
-          <div>
-            <h2>Empieza a automatizar hoy</h2>
-            <p>2 días gratis. Sin tarjeta. Sin compromiso. Tu agente IA activo en 5 minutos.</p>
+        <div className="mk-cal__body">
+          <div className="mk-cal__hours">
+            {['09:00', '10:00', '11:00', '12:00', '14:00', '15:00', '16:00', '17:00'].map(h => <div key={h} className="mk-cal__h">{h}</div>)}
           </div>
-          <Link to="/auth?mode=register" className="btn btn--w btn--xl"><Zap size={18} /> Probar gratis ahora <ArrowRight size={16} /></Link>
-        </div>
-      </section>
-
-      {/* ═══ SECTORS ═══ */}
-      <SectionAnimated>
-        <div className="lc">
-          <div className="sh"><h2>Para cualquier tipo de negocio</h2><p className="sp">Si atiendes clientes por WhatsApp, Wasapy puede ayudarte. Estos son algunos de los sectores que más lo usan.</p></div>
-          <div className="sectors">
-            {SECTORS.map((s, i) => (
-              <motion.div key={i} className="sector" initial={{ opacity: 0, scale: 0.9 }} whileInView={{ opacity: 1, scale: 1 }} viewport={{ once: true }} transition={{ delay: i * 0.05 }}>
-                <div className="sector__ico">{s.icon}</div><span>{s.name}</span>
-              </motion.div>
-            ))}
+          <div className="mk-cal__grid">
+            <div className="mk-cal__ev" style={{ gridColumn: 2, gridRow: '1/2' }}>María G.<br /><small>Corte</small></div>
+            <div className="mk-cal__ev mk-cal__ev--ai" style={{ gridColumn: 3, gridRow: '3/4' }}>Carlos R.<br /><small>Tinte</small></div>
+            <div className="mk-cal__ev" style={{ gridColumn: 2, gridRow: '6/7' }}>Ana M.<br /><small>Mechas</small></div>
+            <div className="mk-cal__ev mk-cal__ev--ai" style={{ gridColumn: 4, gridRow: '4/5' }}>Pedro L.<br /><small>Barba</small></div>
+            <div className="mk-cal__ev" style={{ gridColumn: 5, gridRow: '2/3' }}>Sara T.<br /><small>Keratina</small></div>
+            <div className="mk-cal__ev mk-cal__ev--ai" style={{ gridColumn: 3, gridRow: '7/8' }}>Luis A.<br /><small>Corte</small></div>
           </div>
         </div>
-      </SectionAnimated>
+        <div className="mk-cal__legend"><span className="mk-cal__ldot" /> Manual <span className="mk-cal__ldot mk-cal__ldot--ai" /> Agendada por IA</div>
+      </div>
+    </div>
+  );
+}
 
-      {/* ═══ COMPARE ═══ */}
-      <SectionAnimated className="sec--alt">
-        <div className="lc">
-          <div className="sh"><h2>El antes y el después</h2><p className="sp">Compara cómo funciona tu negocio sin automatizar frente a lo que consigues con un agente IA atendiendo por ti.</p></div>
-          <div className="cmp">
-            <div className="cmp__head"><span className="cmp__h cmp__h--bad">Sin Wasapy</span><span className="cmp__h cmp__h--good">Con Wasapy</span></div>
-            {COMPARE.map((c, i) => (
-              <motion.div key={i} className="cmp__row" initial={{ opacity: 0, x: -8 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.06 }}>
-                <span className="cmp__c cmp__c--bad"><X size={14} />{c.without}</span>
-                <span className="cmp__c cmp__c--good"><Check size={14} />{c.withText}</span>
-              </motion.div>
-            ))}
-          </div>
+function MockDashboard() {
+  return (
+    <div className="mk mk--lg">
+      <div className="mk__bar"><span /><span /><span /></div>
+      <div className="mk-dash">
+        <div className="mk-dash__side">
+          <div className="mk-dash__logo">wasap<em>y</em></div>
+          <nav className="mk-dash__nav">
+            <div className="mk-dash__ni mk-dash__ni--on"><BarChart3 size={11} /> Dashboard</div>
+            <div className="mk-dash__ni"><MessageCircle size={11} /> WhatsApp</div>
+            <div className="mk-dash__ni"><Brain size={11} /> Prompt IA</div>
+            <div className="mk-dash__ni"><CalendarCheck size={11} /> Citas</div>
+            <div className="mk-dash__ni"><Shield size={11} /> Soporte</div>
+          </nav>
         </div>
-      </SectionAnimated>
-
-      {/* ═══ REVIEWS ═══ */}
-      <SectionAnimated>
-        <div className="lc">
-          <div className="sh"><h2>Lo que dicen nuestros usuarios</h2><p className="sp">Negocios reales que ya automatizan su WhatsApp con Wasapy.</p></div>
-          <div className="revs">
-            {REVIEWS.map((r, i) => (
-              <motion.div key={i} className="rev" initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.1 }}>
-                <div className="rev__stars">{Array.from({ length: r.stars }).map((_, si) => <Star key={si} size={15} />)}</div>
-                <p>"{r.quote}"</p>
-                <div className="rev__who"><div className="rev__av">{r.name[0]}</div><div><b>{r.name}</b><span>{r.role}</span></div></div>
-              </motion.div>
-            ))}
+        <div className="mk-dash__main">
+          <div className="mk-dash__stats">
+            <div className="mk-dash__st"><strong>247</strong><span>Mensajes</span></div>
+            <div className="mk-dash__st"><strong>18</strong><span>Leads</span></div>
+            <div className="mk-dash__st"><strong>12</strong><span>Citas hoy</span></div>
+            <div className="mk-dash__st"><strong>95%</strong><span>Precisión</span></div>
           </div>
-        </div>
-      </SectionAnimated>
-
-      {/* ═══ HOW IT WORKS ═══ */}
-      <SectionAnimated className="sec--alt">
-        <div className="lc">
-          <div className="sh"><h2>Activo en <span className="grad">3 pasos</span></h2><p className="sp">No necesitas conocimientos técnicos. Si sabes usar WhatsApp, sabes usar Wasapy.</p></div>
-          <div className="steps">
+          <div className="mk-dash__convos">
+            <small className="mk-dash__convos-title">Conversaciones recientes</small>
             {[
-              { n: '1', t: 'Conecta tu WhatsApp', d: 'Escaneas un QR code desde tu móvil. Solo 10 segundos.', time: '10 seg' },
-              { n: '2', t: 'Entrena a la IA', d: 'Añade servicios, precios y horarios. La IA aprende al instante.', time: '3 min' },
-              { n: '3', t: 'Activa y listo', d: 'Tu agente empieza a atender clientes automáticamente.', time: '¡Ya!' },
-            ].map((s, i) => (
-              <motion.div key={i} className="step" initial={{ opacity: 0, y: 25 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.15 }}>
-                <div className="step__n">{s.n}</div>
-                <h3>{s.t}</h3>
-                <p>{s.d}</p>
-                <span className="step__time">{s.time}</span>
-              </motion.div>
-            ))}
-          </div>
-          <div style={{ textAlign: 'center', marginTop: '2.5rem' }}>
-            <Link to="/auth?mode=register" className="btn btn--p btn--lg"><Zap size={16} /> Empezar ahora — Es gratis <ArrowRight size={14} /></Link>
-          </div>
-        </div>
-      </SectionAnimated>
-
-      {/* ═══ PRICING ═══ */}
-      <SectionAnimated id="pricing">
-        <div className="lc">
-          <div className="sh"><h2>Precio claro. Sin sorpresas.</h2><p className="sp">Un solo plan con todo incluido. Empieza gratis y decide después.</p></div>
-          <div className="price-card">
-            <div className="price-card__top"><Sparkles size={22} /><div><h3>2 días gratis</h3><p>Todo incluido. Sin tarjeta. Sin compromiso.</p></div></div>
-            <div className="price-card__sep" />
-            <div className="price-card__amount"><span>29€</span><em>/mes</em></div>
-            <ul>{['Agente IA para WhatsApp', 'Agendamiento automático de citas', 'Técnicas de venta integradas', 'Dashboard con estadísticas', 'Historial de conversaciones', 'Soporte incluido', 'Sin permanencia'].map((f, i) => <li key={i}><CheckCircle size={14} />{f}</li>)}</ul>
-            <Link to="/auth?mode=register" className="btn btn--p btn--xl btn--full"><Zap size={18} /> Empezar prueba gratis</Link>
-          </div>
-        </div>
-      </SectionAnimated>
-
-      {/* ═══ FAQ ═══ */}
-      <SectionAnimated className="sec--alt" id="faq">
-        <div className="lc">
-          <div className="sh"><h2>Preguntas frecuentes</h2></div>
-          <div className="faqs">
-            {FAQ.map((item, i) => (
-              <div key={i} className={`faq-item ${faqOpen === i ? 'faq-item--open' : ''}`}>
-                <button className="faq-item__q" onClick={() => setFaqOpen(faqOpen === i ? null : i)}>
-                  <span>{item.q}</span><ChevronDown size={18} />
-                </button>
-                <AnimatePresence>
-                  {faqOpen === i && (
-                    <motion.div className="faq-item__a" initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.25 }}>
-                      <p>{item.a}</p>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
+              { name: 'María G.', msg: '¿Tienen disponibilidad mañana por...', time: '14:32', unread: false },
+              { name: 'Carlos R.', msg: 'Perfecto, a las 16:00 me viene...', time: '14:28', unread: true },
+              { name: 'Ana M.', msg: '¿Cuánto cuesta el tratamiento de...', time: '13:15', unread: false },
+              { name: 'Pedro L.', msg: 'Quiero cancelar mi cita del juev...', time: '12:40', unread: true },
+            ].map((c, i) => (
+              <div key={i} className="mk-dash__convo">
+                <div className={`mk-dash__dot ${c.unread ? 'mk-dash__dot--new' : ''}`} />
+                <div className="mk-dash__convo-info"><b>{c.name}</b><span>{c.msg}</span></div>
+                <small>{c.time}</small>
               </div>
             ))}
           </div>
         </div>
-      </SectionAnimated>
-
-      {/* ═══ FINAL CTA ═══ */}
-      <section className="fcta">
-        <div className="lc">
-          <h2>Tu competencia ya usa IA.<br />¿Y tú?</h2>
-          <p>Empieza gratis en 5 minutos. Sin tarjeta. Sin riesgo.</p>
-          <Link to="/auth?mode=register" className="btn btn--p btn--xl"><Zap size={20} /> Automatizar mi WhatsApp <ArrowRight size={18} /></Link>
-          <span className="fcta__note">2 días gratis · Sin tarjeta de crédito · Cancela cuando quieras</span>
-        </div>
-      </section>
-
-      {/* ═══ FOOTER ═══ */}
-      <footer className="ft">
-        <div className="lc ft__inner">
-          <div className="ft__brand"><span className="logo-t logo-t--s">wasap<span className="logo-g">y</span></span><span className="logo-badge">.io</span></div>
-          <p>© 2026 Wasapy. Todos los derechos reservados.</p>
-          <div className="ft__links">
-            <a href="https://agutidesigns.io/privacidad.html" target="_blank" rel="noopener">Privacidad</a><span>·</span>
-            <a href="https://agutidesigns.io/terminos.html" target="_blank" rel="noopener">Términos</a><span>·</span>
-            <a href="mailto:soporte@agutidesigns.io">Contacto</a>
-          </div>
-        </div>
-      </footer>
+      </div>
     </div>
   );
 }
 
-/* ── Helper components ── */
-function SectionAnimated({ children, className = '', id }) {
-  return <section className={`sec ${className}`} id={id}>{children}</section>;
+const MOCKUPS = { chat: MockChat, calendar: MockCalendar, dashboard: MockDashboard };
+
+/* ══════════════════════════════════ */
+export default function SaasLanding() {
+  const [faqOpen, setFaqOpen] = useState(null);
+  const toggle = () => {
+    const d = document.documentElement;
+    const isDark = d.getAttribute('data-theme') === 'dark';
+    if (isDark) { d.removeAttribute('data-theme'); localStorage.setItem('theme', ''); }
+    else { d.setAttribute('data-theme', 'dark'); localStorage.setItem('theme', 'dark'); }
+  };
+
+  return (
+    <div className="lp">
+      {/* NAV */}
+      <nav className="ln"><div className="lc ln__in">
+        <Link to="/" className="ln__logo"><span className="lt">wasap<span className="lg">y</span></span><span className="lb">.io</span></Link>
+        <div className="ln__mid"><a href="#product">Producto</a><a href="#sectors">Sectores</a><a href="#pricing">Precios</a><a href="#faq">FAQ</a></div>
+        <div className="ln__r">
+          <button className="ln__theme" onClick={toggle}><Sun size={15} className="ln__il" /><Moon size={15} className="ln__id" /></button>
+          <Link to="/auth" className="ln__log">Entrar</Link>
+          <Link to="/auth?mode=register" className="ln__cta"><Zap size={14} /> Prueba gratis</Link>
+        </div>
+      </div></nav>
+
+      {/* ═══ HERO — Nexi style ═══ */}
+      <section className="hero">
+        <div className="hero__glow" />
+        <div className="lc hero__grid">
+          <motion.div className="hero__left" initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
+            <span className="hero__pill"><Sparkles size={12} /> Potenciado con Inteligencia Artificial</span>
+            <h1>El WhatsApp con IA que <span className="grad">multiplica tus reservas</span></h1>
+            <p>Un asistente IA que atiende a tus clientes por WhatsApp 24/7. Gestiona reservas, responde preguntas y cierra ventas desde una única plataforma.</p>
+            <div className="hero__metrics">
+              <div><Clock size={15} /> Configuración en 5 min</div>
+              <div><Shield size={15} /> GDPR compliance</div>
+              <div><TrendingUp size={15} /> +40% reservas</div>
+              <div><Bot size={15} /> IA 24/7</div>
+            </div>
+            <div className="hero__social">
+              <div className="hero__avatars"><span>L</span><span>C</span><span>A</span><span>P</span></div>
+              <div className="hero__social-stars">{[1,2,3,4,5].map(i => <Star key={i} size={13} />)}</div>
+              <span className="hero__social-text">Usado por negocios en España</span>
+            </div>
+          </motion.div>
+
+          <motion.div className="hero__right" initial={{ opacity: 0, y: 20, scale: 0.96 }} animate={{ opacity: 1, y: 0, scale: 1 }} transition={{ duration: 0.7, delay: 0.2 }}>
+            <div className="hero-card">
+              <span className="hero-card__badge"><Zap size={12} /> 2 DÍAS GRATIS</span>
+              <h3>Prueba todo el potencial de Wasapy sin coste</h3>
+              <p>Crea tu cuenta en 2 minutos y accede a todas las funcionalidades. Sin tarjeta de crédito, sin permanencia.</p>
+              <ul className="hero-card__features">
+                {HERO_FEATURES.map((f, i) => <li key={i}>{f.icon}<span>{f.text}</span></li>)}
+              </ul>
+              <Link to="/auth?mode=register" className="btn btn--p btn--xl btn--full"><Zap size={16} /> Empezar prueba gratuita <ArrowRight size={16} /></Link>
+              <div className="hero-card__note"><Lock size={12} /> Sin tarjeta <Shield size={12} /> GDPR <Zap size={12} /> Activo en 2 min</div>
+            </div>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* ═══ STATS ═══ */}
+      <section className="strip"><div className="lc strip__in">
+        {[{ n: 5, s: ' min', l: 'Configuración' }, { n: 95, s: '%', l: 'Respuestas correctas' }, { n: 24, s: '/7', l: 'Atención automática' }, { n: 29, s: '€', l: '/mes todo incluido' }].map((s, i) => (
+          <div key={i} className="strip__it"><span className="strip__n"><CountUp end={s.n} suffix={s.s} /></span><span className="strip__l">{s.l}</span></div>
+        ))}
+      </div></section>
+
+      {/* ═══ PRODUCT SECTIONS ═══ */}
+      <div id="product">
+        {PRODUCT_SECTIONS.map((sec, i) => {
+          const Mk = MOCKUPS[sec.mockup];
+          return <ProductSection key={i} sec={sec} idx={i} Mk={Mk} />;
+        })}
+      </div>
+
+      {/* ═══ GREEN CTA ═══ */}
+      <section className="gcta"><div className="lc gcta__in">
+        <div><h2>Activa tu agente IA en 5 minutos</h2><p>2 días gratis. Sin tarjeta. Sin compromiso. Tu WhatsApp automatizado hoy mismo.</p></div>
+        <Link to="/auth?mode=register" className="btn btn--w btn--xl"><Zap size={18} /> Probar gratis ahora <ArrowRight size={16} /></Link>
+      </div></section>
+
+      {/* ═══ SECTORS ═══ */}
+      <Sec id="sectors" alt>
+        <div className="sh"><h2>Para cualquier tipo de negocio</h2><p className="sp">Si atiendes clientes por WhatsApp, Wasapy puede ayudarte.</p></div>
+        <div className="sectors">{SECTORS.map((s, i) => (
+          <motion.div key={i} className="sector" initial={{ opacity: 0, y: 15 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.04 }}>
+            <div className="sector__ic">{s.icon}</div><b>{s.name}</b><span>{s.desc}</span>
+          </motion.div>
+        ))}</div>
+      </Sec>
+
+      {/* ═══ REVIEWS ═══ */}
+      <Sec>
+        <div className="sh"><h2>Lo que dicen nuestros usuarios</h2></div>
+        <div className="revs">{REVIEWS.map((r, i) => (
+          <motion.div key={i} className="rev" initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.1 }}>
+            <div className="rev__stars">{[1,2,3,4,5].map(j => <Star key={j} size={14} />)}</div>
+            <p>"{r.quote}"</p>
+            <div className="rev__who"><div className="rev__av">{r.name[0]}</div><div><b>{r.name}</b><span>{r.role}</span></div></div>
+          </motion.div>
+        ))}</div>
+      </Sec>
+
+      {/* ═══ HOW IT WORKS ═══ */}
+      <Sec alt>
+        <div className="sh"><h2>Activo en <span className="grad">3 pasos</span></h2><p className="sp">No necesitas conocimientos técnicos. Si sabes usar WhatsApp, sabes usar Wasapy.</p></div>
+        <div className="steps">{[
+          { n: '1', t: 'Conecta tu WhatsApp', d: 'Escaneas un QR code. 10 segundos.', time: '10 seg' },
+          { n: '2', t: 'Entrena a la IA', d: 'Añade tus servicios, precios y horarios.', time: '3 min' },
+          { n: '3', t: 'Activa y listo', d: 'Tu agente atiende clientes automáticamente.', time: '¡Ya!' },
+        ].map((s, i) => (
+          <motion.div key={i} className="step" initial={{ opacity: 0, y: 25 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.15 }}>
+            <div className="step__n">{s.n}</div><h3>{s.t}</h3><p>{s.d}</p><span className="step__time">{s.time}</span>
+          </motion.div>
+        ))}</div>
+      </Sec>
+
+      {/* ═══ PRICING ═══ */}
+      <Sec id="pricing">
+        <div className="sh"><h2>Precio claro. Sin sorpresas.</h2><p className="sp">Un solo plan con todo incluido.</p></div>
+        <div className="pcard">
+          <div className="pcard__top"><Sparkles size={22} /><div><h3>2 días gratis</h3><p>Todo incluido. Sin tarjeta. Sin compromiso.</p></div></div>
+          <div className="pcard__sep" />
+          <div className="pcard__price"><span>29€</span><em>/mes</em></div>
+          <ul>{['Agente IA para WhatsApp', 'Agendamiento automático de citas', 'Técnicas de venta integradas', 'Dashboard con estadísticas', 'Historial de conversaciones', 'Soporte incluido', 'Sin permanencia'].map((f, i) => <li key={i}><CheckCircle size={14} />{f}</li>)}</ul>
+          <Link to="/auth?mode=register" className="btn btn--p btn--xl btn--full"><Zap size={18} /> Empezar prueba gratis</Link>
+        </div>
+      </Sec>
+
+      {/* ═══ FAQ ═══ */}
+      <Sec alt id="faq">
+        <div className="sh"><h2>Preguntas frecuentes</h2></div>
+        <div className="faqs">{FAQ.map((item, i) => (
+          <div key={i} className={`fi ${faqOpen === i ? 'fi--open' : ''}`}>
+            <button className="fi__q" onClick={() => setFaqOpen(faqOpen === i ? null : i)}><span>{item.q}</span><ChevronDown size={18} /></button>
+            <AnimatePresence>{faqOpen === i && (
+              <motion.div className="fi__a" initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.25 }}><p>{item.a}</p></motion.div>
+            )}</AnimatePresence>
+          </div>
+        ))}</div>
+      </Sec>
+
+      {/* ═══ FINAL CTA ═══ */}
+      <section className="fcta"><div className="lc">
+        <h2>Tu competencia ya usa IA.<br />¿Y tú?</h2>
+        <p>Empieza gratis en 5 minutos. Sin tarjeta. Sin riesgo.</p>
+        <Link to="/auth?mode=register" className="btn btn--p btn--xl"><Zap size={20} /> Automatizar mi WhatsApp <ArrowRight size={18} /></Link>
+        <span className="fcta__n">2 días gratis · Sin tarjeta · Cancela cuando quieras</span>
+      </div></section>
+
+      {/* FOOTER */}
+      <footer className="ft"><div className="lc ft__in">
+        <div className="ft__brand"><span className="lt lt--s">wasap<span className="lg">y</span></span><span className="lb">.io</span></div>
+        <p>© 2026 Wasapy. Todos los derechos reservados.</p>
+        <div className="ft__links"><a href="https://agutidesigns.io/privacidad.html" target="_blank" rel="noopener">Privacidad</a><span>·</span><a href="https://agutidesigns.io/terminos.html" target="_blank" rel="noopener">Términos</a><span>·</span><a href="mailto:soporte@agutidesigns.io">Contacto</a></div>
+      </div></footer>
+    </div>
+  );
 }
 
-function ShowcaseRow({ s, reverse, Mockup }) {
-  const [ref, inView] = useInView({ threshold: 0.15, triggerOnce: true });
+function Sec({ children, alt, id }) {
+  return <section className={`sec ${alt ? 'sec--a' : ''}`} id={id}>{children}</section>;
+}
+
+function ProductSection({ sec, idx, Mk }) {
+  const [ref, inView] = useInView({ threshold: 0.1, triggerOnce: true });
+  const rev = idx % 2 !== 0;
   return (
-    <motion.div ref={ref} className={`sc ${reverse ? 'sc--rev' : ''}`} initial={{ opacity: 0, y: 40 }} animate={inView ? { opacity: 1, y: 0 } : {}} transition={{ duration: 0.5 }}>
-      <div className="sc__txt">
-        <span className="sc__tag">{s.tagIcon} {s.tag}</span>
-        <h3>{s.title}</h3>
-        <p>{s.desc}</p>
-        <ul>{s.bullets.map((b, i) => <li key={i}><CheckCircle size={14} />{b}</li>)}</ul>
+    <section className={`psec ${rev ? 'psec--rev' : ''} ${idx % 2 === 0 ? '' : 'psec--alt'}`} ref={ref}>
+      <div className="lc">
+        <div className="psec__header">
+          <span className="psec__tag">{sec.tag}</span>
+          <h2>{sec.title}</h2>
+          <p>{sec.desc}</p>
+        </div>
+        <motion.div className={`psec__grid ${rev ? 'psec__grid--rev' : ''}`} initial={{ opacity: 0, y: 40 }} animate={inView ? { opacity: 1, y: 0 } : {}} transition={{ duration: 0.5 }}>
+          <div className="psec__visual"><Mk /></div>
+          <div className="psec__bullets">
+            <ul>{sec.bullets.map((b, i) => <li key={i}><CheckCircle size={16} /><span>{b}</span></li>)}</ul>
+          </div>
+        </motion.div>
       </div>
-      <div className="sc__vis"><Mockup /></div>
-    </motion.div>
+    </section>
   );
 }
