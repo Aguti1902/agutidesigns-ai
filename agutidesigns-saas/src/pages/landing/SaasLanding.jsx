@@ -348,7 +348,7 @@ export default function SaasLanding() {
 }
 
 function Sec({ children, alt, id }) {
-  return <section className={`sec ${alt ? 'sec--a' : ''}`} id={id}>{children}</section>;
+  return <section className={`sec ${alt ? 'sec--a' : ''}`} id={id}><div className="lc">{children}</div></section>;
 }
 
 function ProductSection({ sec, idx, Mk }) {
