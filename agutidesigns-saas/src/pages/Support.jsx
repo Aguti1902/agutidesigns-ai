@@ -322,7 +322,7 @@ export default function Support() {
                   <div className="ticket-msg__body">
                     <div className="ticket-msg__header">
                       <span className="ticket-msg__name">
-                        {msg.is_admin ? 'Soporte Agutidesigns' : 'Tú'}
+                        {msg.is_admin ? 'Soporte Wasapy' : 'Tú'}
                       </span>
                       <span className="ticket-msg__time">{formatDate(msg.created_at)}</span>
                     </div>

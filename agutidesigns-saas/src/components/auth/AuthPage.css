@@ -30,11 +30,14 @@
   margin-bottom: 2rem;
 }
 
-.auth__logo-img {
-  height: 32px;
-  width: auto;
-  display: block;
+.auth__logo-text {
+  font-family: var(--font-display);
+  font-size: 1.8rem;
+  font-weight: 800;
+  color: white;
+  letter-spacing: -0.02em;
 }
+.auth__logo-y { color: #25D366; }
 
 .auth__logo-badge {
   display: inline-flex;

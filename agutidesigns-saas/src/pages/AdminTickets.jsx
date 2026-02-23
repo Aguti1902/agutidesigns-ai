@@ -167,7 +167,7 @@ export default function AdminTickets() {
                     <div className="ticket-msg__avatar">{msg.is_admin ? 'A' : 'U'}</div>
                     <div className="ticket-msg__body">
                       <div className="ticket-msg__header">
-                        <span className="ticket-msg__name">{msg.is_admin ? 'Soporte Agutidesigns' : selectedTicket.profiles?.full_name}</span>
+                        <span className="ticket-msg__name">{msg.is_admin ? 'Soporte Wasapy' : selectedTicket.profiles?.full_name}</span>
                         <span className="ticket-msg__time">{new Date(msg.created_at).toLocaleString('es-ES')}</span>
                       </div>
                       <p className="ticket-msg__content">{msg.message}</p>

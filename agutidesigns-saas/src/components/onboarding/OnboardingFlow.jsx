@@ -26,7 +26,7 @@ export default function OnboardingFlow({ onComplete }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           to: user.email,
-          subject: '¡Bienvenido a Agutidesigns IA! 🚀',
+          subject: '¡Bienvenido a Wasapy! 🚀',
           template: 'welcome',
           data: { name: profile?.full_name || 'ahí', trialDays: 7 }
         })

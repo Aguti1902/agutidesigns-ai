@@ -149,8 +149,8 @@ export default function DashboardLayout() {
         <aside className="dash__sidebar">
           <div className="dash__sidebar-top">
           <div className="dash__logo">
-            <img src="/images/Logoverde.png" alt="Agutidesigns" className="dash__logo-img" />
-            <span className="dash__logo-badge">IA</span>
+            <span className="dash__logo-text">wasap<span className="dash__logo-y">y</span></span>
+            <span className="dash__logo-badge">.io</span>
           </div>
 
             <nav className="dash__nav">
@@ -196,7 +196,7 @@ export default function DashboardLayout() {
           <AgentSelector />
           <Outlet />
           <footer className="dash__footer">
-            <p>© 2026 Agutidesigns IA</p>
+            <p>© 2026 Wasapy</p>
             <div className="dash__footer-links">
               <a href="https://agutidesigns.io/privacidad.html" target="_blank" rel="noopener">Privacidad</a>
               <span>·</span>

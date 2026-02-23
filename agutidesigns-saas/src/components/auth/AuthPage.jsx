@@ -66,8 +66,8 @@ export default function AuthPage() {
         <div className="auth__left">
           <div className="auth__left-content">
             <div className="auth__logo">
-              <img src="/images/Logoverde.png" alt="Agutidesigns" className="auth__logo-img" />
-              <span className="auth__logo-badge">IA</span>
+              <span className="auth__logo-text">wasap<span className="auth__logo-y">y</span></span>
+              <span className="auth__logo-badge">.io</span>
             </div>
             <h1>Tu agente de WhatsApp IA</h1>
             <p>Crea un asistente inteligente que atiende a tus clientes 24/7. Sin código, en minutos.</p>
@@ -124,8 +124,8 @@ export default function AuthPage() {
       <div className="auth__left">
         <div className="auth__left-content">
           <div className="auth__logo">
-            <img src="/images/Logoverde.png" alt="Agutidesigns" className="auth__logo-img" />
-            <span className="auth__logo-badge">IA</span>
+            <span className="auth__logo-text">wasap<span className="auth__logo-y">y</span></span>
+            <span className="auth__logo-badge">.io</span>
           </div>
           <h1>Tu agente de WhatsApp IA</h1>
           <p>Crea un asistente inteligente que atiende a tus clientes 24/7. Sin código, en minutos.</p>
