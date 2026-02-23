@@ -2,7 +2,7 @@
 
 .auth__left {
   flex: 1;
-  background: var(--bg-secondary);
+  background: linear-gradient(160deg, #0d3320 0%, #0a2618 40%, #071a10 100%);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -18,7 +18,7 @@
   right: -30%;
   width: 500px;
   height: 500px;
-  background: radial-gradient(circle, rgba(var(--color-primary-rgb), 0.1), transparent 70%);
+  background: radial-gradient(circle, rgba(37,211,102,0.15), transparent 70%);
 }
 
 .auth__left-content { position: relative; z-index: 1; max-width: 400px; }
@@ -34,7 +34,7 @@
   font-family: var(--font-display);
   font-size: 1.8rem;
   font-weight: 800;
-  color: var(--text-primary);
+  color: #fff;
   letter-spacing: -0.02em;
 }
 .auth__logo-y { color: #25D366; }
@@ -57,12 +57,13 @@
   font-family: var(--font-display);
   font-size: 2.5rem;
   font-weight: 800;
+  color: #fff;
   line-height: 1.1;
   margin-bottom: 1rem;
 }
 
 .auth__left-content p {
-  color: var(--text-secondary);
+  color: rgba(255,255,255,0.7);
   font-size: 1rem;
   line-height: 1.7;
   margin-bottom: 2rem;
