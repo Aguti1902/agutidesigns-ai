@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from './hooks/useAuth';
 import { useDomainRedirect } from './hooks/useDomainRedirect';
@@ -22,6 +22,9 @@ import AdminTickets from './pages/AdminTickets';
 import AdminUsers from './pages/AdminUsers';
 import EmailConfirmed from './pages/EmailConfirmed';
 import CalendarIntegration from './pages/CalendarIntegration';
+import Presupuestos from './pages/Presupuestos';
+import Facturas from './pages/Facturas';
+import Clientes from './pages/Clientes';
 
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth();
@@ -42,11 +45,6 @@ export default function App() {
   const { user, profile, loading } = useAuth();
   const [onboardingDone, setOnboardingDone] = useState(false);
   const { isAppDomain, isMainDomain } = useDomainRedirect(user);
-
-  useEffect(() => {
-    const saved = localStorage.getItem('theme');
-    if (saved) document.documentElement.setAttribute('data-theme', saved);
-  }, []);
 
   if (loading) {
     return (
@@ -87,6 +85,9 @@ export default function App() {
         <Route path="checkout" element={<Checkout />} />
         <Route path="mensajes" element={<Messages />} />
         <Route path="calendario" element={<CalendarIntegration />} />
+        <Route path="presupuestos" element={<Presupuestos />} />
+        <Route path="facturas" element={<Facturas />} />
+        <Route path="clientes" element={<Clientes />} />
         <Route path="soporte" element={<Support />} />
       </Route>
       

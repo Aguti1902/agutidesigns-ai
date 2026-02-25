@@ -1,10 +1,11 @@
 import { useState, useEffect, useRef } from 'react';
-import { Calendar, Check, Loader2, X, RefreshCw, ChevronLeft, ChevronRight, Clock, MapPin, FileText, User, Plus, Phone, Trash2, Edit3, Lock, Bot, Power } from 'lucide-react';
+import { Calendar, Check, Loader2, X, RefreshCw, ChevronLeft, ChevronRight, Clock, MapPin, FileText, User, Plus, Phone, Trash2, Edit3, Lock, Bot, Power, Link as LinkIcon, AlertTriangle } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { useAgents } from '../hooks/useAgents';
 import { supabase } from '../lib/supabase';
 import './DashboardPages.css';
 
+const API_URL = import.meta.env.VITE_API_URL || 'https://xzyhrloiwapbrqmglxeo.supabase.co/functions/v1';
 const HOURS = Array.from({ length: 15 }, (_, i) => i + 7); // 7:00 to 21:00
 const DAY_NAMES = ['LUN', 'MAR', 'MIÉ', 'JUE', 'VIE', 'SÁB', 'DOM'];
 const STATUS_LABELS = { pending: 'Pendiente', confirmed: 'Confirmada', cancelled: 'Cancelada', completed: 'Completada' };
@@ -70,6 +71,10 @@ export default function CalendarIntegration() {
   const [saving, setSaving] = useState(false);
   const [bookingEnabled, setBookingEnabled] = useState(false);
   const [togglingBooking, setTogglingBooking] = useState(false);
+  const [gcalConnected, setGcalConnected] = useState(false);
+  const [gcalInfo, setGcalInfo] = useState(null);
+  const [gcalConnecting, setGcalConnecting] = useState(false);
+  const [gcalError, setGcalError] = useState('');
   const popupRef = useRef(null);
   const formRef = useRef(null);
 
@@ -78,9 +83,36 @@ export default function CalendarIntegration() {
   const weekDays = getWeekDays(currentDate);
   const today = new Date();
 
-  useEffect(() => { if (user) { loadAppointments(); loadBusinessSchedule(); } }, [user]);
+  useEffect(() => { if (user) { loadAppointments(); loadBusinessSchedule(); loadGcalStatus(); } }, [user]);
   useEffect(() => { if (user) loadAppointments(); }, [currentDate]);
   useEffect(() => { if (activeAgent) setBookingEnabled(!!activeAgent.booking_enabled); }, [activeAgent]);
+
+  async function loadGcalStatus() {
+    if (!user) return;
+    try {
+      const { data } = await supabase.from('google_calendar_tokens').select('calendar_id, calendar_name, connected_at').eq('user_id', user.id).single();
+      if (data) { setGcalConnected(true); setGcalInfo(data); }
+    } catch {}
+  }
+
+  async function handleGcalConnect() {
+    setGcalConnecting(true); setGcalError('');
+    try {
+      const res = await fetch(`${API_URL}/google-calendar-auth`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: user.id }) });
+      const data = await res.json();
+      if (!res.ok || !data.authUrl) throw new Error(data.error || 'Error al conectar');
+      window.location.href = data.authUrl;
+    } catch (err) { setGcalError(err.message); setGcalConnecting(false); }
+  }
+
+  async function handleGcalDisconnect() {
+    if (!confirm('¿Desconectar Google Calendar?')) return;
+    try {
+      await supabase.from('google_calendar_tokens').delete().eq('user_id', user.id);
+      if (activeAgent) await fetch(`${API_URL}/toggle-calendar`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ agentId: activeAgent.id, enabled: false }) });
+      setGcalConnected(false); setGcalInfo(null); refreshAgents();
+    } catch (err) { alert('Error: ' + err.message); }
+  }
 
   async function toggleBooking() {
     if (!activeAgent) return;
@@ -268,12 +300,28 @@ export default function CalendarIntegration() {
         </button>
       </div>
 
-      {/* Google Calendar - Próximamente */}
-      <div className="cal-gcal-badge">
-        <Lock size={14} />
-        <span>Google Calendar — <strong>Próximamente</strong></span>
-        <span className="cal-gcal-badge__desc">Sincronización con Google Calendar estará disponible pronto</span>
+      {/* Google Calendar Connection */}
+      <div className={`cal-gcal ${gcalConnected ? 'cal-gcal--on' : ''}`}>
+        <div className="cal-gcal__info">
+          <Calendar size={18} />
+          <div>
+            {gcalConnected ? (
+              <><strong>Google Calendar conectado</strong><span>Sincronizado con {gcalInfo?.calendar_name || 'Google Calendar'}</span></>
+            ) : (
+              <><strong>Google Calendar</strong><span>Sincroniza tus citas con Google Calendar</span></>
+            )}
+          </div>
+        </div>
+        {gcalConnected ? (
+          <button className="btn btn--outline btn--sm" onClick={handleGcalDisconnect}><X size={12} /> Desconectar</button>
+        ) : (
+          <button className="btn btn--primary btn--sm" onClick={handleGcalConnect} disabled={gcalConnecting}>
+            {gcalConnecting ? <Loader2 size={12} className="spin" /> : <LinkIcon size={12} />}
+            Conectar
+          </button>
+        )}
       </div>
+      {gcalError && <p style={{ fontSize: '0.75rem', color: '#ef4444', marginTop: '0.25rem' }}>{gcalError}</p>}
 
       {/* Week Navigation */}
       <div className="cal-nav">
