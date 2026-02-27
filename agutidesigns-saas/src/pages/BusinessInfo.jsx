@@ -1,10 +1,54 @@
-import { useState, useEffect } from 'react';
-import { Building, Save, Check, Plus, Trash2, ChevronDown, ChevronUp, Info } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { Building, Save, Check, ChevronDown, ChevronUp, Upload, X, ImageIcon, CreditCard } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../hooks/useAuth';
 import './DashboardPages.css';
 
 const SECTIONS = [
+  {
+    id: 'fiscal',
+    title: 'Datos fiscales y logo',
+    desc: 'Aparecerán en todos tus presupuestos y facturas PDF. NIF/CIF, razón social, dirección...',
+    fields: [
+      { key: 'fiscal_name', label: 'Razón social / Nombre fiscal', placeholder: 'Ej: Gustavo López García o Guti Design S.L.' },
+      { key: 'fiscal_nif', label: 'NIF / CIF', placeholder: 'Ej: 12345678A o B-12345678' },
+      { key: 'fiscal_address', label: 'Dirección fiscal', placeholder: 'Ej: Calle Mayor 12, 2ºA' },
+      { key: 'fiscal_cp', label: 'Código postal', placeholder: 'Ej: 08001' },
+      { key: 'fiscal_city', label: 'Ciudad y provincia', placeholder: 'Ej: Barcelona, Barcelona' },
+      { key: 'fiscal_country', label: 'País', placeholder: 'España' },
+      { key: 'fiscal_iban', label: 'IBAN bancario (opcional, aparece en facturas)', placeholder: 'ES12 1234 5678 9012 3456 7890' },
+      { key: 'logo', label: 'Logo del negocio', type: 'logo' },
+    ],
+  },
+  {
+    id: 'pagos',
+    title: 'Métodos de pago y condiciones',
+    desc: 'Qué métodos aceptas, IBAN, condiciones de pago y plazos. Aparece en todos los presupuestos y facturas PDF.',
+    fields: [
+      { key: 'payment_methods_list', label: 'Métodos de pago que aceptas', type: 'payment_methods' },
+      { key: 'fiscal_iban', label: 'IBAN para transferencias bancarias', placeholder: 'ES12 1234 5678 9012 3456 7890' },
+      { key: 'payment_bizum', label: 'Número Bizum', placeholder: 'Ej: +34 600 000 000' },
+      { key: 'payment_paypal', label: 'Email de PayPal', placeholder: 'pagos@gutidiseno.com' },
+      { key: 'payment_stripe_link', label: 'Link de pago Stripe / pasarela', placeholder: 'https://buy.stripe.com/...' },
+      { key: 'payment_terms', label: 'Condiciones de pago', type: 'payment_terms' },
+      { key: 'payment_custom_terms', label: 'Condiciones personalizadas (texto libre, aparecerá en PDFs)', placeholder: 'Ej: 50% al inicio del proyecto y 50% en la entrega final. En proyectos de mantenimiento, pago mensual los primeros 5 días del mes.', textarea: true, rows: 3 },
+      { key: 'payment_notes', label: 'Notas adicionales de pago (para la IA)', placeholder: 'Ej: No aceptamos pagos en efectivo para proyectos superiores a 1.000€. Los presupuestos tienen validez de 30 días.', textarea: true, rows: 2 },
+    ],
+  },
+  {
+    id: 'webpage',
+    title: 'Tu página web',
+    desc: 'La IA lee esta info directamente para responder preguntas sobre tus servicios, portfolio y valores.',
+    fields: [
+      { key: 'website', label: 'URL de tu web', placeholder: 'https://gutidiseno.com' },
+      { key: 'web_description', label: 'Descripción completa de tu web (para la IA)', placeholder: 'Escribe aquí el texto principal de tu web: quién eres, qué haces, a quién ayudas y por qué elegiirte. La IA usará esto para responder a los clientes con tu propia voz.\n\nEj: Soy Guti, diseñador web freelance con 7 años de experiencia. Creo webs profesionales para negocios locales: restaurantes, clínicas, tiendas y consultorías. Me especializo en WordPress y Webflow. Cada proyecto tiene precio cerrado y entrego en 3-4 semanas.', textarea: true, rows: 8 },
+      { key: 'web_services_detail', label: 'Servicios detallados de tu web', placeholder: 'Copia aquí el contenido de servicios de tu web. La IA lo usará para responder exactamente lo que ofreces.\n\nEj:\nWEB CORPORATIVA — Diseño + desarrollo WordPress. Desde 800€. Incluye: diseño responsive, formulario de contacto, SEO básico, 1 año de soporte.\nLANDING PAGE — Página de captación de leads. Desde 500€. Incluye: diseño, formulario, integración email marketing.\nTIENDA ONLINE — WooCommerce o Shopify. Desde 1.500€...', textarea: true, rows: 10 },
+      { key: 'web_portfolio', label: 'Portfolio / trabajos realizados', placeholder: 'Describe tus proyectos más relevantes. La IA los usará como ejemplos cuando los clientes pidan ver trabajos.\n\nEj:\n• Bar Mediterráneo (Barcelona) — Web corporativa + carta online + reservas. WordPress.\n• Clínica Salud+ (Madrid) — Landing page + formulario de citas. Aumentó un 40% las consultas.\n• Tienda ModaMujer — Ecommerce WooCommerce con 200+ productos.', textarea: true, rows: 6 },
+      { key: 'web_testimonials', label: 'Testimonios / reseñas de clientes', placeholder: 'Añade testimonios reales. La IA los usará para generar confianza.\n\nEj:\n★★★★★ "Guti nos hizo la web en 3 semanas, exactamente lo que necesitábamos. Muy profesional y atento." — María López, Restaurante El Rincón.\n★★★★★ "El ecommerce funciona perfecto y ya estamos vendiendo online. Recomendadísimo." — Carlos Ruiz, Tienda Deportes.', textarea: true, rows: 5 },
+      { key: 'web_faqs', label: 'FAQs de tu web (preguntas frecuentes)', placeholder: '¿Cuánto cuesta una web?\nDepende del tipo. Web corporativa desde 800€, landing desde 500€. Pide presupuesto sin compromiso.\n\n¿Cuánto tardas?\nWeb corporativa: 3-4 semanas. Landing: 1-2 semanas. Ecommerce: 5-8 semanas.\n\n¿Incluye hosting?\nNo está incluido, pero te asesoro y ayudo a contratarlo (desde 60€/año).\n\n¿Puedo modificar la web yo solo?\nSí, WordPress es muy intuitivo. Incluye formación para que seas autónomo.', textarea: true, rows: 8 },
+      { key: 'web_about', label: 'Sobre mí / Equipo (sección "Quién soy")', placeholder: 'Texto sobre ti o tu equipo tal como aparece en tu web.\n\nEj: Soy Gustavo López (Guti), diseñador web freelance desde 2017. He trabajado con más de 80 negocios en España. Me licencié en Diseño Gráfico y me formé en desarrollo web. Trabajo de forma 100% remota pero con trato muy personal y cercano.' , textarea: true, rows: 4 },
+    ],
+  },
   {
     id: 'general',
     title: 'Tu estudio / freelance',
@@ -91,12 +135,113 @@ const SECTIONS = [
   },
 ];
 
+const PAYMENT_METHODS_OPTIONS = [
+  { id: 'transferencia', label: 'Transferencia bancaria', emoji: '🏦' },
+  { id: 'bizum', label: 'Bizum', emoji: '📱' },
+  { id: 'paypal', label: 'PayPal', emoji: '🅿️' },
+  { id: 'tarjeta', label: 'Tarjeta (Stripe)', emoji: '💳' },
+  { id: 'efectivo', label: 'Efectivo', emoji: '💵' },
+  { id: 'facturacion_30', label: 'Facturación a 30 días', emoji: '📅' },
+  { id: 'facturacion_60', label: 'Facturación a 60 días', emoji: '📅' },
+];
+
+const PAYMENT_TERMS_PRESETS = [
+  { id: '50_50', label: '50% al inicio · 50% a la entrega' },
+  { id: '30_70', label: '30% reserva · 70% a la entrega' },
+  { id: '100_inicio', label: '100% por adelantado' },
+  { id: '100_entrega', label: '100% a la entrega' },
+  { id: 'mensual', label: 'Pago mensual (mantenimiento)' },
+  { id: 'personalizado', label: 'Personalizado' },
+];
+
+function PaymentMethodsSelector({ value, onChange }) {
+  const selected = (() => { try { return Array.isArray(value) ? value : (value ? JSON.parse(value) : []); } catch { return []; } })();
+  const toggle = (id) => {
+    const next = selected.includes(id) ? selected.filter(s => s !== id) : [...selected, id];
+    onChange(JSON.stringify(next));
+  };
+  return (
+    <div className="payment-methods-grid">
+      {PAYMENT_METHODS_OPTIONS.map(m => (
+        <button key={m.id} type="button" className={`pm-chip ${selected.includes(m.id) ? 'pm-chip--on' : ''}`} onClick={() => toggle(m.id)}>
+          <span>{m.emoji}</span> {m.label}
+          {selected.includes(m.id) && <Check size={12} />}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function PaymentTermsSelector({ value, onChange }) {
+  return (
+    <div className="payment-terms-list">
+      {PAYMENT_TERMS_PRESETS.map(t => (
+        <button key={t.id} type="button" className={`pt-option ${value === t.id ? 'pt-option--on' : ''}`} onClick={() => onChange(t.id)}>
+          <span className={`pt-option__radio ${value === t.id ? 'pt-option__radio--on' : ''}`} />
+          {t.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function LogoUpload({ value, onChange }) {
+  const inputRef = useRef();
+
+  function handleFile(file) {
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const MAX = 400;
+        const ratio = Math.min(MAX / img.width, MAX / img.height, 1);
+        canvas.width = img.width * ratio;
+        canvas.height = img.height * ratio;
+        canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+        onChange(canvas.toDataURL('image/png', 0.85));
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  }
+
+  return (
+    <div className="logo-upload">
+      {value ? (
+        <div className="logo-upload__preview">
+          <img src={value} alt="Logo" />
+          <button type="button" className="logo-upload__remove" onClick={() => onChange('')} title="Eliminar logo">
+            <X size={14} />
+          </button>
+        </div>
+      ) : (
+        <button type="button" className="logo-upload__btn" onClick={() => inputRef.current?.click()}
+          onDragOver={e => e.preventDefault()}
+          onDrop={e => { e.preventDefault(); handleFile(e.dataTransfer.files[0]); }}>
+          <ImageIcon size={24} />
+          <span>Subir logo</span>
+          <small>PNG, JPG · máx 2MB</small>
+        </button>
+      )}
+      <input ref={inputRef} type="file" accept="image/*" style={{ display: 'none' }}
+        onChange={e => handleFile(e.target.files[0])} />
+      {value && (
+        <button type="button" className="logo-upload__change" onClick={() => inputRef.current?.click()}>
+          <Upload size={12} /> Cambiar logo
+        </button>
+      )}
+    </div>
+  );
+}
+
 export default function BusinessInfo() {
   const { user } = useAuth();
   const [data, setData] = useState({});
   const [saved, setSaved] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [openSections, setOpenSections] = useState(['general']);
+  const [openSections, setOpenSections] = useState(['fiscal']);
 
   const update = (key, val) => { setData(p => ({ ...p, [key]: val })); setSaved(false); };
 
@@ -143,8 +288,13 @@ export default function BusinessInfo() {
             key === 'email' || key === 'website' || key === 'faq') {
           saveData[key] = value || null;
         } else if (!['id', 'user_id', 'created_at', 'updated_at', 'extra_context'].includes(key)) {
-          if (value && typeof value === 'string' && value.trim()) {
-            extraData[key] = value;
+          // Handle strings and JSON arrays/objects
+          if (value !== undefined && value !== null && value !== '') {
+            if (typeof value === 'string' && value.trim()) {
+              extraData[key] = value;
+            } else if (typeof value === 'object') {
+              extraData[key] = value;
+            }
           }
         }
       }
@@ -221,9 +371,15 @@ export default function BusinessInfo() {
               <div className="card__body">
                 <div className="form-grid">
                   {section.fields.map(f => (
-                    <div key={f.key} className={`form-field ${f.textarea ? 'form-field--full' : ''}`}>
+                    <div key={f.key} className={`form-field ${f.textarea || f.type === 'logo' || f.type === 'payment_methods' || f.type === 'payment_terms' ? 'form-field--full' : ''}`}>
                       <label>{f.label} {f.required && <span className="required">*</span>}</label>
-                      {f.textarea ? (
+                      {f.type === 'logo' ? (
+                        <LogoUpload value={data[f.key] || ''} onChange={val => update(f.key, val)} />
+                      ) : f.type === 'payment_methods' ? (
+                        <PaymentMethodsSelector value={data[f.key] || '[]'} onChange={val => update(f.key, val)} />
+                      ) : f.type === 'payment_terms' ? (
+                        <PaymentTermsSelector value={data[f.key] || ''} onChange={val => update(f.key, val)} />
+                      ) : f.textarea ? (
                         <textarea
                           placeholder={f.placeholder}
                           value={data[f.key] || ''}

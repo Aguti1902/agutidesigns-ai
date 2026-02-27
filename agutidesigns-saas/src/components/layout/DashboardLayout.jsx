@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { NavLink, Outlet, useNavigate, Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, MessageCircle, Building, Brain, BookOpen, CreditCard, LogOut, Zap, HelpCircle, Clock, AlertTriangle, ArrowRight, Lock, BarChart3, Shield, Calendar, FileText, Receipt, Users } from 'lucide-react';
+import { LayoutDashboard, MessageCircle, Building, Bot, BookOpen, CreditCard, LogOut, Zap, HelpCircle, Clock, AlertTriangle, ArrowRight, Lock, BarChart3, Shield, Calendar, FileText, Receipt, Users } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { supabase } from '../../lib/supabase';
 import AgentSelector from '../dashboard/AgentSelector';
@@ -13,7 +13,7 @@ const navItems = [
   { to: '/app/facturas', icon: <Receipt size={18} />, label: 'Facturas' },
   { to: '/app/clientes', icon: <Users size={18} />, label: 'Clientes' },
   { to: '/app/negocio', icon: <Building size={18} />, label: 'Mi Negocio' },
-  { to: '/app/agente', icon: <Brain size={18} />, label: 'Prompt IA' },
+  { to: '/app/agente', icon: <Bot size={18} />, label: 'Configuración IA' },
   { to: '/app/calendario', icon: <Calendar size={18} />, label: 'Citas' },
   { to: '/app/tutoriales', icon: <BookOpen size={18} />, label: 'Tutoriales' },
   { to: '/app/billing', icon: <CreditCard size={18} />, label: 'Suscripción' },

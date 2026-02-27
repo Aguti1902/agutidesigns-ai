@@ -223,6 +223,33 @@ export default function AuthPage() {
               {mode === 'login' ? 'Regístrate gratis' : 'Inicia sesión'}
             </button>
           </p>
+
+          {/* ── Dev shortcut (solo en localhost) ── */}
+          {window.location.hostname === 'localhost' && (
+            <div className="auth__dev-box">
+              <div className="auth__dev-label">🛠 Acceso de desarrollo</div>
+              <button
+                type="button"
+                className="auth__dev-btn"
+                onClick={() => {
+                  setMode('login');
+                  setForm(f => ({ ...f, email: 'demo@wasapy.io', password: 'Demo2026!' }));
+                  setError('');
+                }}
+              >
+                Rellenar credenciales demo →
+              </button>
+              <div className="auth__dev-creds">
+                <code>demo@wasapy.io</code> · <code>Demo2026!</code>
+              </div>
+              <span className="auth__dev-hint">
+                Crea primero este usuario en el{' '}
+                <a href="https://supabase.com/dashboard/project/xzyhrloiwapbrqmglxeo/auth/users" target="_blank" rel="noopener">
+                  Dashboard de Supabase
+                </a>
+              </span>
+            </div>
+          )}
         </motion.form>
       </div>
     </div>

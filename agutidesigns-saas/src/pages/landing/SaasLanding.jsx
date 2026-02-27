@@ -3,14 +3,14 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useInView } from 'react-intersection-observer';
 import { Link } from 'react-router-dom';
 import {
-  MessageCircle, Zap, CheckCircle, ArrowRight, Shield, Brain,
-  BarChart3, ChevronDown, Bot, CalendarCheck, ShoppingCart,
+  Zap, CheckCircle, ArrowRight, Shield, Brain,
+  BarChart3, ChevronDown, Bot, CalendarCheck,
   Star, Sparkles, X, Check, FileText, Receipt, Users,
-  Code, Palette, Globe, Monitor
+  Smartphone, Calendar, Video, Clock, Bell, Wifi, Link2
 } from 'lucide-react';
 import './SaasLanding.css';
 
-/* ── Chat demo específico para diseñadores ── */
+/* ── Chat demo ── */
 function ChatDemo() {
   const msgs = [
     { from: 'user', text: '¿Cuánto cuesta una web para mi restaurante?' },
@@ -28,7 +28,7 @@ function ChatDemo() {
   return (
     <div className="mk">
       <div className="mk__bar"><span /><span /><span /></div>
-      <div className="mk__head"><div className="mk__av"><Bot size={14} /></div><div><b>Guti Diseño Web</b><small>en línea • IA activa</small></div></div>
+      <div className="mk__head"><div className="mk__av"><Bot size={14} /></div><div><b>Guti Diseño Web</b><small>en línea · IA activa</small></div></div>
       <div className="mk__chat">
         {msgs.slice(0, vis).map((m, i) => (
           <motion.div key={i} className={`mk__m mk__m--${m.from}`} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }}>
@@ -76,6 +76,231 @@ function DashMockup() {
   );
 }
 
+/* ── Phone Mockup (App) ── */
+function PhoneMockup() {
+  return (
+    <div className="phone">
+      <div className="phone__notch" />
+      <div className="phone__screen">
+        <div className="phone__status">
+          <span>10:42</span>
+          <div className="phone__status-r"><Wifi size={9} /><span className="phone__batt" /></div>
+        </div>
+        <div className="phone__head">
+          <div className="phone__av-sm">W</div>
+          <strong>Agenda</strong>
+        </div>
+        <div className="phone__day">
+          <div><b>Lunes</b><small>24 febrero</small></div>
+          <div className="phone__tabs">
+            <span className="phone__tab phone__tab--on">Día</span>
+            <span className="phone__tab">Semana</span>
+          </div>
+        </div>
+        <div className="phone__team">
+          <span style={{background:'#25D366'}}>Alejandro</span>
+          <span style={{background:'#3B82F6'}}>Laura</span>
+          <span style={{background:'#8B5CF6'}}>Mario</span>
+        </div>
+        <div className="phone__slots-bar">
+          <span>Huecos disponibles</span>
+          <em>7 libres</em>
+        </div>
+        <div className="phone__slots">
+          {['10:00','10:30','11:00','12:30','16:00','17:30','18:00'].map(t => (
+            <span key={t} className="phone__slot">{t}</span>
+          ))}
+        </div>
+        <div className="phone__appts">
+          <div className="phone__appt">
+            <span className="phone__time">09:00</span>
+            <div className="phone__ainfo"><b>Ana García</b><small>Corte + Peinado · 45 min</small></div>
+            <span className="phone__ast phone__ast--ok">Confirmado</span>
+          </div>
+          <div className="phone__appt phone__appt--hl">
+            <span className="phone__time">10:00</span>
+            <div className="phone__ainfo"><b>Seleccionado</b><small>Toca para reservar</small></div>
+            <span className="phone__ast phone__ast--av">Disponible</span>
+          </div>
+          <div className="phone__appt">
+            <span className="phone__time">12:00</span>
+            <div className="phone__ainfo"><b>Carlos López</b><small>Barba completa · 30 min</small></div>
+            <span className="phone__ast phone__ast--pend">Pendiente</span>
+          </div>
+          <div className="phone__appt">
+            <span className="phone__time">16:00</span>
+            <div className="phone__ainfo"><b>María Ruiz</b><small>Mechas · 90 min</small></div>
+            <span className="phone__ast phone__ast--ok">Confirmado</span>
+          </div>
+          <div className="phone__appt">
+            <span className="phone__time">18:00</span>
+            <div className="phone__ainfo"><b>Juan Martínez</b><small>Corte degradado · 30 min</small></div>
+            <span className="phone__ast phone__ast--ok">Confirmado</span>
+          </div>
+        </div>
+        <div className="phone__fab">+</div>
+        <div className="phone__bnav">
+          <div className="phone__bnav-i phone__bnav-i--on"><Calendar size={12}/><span>Agenda</span></div>
+          <div className="phone__bnav-i"><Users size={12}/><span>Equipo</span></div>
+          <div className="phone__bnav-i"><Bell size={12}/><span>Avisos</span></div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ── Integration Logos (SVG) ── */
+function GoogleCalendarLogo() {
+  return (
+    <svg width="36" height="36" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect x="4" y="7" width="28" height="25" rx="3" fill="#fff"/>
+      <path d="M4 10a3 3 0 013-3h22a3 3 0 013 3v3H4v-3z" fill="#4285F4"/>
+      <rect x="9" y="5" width="3" height="5" rx="1.5" fill="#1A73E8"/>
+      <rect x="24" y="5" width="3" height="5" rx="1.5" fill="#1A73E8"/>
+      <rect x="9" y="17" width="5" height="2" rx="1" fill="#4285F4"/>
+      <rect x="9" y="22" width="5" height="2" rx="1" fill="#EA4335"/>
+      <rect x="16" y="17" width="5" height="2" rx="1" fill="#34A853"/>
+      <rect x="16" y="22" width="5" height="2" rx="1" fill="#FBBC04"/>
+      <rect x="23" y="17" width="5" height="2" rx="1" fill="#EA4335"/>
+      <rect x="23" y="22" width="5" height="2" rx="1" fill="#34A853"/>
+    </svg>
+  );
+}
+
+function CalendlyLogo() {
+  return (
+    <svg width="36" height="36" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="18" cy="18" r="15" fill="#006BFF"/>
+      <circle cx="18" cy="18" r="8" stroke="#fff" strokeWidth="2.5" fill="none"/>
+      <path d="M18 13v6l4 3" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+    </svg>
+  );
+}
+
+function TeamsLogo() {
+  return (
+    <svg width="36" height="36" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect x="3" y="3" width="30" height="30" rx="6" fill="#6264A7"/>
+      <path d="M11 13h14v1.5H19.25V25h-2.5V14.5H11V13z" fill="#fff"/>
+      <circle cx="27" cy="11" r="4" fill="#7B83EB"/>
+      <circle cx="27" cy="11" r="2.5" fill="#fff"/>
+    </svg>
+  );
+}
+
+function ZoomLogo() {
+  return (
+    <svg width="36" height="36" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect x="3" y="3" width="30" height="30" rx="8" fill="#2D8CFF"/>
+      <rect x="8" y="12" width="14" height="12" rx="2.5" fill="#fff"/>
+      <path d="M24 14.5l5-2.5v12l-5-2.5v-7z" fill="#fff"/>
+    </svg>
+  );
+}
+
+/* ── Animated CRM Module Mockups ── */
+function ReservasMock() {
+  return (
+    <div className="cw cw--rv">
+      <div className="cw__bar"><span /><span /><span /></div>
+      <div className="cw__top">Calendario de Reservas</div>
+      <div className="cw__body">
+        <div className="rv__days">{['Lun','Mar','Mié','Jue','Vie'].map(d => <span key={d}>{d}</span>)}</div>
+        {['09:00','10:00','11:00','12:00'].map((t, ti) => (
+          <div key={t} className="rv__row">
+            <span className="rv__t">{t}</span>
+            {[0,1,2,3,4].map(di => {
+              const busy = (ti===0&&di===2)||(ti===3&&di===0)||(ti===1&&di===4);
+              const a1 = ti===1&&di===1;
+              const a2 = ti===2&&di===3;
+              return (
+                <div key={di} className={`rv__c${busy?' rv__c--bsy':''}${a1?' rv__c--a1':''}${a2?' rv__c--a2':''}`}>
+                  {ti===0&&di===2&&<small>Ana G.</small>}
+                  {ti===3&&di===0&&<small>María</small>}
+                  {ti===1&&di===4&&<small>Carlos</small>}
+                  {a1&&<small className="rv__fill">Reservado</small>}
+                  {a2&&<small className="rv__fill rv__fill--2">Reservado</small>}
+                </div>
+              );
+            })}
+          </div>
+        ))}
+        <div className="rv__toast"><CheckCircle size={10} /> Reserva confirmada — Mar 10:00</div>
+        <div className="ani-cur" />
+      </div>
+    </div>
+  );
+}
+
+function PresupMock() {
+  return (
+    <div className="cw cw--ps">
+      <div className="cw__bar"><span /><span /><span /></div>
+      <div className="cw__top">Nuevo Presupuesto</div>
+      <div className="cw__body">
+        <div className="ps__client"><small>Cliente</small><b>Bar Mediterráneo</b></div>
+        <div className="ps__lines">
+          <div className="ps__ln"><span>Diseño web corporativo</span><b>800 €</b></div>
+          <div className="ps__ln"><span>SEO básico (3 meses)</span><b>350 €</b></div>
+          <div className="ps__ln ps__ln--new"><span>Hosting anual</span><b>120 €</b></div>
+        </div>
+        <div className="ps__sep" />
+        <div className="ps__total"><span>Total (IVA incl.)</span><b className="ps__tnum">1.270 €</b></div>
+        <div className="ps__actions">
+          <div className="ps__btn ps__btn--add">+ Añadir línea</div>
+          <div className="ps__btn ps__btn--send">Enviar PDF</div>
+        </div>
+        <div className="ps__toast"><CheckCircle size={10} /> PDF enviado al cliente</div>
+        <div className="ani-cur" />
+      </div>
+    </div>
+  );
+}
+
+function FacturasMock() {
+  return (
+    <div className="cw cw--fc">
+      <div className="cw__bar"><span /><span /><span /></div>
+      <div className="cw__top">Facturación</div>
+      <div className="cw__body">
+        <div className="fc__card">
+          <div className="fc__head"><div><small>Presupuesto</small><b>#PS-042</b></div><span className="fc__st">Aceptado ✓</span></div>
+          <div className="fc__info"><span>Bar Mediterráneo</span><b>1.270 €</b></div>
+          <div className="fc__btn">Generar factura →</div>
+        </div>
+        <div className="fc__result">
+          <div className="fc__check"><CheckCircle size={24} /></div>
+          <b>Factura #FC-042 generada</b>
+          <span>1.270 € — Lista para enviar</span>
+        </div>
+        <div className="ani-cur" />
+      </div>
+    </div>
+  );
+}
+
+function ClientesMock() {
+  return (
+    <div className="cw cw--cm">
+      <div className="cw__bar"><span /><span /><span /></div>
+      <div className="cw__top">Clientes</div>
+      <div className="cw__body">
+        <div className="cm__search"><span>Buscar clientes...</span></div>
+        <div className="cm__list">
+          <div className="cm__row"><div className="cm__av" style={{background:'#25D366'}}>A</div><div className="cm__nfo"><b>Ana García</b><small>3 proyectos · 2.450 €</small></div></div>
+          <div className="cm__row cm__row--hl">
+            <div className="cm__av" style={{background:'#3B82F6'}}>C</div>
+            <div className="cm__nfo"><b>Carlos López</b><small>5 proyectos · 4.800 €</small></div>
+            <div className="cm__detail"><div><small>Último proyecto</small><span>Web corporativa</span></div><div><small>Última actividad</small><span>Hace 3 días</span></div></div>
+          </div>
+          <div className="cm__row"><div className="cm__av" style={{background:'#8B5CF6'}}>M</div><div className="cm__nfo"><b>María Ruiz</b><small>2 proyectos · 1.200 €</small></div></div>
+        </div>
+        <div className="ani-cur" />
+      </div>
+    </div>
+  );
+}
+
 const PAIN_POINTS = [
   { q: '¿Cuánto cuesta una web?', t: 'La IA responde por ti', d: 'Mientras maquetar, la IA responde con tus tarifas reales, tipos de proyecto y tiempos de entrega. Filtrada y cualificada.' },
   { q: 'Leads que se enfrían', t: 'Responde en segundos, no en horas', d: 'El 78% de los leads contratan al primero que responde. Con Wasapy, tú siempre eres el primero, incluso a las 2 de la mañana.' },
@@ -117,6 +342,13 @@ const FAQ = [
   { q: '¿Cuánto cuesta?', a: '29€/mes con todo incluido. 2 días gratis sin tarjeta para que lo pruebes sin riesgo.' },
 ];
 
+const CALENDAR_APPS = [
+  { name: 'Google Calendar', Logo: GoogleCalendarLogo, desc: 'Sync bidireccional en tiempo real' },
+  { name: 'Calendly', Logo: CalendlyLogo, desc: 'Importa disponibilidad automática' },
+  { name: 'Microsoft Teams', Logo: TeamsLogo, desc: 'Reuniones y agenda integradas' },
+  { name: 'Zoom', Logo: ZoomLogo, desc: 'Videoconferencias con un clic' },
+];
+
 export default function SaasLanding() {
   const [faqOpen, setFaqOpen] = useState(null);
   const [painRef, painInView] = useInView({ threshold: 0.1, triggerOnce: true });
@@ -125,6 +357,8 @@ export default function SaasLanding() {
   const [compRef, compInView] = useInView({ threshold: 0.1, triggerOnce: true });
   const [revRef, revInView] = useInView({ threshold: 0.1, triggerOnce: true });
   const [faqRef, faqInView] = useInView({ threshold: 0.05, triggerOnce: true });
+  const [appRef, appInView] = useInView({ threshold: 0.1, triggerOnce: true });
+  const [calRef, calInView] = useInView({ threshold: 0.1, triggerOnce: true });
 
   return (
     <div className="lp">
@@ -140,46 +374,210 @@ export default function SaasLanding() {
         </div>
       </nav>
 
-      {/* HERO */}
+      {/* ═══ HERO ═══ */}
       <section className="hero">
-        <div className="hero__bg" />
+        <div className="hero__glow" />
+        <div className="hero__glow2" />
         <div className="lc hero__grid">
           <motion.div className="hero__left" initial={{ opacity: 0, y: 28 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.55 }}>
-            <span className="hero__pill"><Sparkles size={11} /> Para diseñadores web freelance</span>
-            <h1>Tu WhatsApp IA que<br /><span className="grad">convierte leads</span> mientras maquetar</h1>
-            <p>Un agente IA que responde a tus clientes potenciales, cualifica leads, agenda llamadas de discovery y gestiona tus presupuestos y facturas. <strong>Todo en un solo sitio.</strong></p>
+            <span className="hero__pill"><Sparkles size={11} /> Potenciado con Inteligencia Artificial</span>
+            <h1>Tu WhatsApp IA que<br /><strong className="grad">multiplica tus reservas</strong></h1>
+            <p>Un asistente de IA que atiende a tus clientes por WhatsApp, Instagram y teléfono 24/7. Gestiona reservas, pagos, documentos y facturación desde una única plataforma.</p>
             <div className="hero__metrics">
-              <div><CheckCircle size={14} /> Configurado en 5 min</div>
-              <div><CheckCircle size={14} /> Responde 24/7</div>
-              <div><CheckCircle size={14} /> Presupuestos en PDF</div>
-              <div><CheckCircle size={14} /> Sin permanencia</div>
+              <div className="hero__metric"><Clock size={14} /> <span>Configuración en 5 min</span></div>
+              <div className="hero__metric"><Shield size={14} /> <span>GDPR compliance</span></div>
+              <div className="hero__metric"><BarChart3 size={14} /> <span>+40% reservas</span></div>
+              <div className="hero__metric"><Zap size={14} /> <span>IA 24/7</span></div>
             </div>
             <div className="hero__social">
               <div className="hero__avs"><span>C</span><span>L</span><span>S</span><span>A</span></div>
               <div className="hero__stars">{[1,2,3,4,5].map(i=><Star key={i} size={13}/>)}</div>
-              <span>Usado por diseñadores freelance en España</span>
+              <span>Usado por +50 negocios en España</span>
             </div>
           </motion.div>
           <motion.div className="hero__right" initial={{ opacity: 0, y: 16, scale: 0.97 }} animate={{ opacity: 1, y: 0, scale: 1 }} transition={{ duration: 0.65, delay: 0.18 }}>
             <div className="hcard">
-              <span className="hcard__badge"><Zap size={11} /> 2 DÍAS GRATIS</span>
-              <h3>Activa tu agente IA ahora</h3>
-              <p>Sin tarjeta. Sin compromiso. Tu IA cualificando leads en 5 minutos.</p>
+              <span className="hcard__badge"><Zap size={11} /> 15 DÍAS GRATIS</span>
+              <h3>Prueba todo el potencial de Wasapy sin coste</h3>
+              <p>Crea tu cuenta en 2 minutos y accede a todas las funcionalidades. Sin tarjeta de crédito, sin permanencia.</p>
               <ul>
-                <li><Bot size={15}/> IA entrenada con tus servicios y tarifas</li>
-                <li><CalendarCheck size={15}/> Agenda llamadas de discovery</li>
-                <li><FileText size={15}/> Presupuestos y facturas profesionales</li>
-                <li><Users size={15}/> CRM de clientes integrado</li>
-                <li><BarChart3 size={15}/> Dashboard de negocio en tiempo real</li>
+                <li><Bot size={15}/> IA en WhatsApp e Instagram</li>
+                <li><CalendarCheck size={15}/> Reservas inteligentes</li>
+                <li><Users size={15}/> CRM y gestión de clientes</li>
+                <li><Receipt size={15}/> Facturación y punto de venta</li>
+                <li><FileText size={15}/> Documentos y consentimientos</li>
               </ul>
               <Link to="/auth?mode=register" className="btn btn--p btn--full"><Zap size={16}/> Empezar prueba gratuita <ArrowRight size={15}/></Link>
-              <div className="hcard__note"><Shield size={12}/> Sin tarjeta <CheckCircle size={12}/> GDPR <Zap size={12}/> Activo en 5 min</div>
+              <div className="hcard__note"><Shield size={12}/> Sin tarjeta <CheckCircle size={12}/> GDPR <Zap size={12}/> Activo en 2 min</div>
             </div>
           </motion.div>
         </div>
       </section>
 
-      {/* CHAT DEMO */}
+      {/* ═══ VISTA REAL - DASHBOARD ═══ */}
+      <section className="dash-sec" id="producto">
+        <div className="lc">
+          <div className="sec-h">
+            <span className="tag-pill"><BarChart3 size={12}/> Vista real del producto</span>
+            <h2>Tu negocio de diseño, <span className="grad">todo en un panel</span></h2>
+            <p>Presupuestos, facturas, clientes, conversaciones de WhatsApp y métricas de negocio. Sin saltar entre herramientas.</p>
+          </div>
+          <DashMockup />
+        </div>
+      </section>
+
+      {/* ═══ MÓDULOS DEL CRM ═══ */}
+      <section className="show-sec" id="modulos">
+        <div className="lc">
+          <div className="sec-h">
+            <span className="tag-pill"><Sparkles size={12}/> Módulos del CRM</span>
+            <h2>Cada herramienta que necesitas, <span className="grad">en un solo lugar</span></h2>
+            <p>Mira cómo funciona cada módulo del CRM. Sin capturas estáticas — esto es lo que verás al usarlo.</p>
+          </div>
+
+          <div className="show-row">
+            <div className="show-row__text">
+              <div className="show-row__ico"><CalendarCheck size={20}/></div>
+              <h3>Reservas inteligentes sin ir y venir</h3>
+              <p>Tus clientes reservan solos. Tú controlas disponibilidad, servicios y recordatorios automáticos.</p>
+              <ul className="show-row__list">
+                <li><CheckCircle size={13}/> Reserva online desde WhatsApp</li>
+                <li><CheckCircle size={13}/> Control de disponibilidad en tiempo real</li>
+                <li><CheckCircle size={13}/> Recordatorios automáticos por WhatsApp</li>
+                <li><CheckCircle size={13}/> Vista semanal y diaria del equipo</li>
+              </ul>
+            </div>
+            <div className="show-row__mock"><ReservasMock /></div>
+          </div>
+
+          <div className="show-row show-row--rev">
+            <div className="show-row__text">
+              <div className="show-row__ico"><FileText size={20}/></div>
+              <h3>Presupuestos profesionales en 2 clics</h3>
+              <p>Crea presupuestos con líneas de servicio, descuentos, IVA y exporta a PDF al instante.</p>
+              <ul className="show-row__list">
+                <li><CheckCircle size={13}/> Plantillas personalizables</li>
+                <li><CheckCircle size={13}/> Líneas de servicio con IVA automático</li>
+                <li><CheckCircle size={13}/> Exportación directa a PDF</li>
+                <li><CheckCircle size={13}/> Envío al cliente desde el CRM</li>
+              </ul>
+            </div>
+            <div className="show-row__mock"><PresupMock /></div>
+          </div>
+
+          <div className="show-row">
+            <div className="show-row__text">
+              <div className="show-row__ico"><Receipt size={20}/></div>
+              <h3>De presupuesto a factura con un clic</h3>
+              <p>Convierte cualquier presupuesto aceptado en factura. Controla cobros pendientes y genera informes.</p>
+              <ul className="show-row__list">
+                <li><CheckCircle size={13}/> Conversión automática desde presupuesto</li>
+                <li><CheckCircle size={13}/> Numeración secuencial inteligente</li>
+                <li><CheckCircle size={13}/> Control de cobros pendientes</li>
+                <li><CheckCircle size={13}/> Exportación y envío por email</li>
+              </ul>
+            </div>
+            <div className="show-row__mock"><FacturasMock /></div>
+          </div>
+
+          <div className="show-row show-row--rev">
+            <div className="show-row__text">
+              <div className="show-row__ico"><Users size={20}/></div>
+              <h3>Todos tus clientes en un solo lugar</h3>
+              <p>Historial completo de cada cliente: proyectos, presupuestos, facturas y conversaciones.</p>
+              <ul className="show-row__list">
+                <li><CheckCircle size={13}/> Ficha detallada por cliente</li>
+                <li><CheckCircle size={13}/> Historial de interacciones completo</li>
+                <li><CheckCircle size={13}/> Etiquetas y segmentación</li>
+                <li><CheckCircle size={13}/> Búsqueda instantánea</li>
+              </ul>
+            </div>
+            <div className="show-row__mock"><ClientesMock /></div>
+          </div>
+        </div>
+      </section>
+
+      {/* ═══ APP NATIVA ═══ */}
+      <section className="app-sec" ref={appRef}>
+        <div className="lc app-sec__grid">
+          <motion.div className="app-sec__left" initial={{ opacity: 0, x: -30 }} animate={appInView ? { opacity: 1, x: 0 } : {}} transition={{ duration: 0.5 }}>
+            <span className="tag-pill"><Smartphone size={12}/> App nativa para tu negocio</span>
+            <h2>Gestiona tu agenda desde <span className="grad">cualquier lugar.</span></h2>
+            <p>Una app pensada para tu negocio: consulta disponibilidad, organiza citas y gestiona tu agenda de forma simple y rápida, estés donde estés.</p>
+            <div className="app-sec__note"><Clock size={13}/> Próximamente en iOS y Android</div>
+            <div className="app-sec__features">
+              <div className="app-sec__feat">
+                <div className="app-sec__feat-ico"><Calendar size={16}/></div>
+                <div><b>Hecha para tu día a día</b><span>Una experiencia clara, ágil y profesional para gestionar citas sin complicaciones.</span></div>
+              </div>
+              <div className="app-sec__feat">
+                <div className="app-sec__feat-ico"><CalendarCheck size={16}/></div>
+                <div><b>Agenda siempre al día</b><span>Consulta huecos, ocupación y cambios al momento para organizar mejor cada jornada.</span></div>
+              </div>
+              <div className="app-sec__feat">
+                <div className="app-sec__feat-ico"><Zap size={16}/></div>
+                <div><b>Reserva en 3 toques</b><span>Crea, mueve o cancela citas en segundos con una navegación rápida e intuitiva.</span></div>
+              </div>
+              <div className="app-sec__feat">
+                <div className="app-sec__feat-ico"><Smartphone size={16}/></div>
+                <div><b>Todo en un solo lugar</b><span>Tu agenda, tus clientes y tus avisos reunidos en una única app para trabajar con más control.</span></div>
+              </div>
+            </div>
+            <div className="store-badges">
+              <div className="store-badge">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>
+                <div><small>Disponible en</small><strong>App Store</strong></div>
+              </div>
+              <div className="store-badge">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M3.18 23.54c.46.29 1.07.32 1.6.02l14-8.04-3.44-3.44L3.18 23.54zm17.42-10.76c.56-.32.9-.9.9-1.53s-.34-1.21-.9-1.53L17.52 8l-3.76 3.76 3.76 3.76 3.08-1.76zM2.39 1.32C2.15 1.6 2 2.01 2 2.5v19c0 .49.15.9.39 1.18L13.1 12 2.39 1.32zm12.9 8.48L18.68 6.4l-3.1-1.77c-.53-.3-1.14-.27-1.6.02L2.18.46l13.11 9.34z"/></svg>
+                <div><small>Disponible en</small><strong>Google Play</strong></div>
+              </div>
+            </div>
+          </motion.div>
+          <motion.div className="app-sec__right" initial={{ opacity: 0, x: 30 }} animate={appInView ? { opacity: 1, x: 0 } : {}} transition={{ duration: 0.6, delay: 0.15 }}>
+            <PhoneMockup />
+          </motion.div>
+        </div>
+      </section>
+
+      {/* ═══ CALENDARIO & INTEGRACIONES ═══ */}
+      <section className="cal-sec" ref={calRef}>
+        <div className="lc">
+          <div className="sec-h">
+            <span className="tag-pill"><Link2 size={12}/> Conexiones reales</span>
+            <h2>Tus reservas, <span className="grad">sincronizadas con todo</span></h2>
+            <p>Conecta tu calendario favorito y sincroniza reservas automáticamente. Evita dobles reservas y conflictos de agenda.</p>
+          </div>
+          <div className="cal-sec__grid">
+            <motion.div className="cal-sec__integrations" initial={{ opacity: 0, y: 20 }} animate={calInView ? { opacity: 1, y: 0 } : {}} transition={{ duration: 0.5 }}>
+              {CALENDAR_APPS.map((app, i) => (
+                <motion.div key={i} className="cal-card" initial={{ opacity: 0, y: 16 }} animate={calInView ? { opacity: 1, y: 0 } : {}} transition={{ delay: i * 0.1 }}>
+                  <div className="cal-card__logo"><app.Logo /></div>
+                  <div className="cal-card__info">
+                    <b>{app.name}</b>
+                    <span>{app.desc}</span>
+                  </div>
+                  <div className="cal-card__status"><CheckCircle size={14}/> Conectado</div>
+                </motion.div>
+              ))}
+            </motion.div>
+            <motion.div className="cal-sec__features" initial={{ opacity: 0, y: 20 }} animate={calInView ? { opacity: 1, y: 0 } : {}} transition={{ duration: 0.5, delay: 0.2 }}>
+              <h3>Sincronización en tiempo real</h3>
+              <p>Conecta tu cuenta con OAuth y sincroniza automáticamente. Sin configuración manual.</p>
+              <ul className="cal-sec__list">
+                <li><CheckCircle size={14}/> Sync al crear, modificar o cancelar reservas</li>
+                <li><CheckCircle size={14}/> Evita dobles reservas y conflictos de agenda</li>
+                <li><CheckCircle size={14}/> Tu equipo ve todo en su calendario habitual</li>
+                <li><CheckCircle size={14}/> Videollamadas automáticas con Zoom y Teams</li>
+                <li><CheckCircle size={14}/> Recordatorios y notificaciones integradas</li>
+                <li><CheckCircle size={14}/> Compatible con cualquier flujo de trabajo</li>
+              </ul>
+            </motion.div>
+          </div>
+        </div>
+      </section>
+
+      {/* ═══ CHAT DEMO ═══ */}
       <section className="demo-sec">
         <div className="lc demo-sec__grid">
           <div>
@@ -191,26 +589,12 @@ export default function SaasLanding() {
         </div>
       </section>
 
-      {/* DASHBOARD MOCKUP */}
-      <section className="dash-sec" id="producto">
-        <div className="lc">
-          <div className="sec-h">
-            <h2>Tu negocio de diseño, <span className="grad">todo en un panel</span></h2>
-            <p>Presupuestos, facturas, clientes, conversaciones de WhatsApp y métricas de negocio. Sin saltar entre herramientas.</p>
-          </div>
-          <DashMockup />
-        </div>
-      </section>
-
-      {/* HISTORIA PERSONAL */}
+      {/* ═══ HISTORIA PERSONAL ═══ */}
       <section className="story" ref={storyRef}>
         <div className="lc story__grid">
           <motion.div className="story__img" initial={{ opacity: 0, x: -30 }} animate={storyInView ? { opacity: 1, x: 0 } : {}} transition={{ duration: 0.5 }}>
             <div className="story__photo">
-              <div className="story__photo-placeholder">
-                <span>G</span>
-                <small>Foto de Guti</small>
-              </div>
+              <img src="/images/ImagenGuti.png" alt="Guti — Fundador de Wasapy" />
             </div>
             <div className="story__badge"><Sparkles size={14}/> Fundador de Wasapy</div>
           </motion.div>
@@ -226,7 +610,7 @@ export default function SaasLanding() {
         </div>
       </section>
 
-      {/* PAIN POINTS */}
+      {/* ═══ PAIN POINTS ═══ */}
       <section className="pain" ref={painRef}>
         <div className="lc">
           <div className="sec-h">
@@ -246,7 +630,7 @@ export default function SaasLanding() {
         </div>
       </section>
 
-      {/* FEATURES GRID */}
+      {/* ═══ FEATURES GRID ═══ */}
       <section className="feat" ref={featRef}>
         <div className="lc">
           <div className="sec-h"><h2>Todo lo que necesita tu negocio de diseño</h2></div>
@@ -262,7 +646,7 @@ export default function SaasLanding() {
         </div>
       </section>
 
-      {/* GREEN CTA */}
+      {/* ═══ GREEN CTA ═══ */}
       <section className="gcta">
         <div className="lc gcta__in">
           <div>
@@ -273,7 +657,7 @@ export default function SaasLanding() {
         </div>
       </section>
 
-      {/* COMPARATIVA */}
+      {/* ═══ COMPARATIVA ═══ */}
       <section className="cmp" ref={compRef}>
         <div className="lc">
           <div className="sec-h"><h2>El antes y el después</h2><p>Lo que cambia cuando tienes una IA trabajando contigo.</p></div>
@@ -289,7 +673,7 @@ export default function SaasLanding() {
         </div>
       </section>
 
-      {/* REVIEWS */}
+      {/* ═══ REVIEWS ═══ */}
       <section className="revs" ref={revRef}>
         <div className="lc">
           <div className="sec-h"><h2>Lo que dicen otros diseñadores freelance</h2></div>
@@ -305,7 +689,7 @@ export default function SaasLanding() {
         </div>
       </section>
 
-      {/* PRICING */}
+      {/* ═══ PRICING ═══ */}
       <section className="pricing" id="precios">
         <div className="lc">
           <div className="sec-h"><h2>Precio claro. Sin sorpresas.</h2><p>Un plan con todo lo que necesita un diseñador freelance.</p></div>
@@ -323,7 +707,7 @@ export default function SaasLanding() {
         </div>
       </section>
 
-      {/* FAQ */}
+      {/* ═══ FAQ ═══ */}
       <section className="faq" id="faq" ref={faqRef}>
         <div className="lc">
           <div className="sec-h"><h2>Preguntas frecuentes</h2></div>
@@ -340,7 +724,7 @@ export default function SaasLanding() {
         </div>
       </section>
 
-      {/* FINAL CTA */}
+      {/* ═══ FINAL CTA ═══ */}
       <section className="fcta">
         <div className="lc">
           <h2>Deja de perder leads.<br/>Empieza a diseñar.</h2>

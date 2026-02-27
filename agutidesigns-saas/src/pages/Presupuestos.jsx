@@ -41,102 +41,167 @@ function calcularTotales(lineas, iva, descuento) {
   return { subtotal, descAmt: desc, base, ivaAmt, total: base + ivaAmt };
 }
 
+const PAYMENT_LABELS = { transferencia: 'Transferencia bancaria', bizum: 'Bizum', paypal: 'PayPal', tarjeta: 'Tarjeta (Stripe)', efectivo: 'Efectivo', facturacion_30: 'Facturación 30 días', facturacion_60: 'Facturación 60 días' };
+const TERMS_LABELS = { '50_50': '50% al inicio del proyecto · 50% a la entrega', '30_70': '30% de reserva · 70% a la entrega', '100_inicio': '100% por adelantado', '100_entrega': '100% a la entrega', mensual: 'Pago mensual', personalizado: '' };
+
+function parseFiscal(neg) {
+  let extra = {};
+  try { extra = neg?.extra_context ? JSON.parse(neg.extra_context) : {}; } catch {}
+  const methodsRaw = extra.payment_methods_list;
+  let methods = [];
+  try { methods = Array.isArray(methodsRaw) ? methodsRaw : (methodsRaw ? JSON.parse(methodsRaw) : []); } catch {}
+  const termsKey = extra.payment_terms || '';
+  const termsLabel = TERMS_LABELS[termsKey] || extra.payment_custom_terms || extra.payment_methods || '';
+  return {
+    nombre: extra.fiscal_name || neg?.name || 'Mi Negocio',
+    nif: extra.fiscal_nif || '',
+    direccion: extra.fiscal_address || '',
+    cp: extra.fiscal_cp || '',
+    ciudad: extra.fiscal_city || '',
+    pais: extra.fiscal_country || 'España',
+    iban: extra.fiscal_iban || '',
+    logo: extra.logo || '',
+    email: neg?.email || '',
+    telefono: neg?.phone || '',
+    web: neg?.website || '',
+    bizum: extra.payment_bizum || '',
+    paypal: extra.payment_paypal || '',
+    stripeLink: extra.payment_stripe_link || '',
+    methods,
+    termsLabel,
+    paymentNotes: extra.payment_custom_terms || extra.payment_notes || '',
+  };
+}
+
 async function exportarPDF(pres, negocio) {
   const { jsPDF } = await import('jspdf');
   const autoTable = (await import('jspdf-autotable')).default;
   const doc = new jsPDF();
-
+  const f = parseFiscal(negocio);
   const { subtotal, descAmt, base, ivaAmt, total } = calcularTotales(pres.lineas || [], pres.iva, pres.descuento);
-  const negNombre = negocio?.name || 'Mi Negocio';
-  const negEmail = negocio?.email || '';
-  const negTelefono = negocio?.phone || '';
-  const negWeb = negocio?.website || '';
 
-  // Header
+  // ── Franja verde superior ──
   doc.setFillColor(37, 211, 102);
-  doc.rect(0, 0, 210, 8, 'F');
-  doc.setFontSize(22);
-  doc.setFont('helvetica', 'bold');
-  doc.setTextColor(20, 20, 20);
-  doc.text(negNombre, 14, 22);
-  doc.setFontSize(9);
-  doc.setFont('helvetica', 'normal');
-  doc.setTextColor(100, 100, 100);
-  if (negEmail) doc.text(negEmail, 14, 29);
-  if (negTelefono) doc.text(negTelefono, 14, 34);
-  if (negWeb) doc.text(negWeb, 14, 39);
+  doc.rect(0, 0, 210, 6, 'F');
 
-  // Número y fecha
-  doc.setFontSize(24);
-  doc.setFont('helvetica', 'bold');
-  doc.setTextColor(20, 20, 20);
+  let leftY = 14;
+
+  // ── Logo (si existe) ──
+  if (f.logo) {
+    try {
+      doc.addImage(f.logo, 'PNG', 14, leftY, 40, 20, '', 'FAST');
+      leftY = 38;
+    } catch {}
+  }
+
+  // ── Datos del emisor ──
+  doc.setFontSize(13); doc.setFont('helvetica', 'bold'); doc.setTextColor(20, 20, 20);
+  doc.text(f.nombre, 14, leftY);
+  leftY += 5;
+  doc.setFontSize(8); doc.setFont('helvetica', 'normal'); doc.setTextColor(90, 90, 90);
+  if (f.nif) { doc.text(`NIF/CIF: ${f.nif}`, 14, leftY); leftY += 4.5; }
+  if (f.direccion) { doc.text(f.direccion, 14, leftY); leftY += 4.5; }
+  if (f.cp || f.ciudad) { doc.text([f.cp, f.ciudad].filter(Boolean).join(' · '), 14, leftY); leftY += 4.5; }
+  if (f.telefono) { doc.text(`Tel: ${f.telefono}`, 14, leftY); leftY += 4.5; }
+  if (f.email) { doc.text(f.email, 14, leftY); leftY += 4.5; }
+  if (f.web) { doc.text(f.web, 14, leftY); leftY += 4.5; }
+
+  // ── Bloque derecho: tipo y número ──
+  doc.setFillColor(245, 245, 245);
+  doc.roundedRect(120, 10, 76, 42, 2, 2, 'F');
+  doc.setFontSize(16); doc.setFont('helvetica', 'bold'); doc.setTextColor(30, 30, 30);
   doc.text('PRESUPUESTO', 196, 22, { align: 'right' });
-  doc.setFontSize(11);
-  doc.setFont('helvetica', 'normal');
-  doc.setTextColor(80, 80, 80);
-  doc.text(pres.numero, 196, 30, { align: 'right' });
-  doc.text(`Fecha: ${new Date(pres.created_at).toLocaleDateString('es-ES')}`, 196, 37, { align: 'right' });
-  doc.text(`Válido: ${pres.validez_dias || 30} días`, 196, 44, { align: 'right' });
+  doc.setFontSize(9); doc.setFont('helvetica', 'normal'); doc.setTextColor(80, 80, 80);
+  doc.text(`Nº: ${pres.numero}`, 196, 30, { align: 'right' });
+  doc.text(`Fecha: ${new Date(pres.created_at || Date.now()).toLocaleDateString('es-ES')}`, 196, 36, { align: 'right' });
+  doc.text(`Válido: ${pres.validez_dias || 30} días`, 196, 42, { align: 'right' });
 
-  // Destinatario
-  doc.setDrawColor(230, 230, 230);
-  doc.line(14, 48, 196, 48);
-  doc.setFontSize(9);
-  doc.setFont('helvetica', 'bold');
-  doc.setTextColor(100, 100, 100);
-  doc.text('PARA:', 14, 55);
-  doc.setFont('helvetica', 'normal');
-  doc.setTextColor(20, 20, 20);
-  doc.setFontSize(11);
-  doc.text(pres.cliente_nombre || 'Cliente', 14, 62);
-  doc.setFontSize(9);
-  doc.setTextColor(80, 80, 80);
-  if (pres.cliente_empresa) doc.text(pres.cliente_empresa, 14, 68);
-  if (pres.cliente_email) doc.text(pres.cliente_email, 14, 73);
+  // ── Separador ──
+  const sepY = Math.max(leftY + 4, 56);
+  doc.setDrawColor(220, 220, 220); doc.setLineWidth(0.4);
+  doc.line(14, sepY, 196, sepY);
 
-  // Tabla de líneas
+  // ── Destinatario ──
+  let clientY = sepY + 7;
+  doc.setFontSize(7); doc.setFont('helvetica', 'bold'); doc.setTextColor(150, 150, 150);
+  doc.text('PRESUPUESTO PARA:', 14, clientY);
+  clientY += 5;
+  doc.setFontSize(11); doc.setFont('helvetica', 'bold'); doc.setTextColor(20, 20, 20);
+  doc.text(pres.cliente_nombre || 'Cliente', 14, clientY);
+  clientY += 5;
+  doc.setFontSize(8.5); doc.setFont('helvetica', 'normal'); doc.setTextColor(80, 80, 80);
+  if (pres.cliente_empresa) { doc.text(pres.cliente_empresa, 14, clientY); clientY += 4.5; }
+  if (pres.cliente_email) { doc.text(pres.cliente_email, 14, clientY); }
+
+  // ── Tabla líneas ──
+  const tableY = clientY + 10;
   const rows = (pres.lineas || []).map(l => [
-    l.descripcion,
-    l.cantidad,
+    l.descripcion, l.cantidad,
     `${parseFloat(l.precio || 0).toFixed(2)}€`,
     `${((parseFloat(l.cantidad) || 0) * (parseFloat(l.precio) || 0)).toFixed(2)}€`,
   ]);
   autoTable(doc, {
-    startY: 80,
+    startY: tableY,
     head: [['Descripción', 'Cant.', 'Precio unit.', 'Total']],
     body: rows,
     headStyles: { fillColor: [37, 211, 102], textColor: [0, 0, 0], fontStyle: 'bold', fontSize: 9 },
     bodyStyles: { fontSize: 9, textColor: [40, 40, 40] },
-    alternateRowStyles: { fillColor: [248, 248, 248] },
-    columnStyles: { 0: { cellWidth: 90 }, 1: { halign: 'center' }, 2: { halign: 'right' }, 3: { halign: 'right' } },
+    alternateRowStyles: { fillColor: [250, 250, 250] },
+    columnStyles: { 0: { cellWidth: 88 }, 1: { halign: 'center', cellWidth: 18 }, 2: { halign: 'right', cellWidth: 30 }, 3: { halign: 'right', cellWidth: 30 } },
     margin: { left: 14, right: 14 },
+    tableLineColor: [230, 230, 230], tableLineWidth: 0.3,
   });
 
-  let finalY = doc.lastAutoTable?.finalY + 8 || 160;
-  const rightX = 196;
-  doc.setFontSize(9);
-  doc.setTextColor(80, 80, 80);
-  doc.text('Subtotal:', rightX - 50, finalY); doc.text(`${subtotal.toFixed(2)}€`, rightX, finalY, { align: 'right' });
+  // ── Totales ──
+  let fy = (doc.lastAutoTable?.finalY || tableY + 30) + 6;
+  const rx = 196;
+  doc.setFillColor(248, 248, 248);
+  doc.roundedRect(120, fy - 4, 76, descAmt > 0 ? 28 : 22, 2, 2, 'F');
+  doc.setFontSize(8.5); doc.setFont('helvetica', 'normal'); doc.setTextColor(80, 80, 80);
+  doc.text('Subtotal:', 125, fy + 2); doc.text(`${subtotal.toFixed(2)}€`, rx, fy + 2, { align: 'right' });
   if (descAmt > 0) {
-    finalY += 6;
-    doc.text(`Descuento (${pres.descuento}%):`, rightX - 50, finalY); doc.text(`-${descAmt.toFixed(2)}€`, rightX, finalY, { align: 'right' });
+    fy += 6;
+    doc.text(`Descuento (${pres.descuento}%):`, 125, fy + 2); doc.text(`-${descAmt.toFixed(2)}€`, rx, fy + 2, { align: 'right' });
   }
-  finalY += 6;
-  doc.text(`IVA (${pres.iva}%):`, rightX - 50, finalY); doc.text(`${ivaAmt.toFixed(2)}€`, rightX, finalY, { align: 'right' });
-  finalY += 2;
-  doc.setDrawColor(37, 211, 102); doc.line(rightX - 60, finalY, rightX, finalY);
-  finalY += 6;
-  doc.setFont('helvetica', 'bold'); doc.setFontSize(11); doc.setTextColor(20, 20, 20);
-  doc.text('TOTAL:', rightX - 50, finalY); doc.text(`${total.toFixed(2)}€`, rightX, finalY, { align: 'right' });
+  fy += 6;
+  doc.text(`IVA (${pres.iva}%):`, 125, fy + 2); doc.text(`${ivaAmt.toFixed(2)}€`, rx, fy + 2, { align: 'right' });
+  fy += 6;
+  doc.setDrawColor(37, 211, 102); doc.setLineWidth(0.6);
+  doc.line(120, fy, rx, fy);
+  fy += 6;
+  doc.setFillColor(37, 211, 102);
+  doc.roundedRect(120, fy - 4, 76, 10, 2, 2, 'F');
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(10); doc.setTextColor(0, 0, 0);
+  doc.text('TOTAL:', 125, fy + 2); doc.text(`${total.toFixed(2)}€`, rx, fy + 2, { align: 'right' });
 
+  // ── Notas ──
   if (pres.notas) {
-    finalY += 14;
-    doc.setFont('helvetica', 'bold'); doc.setFontSize(9); doc.setTextColor(80, 80, 80);
-    doc.text('Notas y condiciones:', 14, finalY);
-    doc.setFont('helvetica', 'normal');
-    finalY += 6;
-    const lines = doc.splitTextToSize(pres.notas, 170);
-    doc.text(lines, 14, finalY);
+    fy += 16;
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(8.5); doc.setTextColor(80, 80, 80);
+    doc.text('Notas y condiciones:', 14, fy);
+    doc.setFont('helvetica', 'normal'); fy += 5;
+    doc.text(doc.splitTextToSize(pres.notas, 100), 14, fy);
+  }
+
+  // ── Pie: condiciones de pago y datos bancarios ──
+  const pageH = doc.internal.pageSize.height;
+  const hasPaymentInfo = f.iban || f.bizum || f.termsLabel || f.methods.length > 0;
+  if (hasPaymentInfo) {
+    doc.setDrawColor(220, 220, 220); doc.setLineWidth(0.3);
+    doc.line(14, pageH - 28, 196, pageH - 28);
+    let footY = pageH - 23;
+    doc.setFontSize(7.5); doc.setFont('helvetica', 'bold'); doc.setTextColor(80, 80, 80);
+    doc.text('CONDICIONES DE PAGO', 14, footY);
+    footY += 4.5;
+    doc.setFont('helvetica', 'normal'); doc.setTextColor(120, 120, 120);
+    if (f.termsLabel) { doc.text(f.termsLabel, 14, footY); footY += 4; }
+    if (f.methods.length > 0) {
+      const mStr = f.methods.map(m => PAYMENT_LABELS[m] || m).join(' · ');
+      doc.text(`Métodos aceptados: ${mStr}`, 14, footY); footY += 4;
+    }
+    if (f.iban) doc.text(`IBAN: ${f.iban}`, 14, footY);
+    if (f.bizum) doc.text(`Bizum: ${f.bizum}`, f.iban ? 100 : 14, footY);
+    if (f.paypal) { footY += 4; doc.text(`PayPal: ${f.paypal}`, 14, footY); }
   }
 
   doc.save(`${pres.numero}.pdf`);
@@ -165,7 +230,7 @@ export default function Presupuestos() {
   }
 
   async function loadNegocio() {
-    const { data } = await supabase.from('businesses').select('*').eq('user_id', user.id).single();
+    const { data } = await supabase.from('businesses').select('name,email,phone,website,extra_context').eq('user_id', user.id).single();
     setNegocio(data);
   }
 

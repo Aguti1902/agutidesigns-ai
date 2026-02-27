@@ -1,8 +1,85 @@
 import { useState, useEffect } from 'react';
-import { Receipt, Plus, Trash2, Edit3, Download, Check, X, Loader2, AlertTriangle } from 'lucide-react';
+import { Receipt, Plus, Trash2, Edit3, Download, Check, X, Loader2, AlertTriangle, FileSpreadsheet, Filter } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { supabase } from '../lib/supabase';
 import './DashboardPages.css';
+
+async function exportarExcel(facturas, negocio) {
+  const XLSX = await import('xlsx');
+  const extra = (() => { try { return negocio?.extra_context ? JSON.parse(negocio.extra_context) : {}; } catch { return {}; } })();
+  const negNombre = extra.fiscal_name || negocio?.name || 'Mi Negocio';
+  const negNif = extra.fiscal_nif || '';
+
+  // Filas principales
+  const rows = facturas.map(f => {
+    const { subtotal, ivaAmt, total } = calcularTotales(f.lineas, f.iva);
+    return {
+      'Número': f.numero || '',
+      'Fecha emisión': f.created_at ? new Date(f.created_at).toLocaleDateString('es-ES') : '',
+      'Fecha vencimiento': f.fecha_vencimiento ? new Date(f.fecha_vencimiento).toLocaleDateString('es-ES') : '',
+      'Cliente': f.cliente_nombre || '',
+      'Empresa cliente': f.cliente_empresa || '',
+      'Email cliente': f.cliente_email || '',
+      'Base imponible (€)': parseFloat(subtotal.toFixed(2)),
+      'IVA %': parseFloat(f.iva) || 21,
+      'Cuota IVA (€)': parseFloat(ivaAmt.toFixed(2)),
+      'Total (€)': parseFloat(total.toFixed(2)),
+      'Estado': { pendiente: 'Pendiente', pagada: 'Pagada', vencida: 'Vencida' }[f.estado] || f.estado,
+      'Notas': f.notas || '',
+    };
+  });
+
+  // Totales
+  const totalBase = facturas.reduce((s, f) => s + calcularTotales(f.lineas, f.iva).subtotal, 0);
+  const totalIva = facturas.reduce((s, f) => s + calcularTotales(f.lineas, f.iva).ivaAmt, 0);
+  const totalTotal = facturas.reduce((s, f) => s + calcularTotales(f.lineas, f.iva).total, 0);
+  const totalPagado = facturas.filter(f => f.estado === 'pagada').reduce((s, f) => s + calcularTotales(f.lineas, f.iva).total, 0);
+  const totalPendiente = facturas.filter(f => f.estado !== 'pagada').reduce((s, f) => s + calcularTotales(f.lineas, f.iva).total, 0);
+
+  rows.push({});
+  rows.push({
+    'Número': 'TOTALES',
+    'Base imponible (€)': parseFloat(totalBase.toFixed(2)),
+    'Cuota IVA (€)': parseFloat(totalIva.toFixed(2)),
+    'Total (€)': parseFloat(totalTotal.toFixed(2)),
+    'Estado': `Cobrado: ${totalPagado.toFixed(2)}€ | Pendiente: ${totalPendiente.toFixed(2)}€`,
+  });
+
+  const wb = XLSX.utils.book_new();
+  const ws = XLSX.utils.json_to_sheet(rows);
+
+  // Anchos de columna
+  ws['!cols'] = [
+    { wch: 22 }, { wch: 14 }, { wch: 16 }, { wch: 24 }, { wch: 22 }, { wch: 26 },
+    { wch: 18 }, { wch: 8 }, { wch: 14 }, { wch: 12 }, { wch: 12 }, { wch: 30 },
+  ];
+
+  // Hoja de resumen
+  const resumenRows = [
+    { 'Campo': 'Negocio', 'Valor': negNombre },
+    { 'Campo': 'NIF/CIF', 'Valor': negNif },
+    { 'Campo': 'Exportado el', 'Valor': new Date().toLocaleDateString('es-ES') },
+    { 'Campo': '' },
+    { 'Campo': 'Total facturas', 'Valor': facturas.length },
+    { 'Campo': 'Facturas pagadas', 'Valor': facturas.filter(f => f.estado === 'pagada').length },
+    { 'Campo': 'Facturas pendientes', 'Valor': facturas.filter(f => f.estado === 'pendiente').length },
+    { 'Campo': 'Facturas vencidas', 'Valor': facturas.filter(f => f.estado === 'vencida').length },
+    { 'Campo': '' },
+    { 'Campo': 'Base imponible total', 'Valor': `${totalBase.toFixed(2)} €` },
+    { 'Campo': 'IVA total', 'Valor': `${totalIva.toFixed(2)} €` },
+    { 'Campo': 'Total facturado', 'Valor': `${totalTotal.toFixed(2)} €` },
+    { 'Campo': 'Cobrado', 'Valor': `${totalPagado.toFixed(2)} €` },
+    { 'Campo': 'Pendiente de cobro', 'Valor': `${totalPendiente.toFixed(2)} €` },
+  ];
+  const wsResumen = XLSX.utils.json_to_sheet(resumenRows);
+  wsResumen['!cols'] = [{ wch: 24 }, { wch: 22 }];
+
+  XLSX.utils.book_append_sheet(wb, wsResumen, 'Resumen');
+  XLSX.utils.book_append_sheet(wb, ws, 'Facturas');
+
+  const año = new Date().getFullYear();
+  XLSX.writeFile(wb, `Facturas_${negNombre.replace(/\s+/g, '_')}_${año}.xlsx`);
+}
 
 const ESTADOS = {
   pendiente: { label: 'Pendiente', color: '#f59e0b' },
@@ -20,65 +97,165 @@ function isVencida(f) {
   return f.estado === 'pendiente' && f.fecha_vencimiento && new Date(f.fecha_vencimiento) < new Date();
 }
 
+const PAYMENT_LABELS_F = { transferencia: 'Transferencia bancaria', bizum: 'Bizum', paypal: 'PayPal', tarjeta: 'Tarjeta (Stripe)', efectivo: 'Efectivo', facturacion_30: 'Facturación 30 días', facturacion_60: 'Facturación 60 días' };
+const TERMS_LABELS_F = { '50_50': '50% al inicio · 50% a la entrega', '30_70': '30% reserva · 70% a la entrega', '100_inicio': '100% por adelantado', '100_entrega': '100% a la entrega', mensual: 'Pago mensual', personalizado: '' };
+
+function parseFiscal(neg) {
+  let extra = {};
+  try { extra = neg?.extra_context ? JSON.parse(neg.extra_context) : {}; } catch {}
+  const methodsRaw = extra.payment_methods_list;
+  let methods = [];
+  try { methods = Array.isArray(methodsRaw) ? methodsRaw : (methodsRaw ? JSON.parse(methodsRaw) : []); } catch {}
+  const termsLabel = TERMS_LABELS_F[extra.payment_terms || ''] || extra.payment_custom_terms || extra.payment_methods || '';
+  return {
+    nombre: extra.fiscal_name || neg?.name || 'Mi Negocio',
+    nif: extra.fiscal_nif || '',
+    direccion: extra.fiscal_address || '',
+    cp: extra.fiscal_cp || '',
+    ciudad: extra.fiscal_city || '',
+    iban: extra.fiscal_iban || '',
+    logo: extra.logo || '',
+    email: neg?.email || '',
+    telefono: neg?.phone || '',
+    web: neg?.website || '',
+    bizum: extra.payment_bizum || '',
+    paypal: extra.payment_paypal || '',
+    methods,
+    termsLabel,
+  };
+}
+
 async function exportarPDF(fact, negocio) {
   const { jsPDF } = await import('jspdf');
   const autoTable = (await import('jspdf-autotable')).default;
   const doc = new jsPDF();
+  const f = parseFiscal(negocio);
   const { subtotal, ivaAmt, total } = calcularTotales(fact.lineas, fact.iva);
-  const negNombre = negocio?.name || 'Mi Negocio';
 
+  // ── Franja verde superior ──
   doc.setFillColor(37, 211, 102);
-  doc.rect(0, 0, 210, 8, 'F');
-  doc.setFontSize(22); doc.setFont('helvetica', 'bold'); doc.setTextColor(20, 20, 20);
-  doc.text(negNombre, 14, 22);
-  doc.setFontSize(9); doc.setFont('helvetica', 'normal'); doc.setTextColor(100, 100, 100);
-  if (negocio?.email) doc.text(negocio.email, 14, 29);
-  if (negocio?.phone) doc.text(negocio.phone, 14, 34);
+  doc.rect(0, 0, 210, 6, 'F');
 
-  doc.setFontSize(24); doc.setFont('helvetica', 'bold'); doc.setTextColor(20, 20, 20);
+  let leftY = 14;
+
+  // ── Logo ──
+  if (f.logo) {
+    try {
+      doc.addImage(f.logo, 'PNG', 14, leftY, 40, 20, '', 'FAST');
+      leftY = 38;
+    } catch {}
+  }
+
+  // ── Datos del emisor ──
+  doc.setFontSize(13); doc.setFont('helvetica', 'bold'); doc.setTextColor(20, 20, 20);
+  doc.text(f.nombre, 14, leftY);
+  leftY += 5;
+  doc.setFontSize(8); doc.setFont('helvetica', 'normal'); doc.setTextColor(90, 90, 90);
+  if (f.nif) { doc.text(`NIF/CIF: ${f.nif}`, 14, leftY); leftY += 4.5; }
+  if (f.direccion) { doc.text(f.direccion, 14, leftY); leftY += 4.5; }
+  if (f.cp || f.ciudad) { doc.text([f.cp, f.ciudad].filter(Boolean).join(' · '), 14, leftY); leftY += 4.5; }
+  if (f.telefono) { doc.text(`Tel: ${f.telefono}`, 14, leftY); leftY += 4.5; }
+  if (f.email) { doc.text(f.email, 14, leftY); leftY += 4.5; }
+  if (f.web) { doc.text(f.web, 14, leftY); leftY += 4.5; }
+
+  // ── Bloque derecho ──
+  doc.setFillColor(245, 245, 245);
+  doc.roundedRect(120, 10, 76, 46, 2, 2, 'F');
+  doc.setFontSize(16); doc.setFont('helvetica', 'bold'); doc.setTextColor(30, 30, 30);
   doc.text('FACTURA', 196, 22, { align: 'right' });
-  doc.setFontSize(11); doc.setFont('helvetica', 'normal'); doc.setTextColor(80, 80, 80);
-  doc.text(fact.numero, 196, 30, { align: 'right' });
-  doc.text(`Fecha: ${new Date(fact.created_at).toLocaleDateString('es-ES')}`, 196, 37, { align: 'right' });
-  if (fact.fecha_vencimiento) doc.text(`Vencimiento: ${new Date(fact.fecha_vencimiento).toLocaleDateString('es-ES')}`, 196, 44, { align: 'right' });
+  doc.setFontSize(9); doc.setFont('helvetica', 'normal'); doc.setTextColor(80, 80, 80);
+  doc.text(`Nº: ${fact.numero}`, 196, 30, { align: 'right' });
+  doc.text(`Fecha: ${new Date(fact.created_at || Date.now()).toLocaleDateString('es-ES')}`, 196, 36, { align: 'right' });
+  if (fact.fecha_vencimiento) doc.text(`Vencimiento: ${new Date(fact.fecha_vencimiento).toLocaleDateString('es-ES')}`, 196, 42, { align: 'right' });
+  const estadoLabel = { pendiente: 'PENDIENTE', pagada: 'PAGADA', vencida: 'VENCIDA' }[fact.estado] || '';
+  const estadoColor = { pendiente: [245, 158, 11], pagada: [37, 211, 102], vencida: [239, 68, 68] }[fact.estado] || [100, 100, 100];
+  doc.setFillColor(...estadoColor);
+  doc.roundedRect(148, 47, 48, 7, 1, 1, 'F');
+  doc.setFontSize(7); doc.setFont('helvetica', 'bold'); doc.setTextColor(0, 0, 0);
+  doc.text(estadoLabel, 172, 52, { align: 'center' });
 
-  doc.setDrawColor(230, 230, 230); doc.line(14, 48, 196, 48);
-  doc.setFontSize(9); doc.setFont('helvetica', 'bold'); doc.setTextColor(100, 100, 100);
-  doc.text('FACTURAR A:', 14, 55);
-  doc.setFont('helvetica', 'normal'); doc.setTextColor(20, 20, 20); doc.setFontSize(11);
-  doc.text(fact.cliente_nombre || 'Cliente', 14, 62);
-  doc.setFontSize(9); doc.setTextColor(80, 80, 80);
-  if (fact.cliente_empresa) doc.text(fact.cliente_empresa, 14, 68);
-  if (fact.cliente_email) doc.text(fact.cliente_email, 14, 73);
+  // ── Separador ──
+  const sepY = Math.max(leftY + 4, 58);
+  doc.setDrawColor(220, 220, 220); doc.setLineWidth(0.4);
+  doc.line(14, sepY, 196, sepY);
 
-  const rows = (fact.lineas || []).map(l => [l.descripcion, l.cantidad, `${parseFloat(l.precio || 0).toFixed(2)}€`, `${((parseFloat(l.cantidad) || 0) * (parseFloat(l.precio) || 0)).toFixed(2)}€`]);
+  // ── Datos del cliente ──
+  let clientY = sepY + 7;
+  doc.setFontSize(7); doc.setFont('helvetica', 'bold'); doc.setTextColor(150, 150, 150);
+  doc.text('FACTURAR A:', 14, clientY);
+  clientY += 5;
+  doc.setFontSize(11); doc.setFont('helvetica', 'bold'); doc.setTextColor(20, 20, 20);
+  doc.text(fact.cliente_nombre || 'Cliente', 14, clientY);
+  clientY += 5;
+  doc.setFontSize(8.5); doc.setFont('helvetica', 'normal'); doc.setTextColor(80, 80, 80);
+  if (fact.cliente_empresa) { doc.text(fact.cliente_empresa, 14, clientY); clientY += 4.5; }
+  if (fact.cliente_email) doc.text(fact.cliente_email, 14, clientY);
+
+  // ── Tabla ──
+  const tableY = clientY + 10;
+  const rows = (fact.lineas || []).map(l => [
+    l.descripcion, l.cantidad,
+    `${parseFloat(l.precio || 0).toFixed(2)}€`,
+    `${((parseFloat(l.cantidad) || 0) * (parseFloat(l.precio) || 0)).toFixed(2)}€`,
+  ]);
   autoTable(doc, {
-    startY: 80,
+    startY: tableY,
     head: [['Descripción', 'Cant.', 'Precio unit.', 'Total']],
     body: rows,
     headStyles: { fillColor: [37, 211, 102], textColor: [0, 0, 0], fontStyle: 'bold', fontSize: 9 },
     bodyStyles: { fontSize: 9, textColor: [40, 40, 40] },
-    alternateRowStyles: { fillColor: [248, 248, 248] },
-    columnStyles: { 0: { cellWidth: 90 }, 1: { halign: 'center' }, 2: { halign: 'right' }, 3: { halign: 'right' } },
+    alternateRowStyles: { fillColor: [250, 250, 250] },
+    columnStyles: { 0: { cellWidth: 88 }, 1: { halign: 'center', cellWidth: 18 }, 2: { halign: 'right', cellWidth: 30 }, 3: { halign: 'right', cellWidth: 30 } },
     margin: { left: 14, right: 14 },
+    tableLineColor: [230, 230, 230], tableLineWidth: 0.3,
   });
 
-  let finalY = doc.lastAutoTable?.finalY + 8 || 160;
-  const rightX = 196;
-  doc.setFontSize(9); doc.setTextColor(80, 80, 80);
-  doc.text('Base imponible:', rightX - 50, finalY); doc.text(`${subtotal.toFixed(2)}€`, rightX, finalY, { align: 'right' });
-  finalY += 6; doc.text(`IVA (${fact.iva}%):`, rightX - 50, finalY); doc.text(`${ivaAmt.toFixed(2)}€`, rightX, finalY, { align: 'right' });
-  finalY += 2; doc.setDrawColor(37, 211, 102); doc.line(rightX - 60, finalY, rightX, finalY);
-  finalY += 6; doc.setFont('helvetica', 'bold'); doc.setFontSize(11); doc.setTextColor(20, 20, 20);
-  doc.text('TOTAL:', rightX - 50, finalY); doc.text(`${total.toFixed(2)}€`, rightX, finalY, { align: 'right' });
+  // ── Totales ──
+  let fy = (doc.lastAutoTable?.finalY || tableY + 30) + 6;
+  const rx = 196;
+  doc.setFillColor(248, 248, 248);
+  doc.roundedRect(120, fy - 4, 76, 22, 2, 2, 'F');
+  doc.setFontSize(8.5); doc.setFont('helvetica', 'normal'); doc.setTextColor(80, 80, 80);
+  doc.text('Base imponible:', 125, fy + 2); doc.text(`${subtotal.toFixed(2)}€`, rx, fy + 2, { align: 'right' });
+  fy += 6;
+  doc.text(`IVA (${fact.iva}%):`, 125, fy + 2); doc.text(`${ivaAmt.toFixed(2)}€`, rx, fy + 2, { align: 'right' });
+  fy += 6;
+  doc.setDrawColor(37, 211, 102); doc.setLineWidth(0.6);
+  doc.line(120, fy, rx, fy);
+  fy += 6;
+  doc.setFillColor(37, 211, 102);
+  doc.roundedRect(120, fy - 4, 76, 10, 2, 2, 'F');
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(10); doc.setTextColor(0, 0, 0);
+  doc.text('TOTAL:', 125, fy + 2); doc.text(`${total.toFixed(2)}€`, rx, fy + 2, { align: 'right' });
 
+  // ── Notas ──
   if (fact.notas) {
-    finalY += 14;
-    doc.setFont('helvetica', 'bold'); doc.setFontSize(9); doc.setTextColor(80, 80, 80);
-    doc.text('Notas:', 14, finalY); doc.setFont('helvetica', 'normal');
-    finalY += 6;
-    doc.text(doc.splitTextToSize(fact.notas, 170), 14, finalY);
+    fy += 16;
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(8.5); doc.setTextColor(80, 80, 80);
+    doc.text('Notas:', 14, fy); doc.setFont('helvetica', 'normal'); fy += 5;
+    doc.text(doc.splitTextToSize(fact.notas, 100), 14, fy);
   }
+
+  // ── Pie con métodos de pago e IBAN ──
+  const pageH = doc.internal.pageSize.height;
+  doc.setDrawColor(220, 220, 220); doc.setLineWidth(0.3);
+  doc.line(14, pageH - 30, 196, pageH - 30);
+  let footY = pageH - 25;
+  doc.setFontSize(7.5); doc.setFont('helvetica', 'bold'); doc.setTextColor(80, 80, 80);
+  doc.text('DATOS DE PAGO', 14, footY);
+  footY += 4;
+  doc.setFont('helvetica', 'normal'); doc.setTextColor(120, 120, 120);
+  if (f.termsLabel) { doc.text(f.termsLabel, 14, footY); footY += 3.5; }
+  if (f.iban) { doc.text(`IBAN: ${f.iban}`, 14, footY); }
+  if (f.bizum) { doc.text(`Bizum: ${f.bizum}`, f.iban ? 105 : 14, footY); }
+  if (f.paypal) { footY += 3.5; doc.text(`PayPal: ${f.paypal}`, 14, footY); }
+  if (f.methods.length > 0) {
+    const mStr = f.methods.map(m => PAYMENT_LABELS_F[m] || m).join(' · ');
+    footY += 3.5; doc.text(`Métodos: ${mStr}`, 14, footY);
+  }
+  doc.text(`${f.nombre}${f.nif ? ` · NIF: ${f.nif}` : ''}`, 14, pageH - 5);
+  doc.text(`Generado el ${new Date().toLocaleDateString('es-ES')}`, 196, pageH - 5, { align: 'right' });
+
   doc.save(`${fact.numero}.pdf`);
 }
 
@@ -90,6 +267,9 @@ export default function Facturas() {
   const [editing, setEditing] = useState(null);
   const [saving, setSaving] = useState(false);
   const [negocio, setNegocio] = useState(null);
+  const [exportando, setExportando] = useState(false);
+  const [filtroAño, setFiltroAño] = useState('todos');
+  const [filtroEstado, setFiltroEstado] = useState('todos');
   const [form, setForm] = useState({
     numero: '', cliente_nombre: '', cliente_email: '', cliente_empresa: '',
     lineas: [{ descripcion: '', cantidad: 1, precio: 0 }],
@@ -113,7 +293,7 @@ export default function Facturas() {
   }
 
   async function loadNegocio() {
-    const { data } = await supabase.from('businesses').select('*').eq('user_id', user.id).single();
+    const { data } = await supabase.from('businesses').select('name,email,phone,website,extra_context').eq('user_id', user.id).single();
     setNegocio(data);
   }
 
@@ -159,8 +339,26 @@ export default function Facturas() {
   }
 
   const totales = calcularTotales(form.lineas, form.iva);
-  const pendienteTotal = facturas.filter(f => f.estado === 'pendiente').reduce((s, f) => s + calcularTotales(f.lineas || [], f.iva).total, 0);
-  const vencidasCount = facturas.filter(f => f.estado === 'vencida').length;
+
+  // Años disponibles para filtrar
+  const años = ['todos', ...Array.from(new Set(facturas.map(f => f.created_at ? new Date(f.created_at).getFullYear().toString() : null).filter(Boolean))).sort((a, b) => b - a)];
+
+  // Facturas filtradas
+  const facturasFiltradas = facturas.filter(f => {
+    const matchAño = filtroAño === 'todos' || (f.created_at && new Date(f.created_at).getFullYear().toString() === filtroAño);
+    const matchEstado = filtroEstado === 'todos' || f.estado === filtroEstado;
+    return matchAño && matchEstado;
+  });
+
+  const pendienteTotal = facturasFiltradas.filter(f => f.estado === 'pendiente').reduce((s, f) => s + calcularTotales(f.lineas || [], f.iva).total, 0);
+  const vencidasCount = facturasFiltradas.filter(f => f.estado === 'vencida').length;
+  const totalFacturado = facturasFiltradas.reduce((s, f) => s + calcularTotales(f.lineas || [], f.iva).total, 0);
+
+  async function handleExportExcel() {
+    setExportando(true);
+    await exportarExcel(facturasFiltradas, negocio);
+    setExportando(false);
+  }
 
   return (
     <div className="page">
@@ -169,7 +367,18 @@ export default function Facturas() {
           <h1><Receipt size={22} /> Facturas</h1>
           <p>Controla tus facturas y cobros pendientes.</p>
         </div>
-        <button className="btn btn--primary" onClick={openNew}><Plus size={14} /> Nueva factura</button>
+        <div style={{ display: 'flex', gap: '0.6rem' }}>
+          <button
+            className="btn btn--outline"
+            onClick={handleExportExcel}
+            disabled={exportando || facturasFiltradas.length === 0}
+            title="Exportar a Excel para el gestor"
+          >
+            {exportando ? <Loader2 size={14} className="spin" /> : <FileSpreadsheet size={14} />}
+            {exportando ? 'Generando...' : 'Exportar Excel'}
+          </button>
+          <button className="btn btn--primary" onClick={openNew}><Plus size={14} /> Nueva factura</button>
+        </div>
       </div>
 
       {vencidasCount > 0 && (
@@ -179,21 +388,48 @@ export default function Facturas() {
         </div>
       )}
 
+      {/* Filtros */}
+      <div className="fact-filters">
+        <div className="fact-filters__group">
+          <Filter size={13} />
+          <span>Año:</span>
+          {años.map(a => (
+            <button key={a} type="button" className={`fact-filter-btn ${filtroAño === a ? 'fact-filter-btn--on' : ''}`} onClick={() => setFiltroAño(a)}>
+              {a === 'todos' ? 'Todos' : a}
+            </button>
+          ))}
+        </div>
+        <div className="fact-filters__group">
+          <span>Estado:</span>
+          {[['todos','Todos'],['pendiente','Pendiente'],['pagada','Pagada'],['vencida','Vencida']].map(([v, l]) => (
+            <button key={v} type="button" className={`fact-filter-btn ${filtroEstado === v ? 'fact-filter-btn--on' : ''}`} onClick={() => setFiltroEstado(v)}>
+              {l}
+            </button>
+          ))}
+        </div>
+        {(filtroAño !== 'todos' || filtroEstado !== 'todos') && (
+          <div className="fact-filters__total">
+            <span>{facturasFiltradas.length} facturas · <strong>{totalFacturado.toFixed(2)}€</strong> total</span>
+            <button type="button" onClick={() => { setFiltroAño('todos'); setFiltroEstado('todos'); }} style={{ background: 'none', border: 'none', color: 'var(--text-tertiary)', cursor: 'pointer', fontSize: '0.7rem', textDecoration: 'underline' }}>Limpiar filtros</button>
+          </div>
+        )}
+      </div>
+
       <div className="stats-grid" style={{ marginBottom: '1.5rem' }}>
-        <div className="stat-card"><div className="stat-card__icon" style={{ background: 'rgba(37,211,102,0.1)', color: '#25D366' }}><Receipt size={18} /></div><div><span className="stat-card__value">{facturas.length}</span><span className="stat-card__label">Total</span></div></div>
-        <div className="stat-card"><div className="stat-card__icon" style={{ background: 'rgba(245,158,11,0.1)', color: '#f59e0b' }}><Receipt size={18} /></div><div><span className="stat-card__value">{facturas.filter(f => f.estado === 'pendiente').length}</span><span className="stat-card__label">Pendientes</span></div></div>
-        <div className="stat-card"><div className="stat-card__icon" style={{ background: 'rgba(37,211,102,0.1)', color: '#25D366' }}><Check size={18} /></div><div><span className="stat-card__value">{facturas.filter(f => f.estado === 'pagada').length}</span><span className="stat-card__label">Pagadas</span></div></div>
+        <div className="stat-card"><div className="stat-card__icon" style={{ background: 'rgba(37,211,102,0.1)', color: '#25D366' }}><Receipt size={18} /></div><div><span className="stat-card__value">{facturasFiltradas.length}</span><span className="stat-card__label">Total</span></div></div>
+        <div className="stat-card"><div className="stat-card__icon" style={{ background: 'rgba(245,158,11,0.1)', color: '#f59e0b' }}><Receipt size={18} /></div><div><span className="stat-card__value">{facturasFiltradas.filter(f => f.estado === 'pendiente').length}</span><span className="stat-card__label">Pendientes</span></div></div>
+        <div className="stat-card"><div className="stat-card__icon" style={{ background: 'rgba(37,211,102,0.1)', color: '#25D366' }}><Check size={18} /></div><div><span className="stat-card__value">{facturasFiltradas.filter(f => f.estado === 'pagada').length}</span><span className="stat-card__label">Pagadas</span></div></div>
         <div className="stat-card"><div className="stat-card__icon" style={{ background: 'rgba(37,211,102,0.08)', color: '#25D366' }}><Receipt size={18} /></div><div><span className="stat-card__value">{pendienteTotal.toFixed(0)}€</span><span className="stat-card__label">Por cobrar</span></div></div>
       </div>
 
       {loading ? (
         <div style={{ display: 'flex', justifyContent: 'center', padding: '3rem' }}><Loader2 size={24} className="spin" style={{ color: '#555' }} /></div>
-      ) : facturas.length === 0 ? (
+      ) : facturasFiltradas.length === 0 ? (
         <div className="empty-state">
           <Receipt size={40} />
-          <h3>Aún no tienes facturas</h3>
-          <p>Crea tu primera factura o genera una desde un presupuesto aceptado.</p>
-          <button className="btn btn--primary" onClick={openNew}><Plus size={14} /> Crear factura</button>
+          <h3>{facturas.length === 0 ? 'Aún no tienes facturas' : 'No hay facturas con estos filtros'}</h3>
+          <p>{facturas.length === 0 ? 'Crea tu primera factura o genera una desde un presupuesto aceptado.' : 'Prueba a cambiar los filtros de año o estado.'}</p>
+          {facturas.length === 0 && <button className="btn btn--primary" onClick={openNew}><Plus size={14} /> Crear factura</button>}
         </div>
       ) : (
         <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
@@ -206,7 +442,7 @@ export default function Facturas() {
               </tr>
             </thead>
             <tbody>
-              {facturas.map(f => {
+              {facturasFiltradas.map(f => {
                 const { total } = calcularTotales(f.lineas || [], f.iva);
                 const est = ESTADOS[f.estado] || ESTADOS.pendiente;
                 return (

@@ -405,3 +405,13 @@
   .auth { flex-direction: column; }
   .auth__left { display: none; }
 }
+
+/* ── Dev access box ── */
+.auth__dev-box { margin-top: 1.25rem; padding: 0.85rem 1rem; background: rgba(245,158,11,0.06); border: 1px dashed rgba(245,158,11,0.3); border-radius: 0.65rem; display: flex; flex-direction: column; gap: 0.4rem; }
+.auth__dev-label { font-family: var(--font-mono, monospace); font-size: 0.68rem; font-weight: 700; color: #f59e0b; }
+.auth__dev-btn { padding: 0.45rem 0.85rem; background: rgba(245,158,11,0.1); border: 1px solid rgba(245,158,11,0.25); border-radius: 0.4rem; font-family: var(--font-mono, monospace); font-size: 0.72rem; font-weight: 700; color: #f59e0b; cursor: pointer; text-align: left; transition: background 0.15s; }
+.auth__dev-btn:hover { background: rgba(245,158,11,0.18); }
+.auth__dev-creds { font-family: var(--font-mono, monospace); font-size: 0.65rem; color: #888; }
+.auth__dev-creds code { background: rgba(255,255,255,0.06); padding: 0.1rem 0.35rem; border-radius: 3px; color: #ccc; }
+.auth__dev-hint { font-size: 0.62rem; color: #666; }
+.auth__dev-hint a { color: #f59e0b; text-decoration: underline; }
