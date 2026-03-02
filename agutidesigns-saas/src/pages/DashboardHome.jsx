@@ -3,7 +3,7 @@ import {
   MessageCircle, Users, BarChart3, Zap, ArrowRight, TrendingUp,
   CalendarCheck, CheckCircle, Circle, Clock, Building, Bot,
   ChevronRight, FileText, Receipt, AlertTriangle, TrendingDown,
-  Target, Euro, Sparkles, Brain
+  Target, Euro, Sparkles, Brain, Calculator, Award, Minus, Plus
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
@@ -14,6 +14,70 @@ import './DashboardPages.css';
 function calcTotal(lineas, iva) {
   const base = (lineas || []).reduce((s, l) => s + (parseFloat(l.cantidad) || 0) * (parseFloat(l.precio) || 0), 0);
   return base * (1 + (parseFloat(iva) || 0) / 100);
+}
+
+/* ── Simulador de ingresos ── */
+function SimuladorIngresos({ valorMedio, conversion, totalLeads }) {
+  const [proyectosExtra, setProyectosExtra] = useState(3);
+  const [subidaPrecio, setSubidaPrecio] = useState(10);
+  const [pctMantenimiento, setPctMantenimiento] = useState(30);
+  const precioMant = Math.round((valorMedio || 1000) * 0.05);
+  const ingresoBase = (valorMedio || 1000) * Math.max(1, Math.round((totalLeads || 1) * ((conversion || 20) / 100)));
+  const ganaProyectos = proyectosExtra * (valorMedio || 1000);
+  const ganaSubida = ingresoBase * (subidaPrecio / 100);
+  const gainMant = Math.round((totalLeads || 5) * (pctMantenimiento / 100)) * precioMant * 12;
+  const totalGain = ganaProyectos + ganaSubida + gainMant;
+
+  return (
+    <div className="sim-card">
+      <div className="sim-card__head">
+        <Calculator size={18} style={{ color: '#25D366' }} />
+        <div>
+          <h3>Simulador de ingresos</h3>
+          <p>¿Cuánto ganarías si cambias estas 3 cosas?</p>
+        </div>
+      </div>
+      <div className="sim-sliders">
+        <div className="sim-row">
+          <div className="sim-row__label">
+            <span>Si cierro <strong>{proyectosExtra} proyectos más</strong> este mes</span>
+            <span className="sim-gain">+{ganaProyectos.toLocaleString('es-ES')}€</span>
+          </div>
+          <div className="sim-controls">
+            <button onClick={() => setProyectosExtra(Math.max(1, proyectosExtra - 1))}><Minus size={10} /></button>
+            <span>{proyectosExtra}</span>
+            <button onClick={() => setProyectosExtra(proyectosExtra + 1)}><Plus size={10} /></button>
+          </div>
+        </div>
+        <div className="sim-row">
+          <div className="sim-row__label">
+            <span>Si subo mis precios un <strong>{subidaPrecio}%</strong></span>
+            <span className="sim-gain">+{Math.round(ganaSubida).toLocaleString('es-ES')}€/año</span>
+          </div>
+          <div className="sim-controls">
+            <button onClick={() => setSubidaPrecio(Math.max(5, subidaPrecio - 5))}><Minus size={10} /></button>
+            <span>{subidaPrecio}%</span>
+            <button onClick={() => setSubidaPrecio(subidaPrecio + 5)}><Plus size={10} /></button>
+          </div>
+        </div>
+        <div className="sim-row">
+          <div className="sim-row__label">
+            <span>Si vendo mantenimiento al <strong>{pctMantenimiento}%</strong> de clientes</span>
+            <span className="sim-gain">+{gainMant.toLocaleString('es-ES')}€/año</span>
+          </div>
+          <div className="sim-controls">
+            <button onClick={() => setPctMantenimiento(Math.max(10, pctMantenimiento - 10))}><Minus size={10} /></button>
+            <span>{pctMantenimiento}%</span>
+            <button onClick={() => setPctMantenimiento(Math.min(100, pctMantenimiento + 10))}><Plus size={10} /></button>
+          </div>
+        </div>
+      </div>
+      <div className="sim-total">
+        <span>Ingreso potencial adicional</span>
+        <strong>+{totalGain.toLocaleString('es-ES')}€</strong>
+      </div>
+    </div>
+  );
 }
 
 function KpiCard({ label, value, sub, icon, color, href, highlight }) {
@@ -35,6 +99,7 @@ export default function DashboardHome() {
   const { activeAgent, agents } = useAgents();
 
   const [stats, setStats] = useState({ messagesToday: 0, leads: 0, appointmentsToday: 0, aiAppts: 0, conversion: 0, valorMedio: 0, totalFacturado: 0 });
+  const [rentabilidad, setRentabilidad] = useState({ topClientes: [], tiposMasRentables: [], precioMedioTipo: [] });
   const [recentConvos, setRecentConvos] = useState([]);
   const [todayAppts, setTodayAppts] = useState([]);
   const [pipeline, setPipeline] = useState({ borrador: [], enviado: [], aceptado: [] });
@@ -104,6 +169,27 @@ export default function DashboardHome() {
     });
 
     setStats({ messagesToday: msgsRes.count || 0, leads: totalLeads, appointmentsToday: apptsRes.count || 0, aiAppts: aiApptsRes.count || 0, conversion, valorMedio, totalFacturado });
+
+    // Rentabilidad: top clientes por facturación
+    const clienteMap = {};
+    for (const f of factPagRes.data || []) {
+      const key = f.cliente_nombre || 'Sin nombre';
+      const t = calcTotal(f.lineas, f.iva);
+      clienteMap[key] = (clienteMap[key] || 0) + t;
+    }
+    const topClientes = Object.entries(clienteMap).sort((a, b) => b[1] - a[1]).slice(0, 4).map(([n, v]) => ({ nombre: n, valor: Math.round(v) }));
+
+    // Tipo de proyecto más rentable (basado en primera descripción de línea)
+    const tipoMap = {};
+    for (const f of factPagRes.data || []) {
+      const tipo = (f.lineas?.[0]?.descripcion || 'Otros').split(' ').slice(0, 2).join(' ');
+      const t = calcTotal(f.lineas, f.iva);
+      if (!tipoMap[tipo]) tipoMap[tipo] = { total: 0, count: 0 };
+      tipoMap[tipo].total += t;
+      tipoMap[tipo].count++;
+    }
+    const tiposMasRentables = Object.entries(tipoMap).sort((a, b) => b[1].total - a[1].total).slice(0, 3).map(([tipo, data]) => ({ tipo, media: Math.round(data.total / data.count), total: Math.round(data.total) }));
+    setRentabilidad({ topClientes, tiposMasRentables });
     setRecentConvos(recentRes.data || []);
     setTodayAppts(todayApptsRes.data || []);
     setFacturasPendientes(factRes.data || []);
@@ -318,6 +404,52 @@ export default function DashboardHome() {
           </div>
         </div>
       )}
+
+      {/* ── Rentabilidad + Simulador ── */}
+      <div className="dash-cols">
+        {/* Panel de rentabilidad */}
+        {(rentabilidad.topClientes.length > 0 || rentabilidad.tiposMasRentables.length > 0) && (
+          <div className="dash-widget">
+            <div className="dash-widget__head">
+              <h3><Award size={16} /> Rentabilidad real</h3>
+              <Link to="/app/clientes">Ver clientes <ChevronRight size={12} /></Link>
+            </div>
+            {rentabilidad.topClientes.length > 0 && (
+              <div style={{ marginBottom: '1rem' }}>
+                <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.62rem', fontWeight: 700, color: 'var(--text-tertiary)', textTransform: 'uppercase', marginBottom: '0.5rem' }}>Clientes más rentables</div>
+                {rentabilidad.topClientes.map((c, i) => (
+                  <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.4rem 0', borderBottom: '1px solid var(--border-light)' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.6rem', color: '#25D366', fontWeight: 700, minWidth: 16 }}>#{i + 1}</span>
+                      <span style={{ fontSize: '0.78rem' }}>{c.nombre}</span>
+                    </div>
+                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.78rem', fontWeight: 700, color: '#25D366' }}>{c.valor.toLocaleString('es-ES')}€</span>
+                  </div>
+                ))}
+              </div>
+            )}
+            {rentabilidad.tiposMasRentables.length > 0 && (
+              <div>
+                <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.62rem', fontWeight: 700, color: 'var(--text-tertiary)', textTransform: 'uppercase', marginBottom: '0.5rem' }}>Proyectos más rentables</div>
+                {rentabilidad.tiposMasRentables.map((t, i) => (
+                  <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.4rem 0', borderBottom: '1px solid var(--border-light)' }}>
+                    <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{t.tipo}</span>
+                    <div style={{ textAlign: 'right' }}>
+                      <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.72rem', fontWeight: 700 }}>{t.media.toLocaleString('es-ES')}€ / proy.</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+            {rentabilidad.topClientes.length === 0 && (
+              <div className="dash-widget__empty"><BarChart3 size={22} /><p>Aquí verás qué clientes y proyectos son más rentables cuando tengas facturas pagadas.</p></div>
+            )}
+          </div>
+        )}
+
+        {/* Simulador de ingresos */}
+        <SimuladorIngresos valorMedio={stats.valorMedio} conversion={stats.conversion} totalLeads={stats.leads} />
+      </div>
 
       {/* ── Setup progress ── */}
       {!allSetup && (

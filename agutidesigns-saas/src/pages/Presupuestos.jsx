@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { FileText, Plus, Trash2, Edit3, Download, Check, X, ChevronDown, Loader2, Receipt, ArrowRight, Copy } from 'lucide-react';
+import { FileText, Plus, Trash2, Edit3, Download, Check, X, ChevronDown, Loader2, Receipt, ArrowRight, Copy, Layers, Zap, Star, Crown } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { supabase } from '../lib/supabase';
 import './DashboardPages.css';
@@ -207,11 +207,118 @@ async function exportarPDF(pres, negocio) {
   doc.save(`${pres.numero}.pdf`);
 }
 
+/* ── Generador de 3 paquetes ── */
+const PAQUETES_CONFIG = {
+  basico:      { label: 'Básico',      emoji: '⚡', color: '#6b7280', multi: 1.0, desc: 'Lo esencial para empezar', badge: 'Económico' },
+  profesional: { label: 'Profesional', emoji: '⭐', color: '#3b82f6', multi: 1.55, desc: 'Equilibrio calidad-precio', badge: 'Más popular' },
+  premium:     { label: 'Premium',     emoji: '👑', color: '#f59e0b', multi: 2.1, desc: 'Solución completa y avanzada', badge: 'Máximo valor' },
+};
+
+function ModalTresPaquetes({ onClose, onGenerar, baseLineas, baseIva, clienteNombre, numeroBase }) {
+  const [extras, setExtras] = useState({ seo: false, copywriting: false, mantenimiento: false, analytics: false, social: false, disenoPersonalizado: false });
+  const [precioSeo, setPrecioSeo] = useState(350);
+  const [precioCopy, setPrecioCopy] = useState(250);
+  const [precioMant, setPrecioMant] = useState(60);
+  const [precioAnalytics, setPrecioAnalytics] = useState(120);
+
+  const toggleExtra = (k) => setExtras(p => ({ ...p, [k]: !p[k] }));
+
+  const buildLineas = (paquete) => {
+    const m = PAQUETES_CONFIG[paquete].multi;
+    const lineasBase = baseLineas.map(l => ({ ...l, precio: Math.round(parseFloat(l.precio || 0) * m) }));
+    const lineasExtras = [];
+    if (paquete !== 'basico') {
+      if (extras.seo && paquete === 'premium') lineasExtras.push({ descripcion: 'SEO on-page + estrategia de contenidos', cantidad: 1, precio: Math.round(precioSeo * m) });
+      if (extras.copywriting) lineasExtras.push({ descripcion: 'Copywriting profesional (textos web)', cantidad: 1, precio: Math.round(precioCopy * m) });
+      if (extras.analytics && paquete === 'premium') lineasExtras.push({ descripcion: 'Configuración Google Analytics + Tag Manager', cantidad: 1, precio: Math.round(precioAnalytics * m) });
+    }
+    if (extras.mantenimiento) lineasExtras.push({ descripcion: paquete === 'premium' ? 'Mantenimiento premium 6 meses' : 'Mantenimiento básico 3 meses', cantidad: 1, precio: Math.round(precioMant * (paquete === 'premium' ? 6 : 3)) });
+    return [...lineasBase, ...lineasExtras];
+  };
+
+  const calcTotal = (paquete) => {
+    const ls = buildLineas(paquete);
+    return ls.reduce((s, l) => s + (parseFloat(l.cantidad) || 1) * (parseFloat(l.precio) || 0), 0) * (1 + baseIva / 100);
+  };
+
+  return (
+    <div className="cal-popup-overlay">
+      <div className="cal-popup" style={{ width: '720px', maxWidth: '95vw' }} onClick={e => e.stopPropagation()}>
+        <div className="cal-popup__header">
+          <h3><Layers size={16} /> Generar 3 paquetes automáticos</h3>
+          <button className="cal-popup__close" onClick={onClose}><X size={16} /></button>
+        </div>
+        <div style={{ padding: '1.25rem 1.5rem', maxHeight: '80vh', overflowY: 'auto' }}>
+          <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '1.25rem' }}>
+            Basado en tus líneas de servicio, generaré 3 presupuestos: <strong>Básico</strong> (precio base), <strong>Profesional</strong> (+55%) y <strong>Premium</strong> (+110%). El precio alto ancla la percepción de valor.
+          </p>
+
+          <div style={{ marginBottom: '1.25rem' }}>
+            <label style={{ fontFamily: 'var(--font-mono)', fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: '0.65rem', display: 'block' }}>Extras opcionales por paquete:</label>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '0.5rem' }}>
+              {[
+                { key: 'seo', label: 'SEO on-page', price: precioSeo, setPrice: setPrecioSeo, note: 'Solo en Pro y Premium' },
+                { key: 'copywriting', label: 'Copywriting', price: precioCopy, setPrice: setPrecioCopy, note: 'En Pro y Premium' },
+                { key: 'mantenimiento', label: 'Mantenimiento', price: precioMant, setPrice: setPrecioMant, note: '3 meses básico / 6 meses premium' },
+                { key: 'analytics', label: 'Analytics + GTM', price: precioAnalytics, setPrice: setPrecioAnalytics, note: 'Solo en Premium' },
+              ].map(ex => (
+                <div key={ex.key} className={`paquete-extra ${extras[ex.key] ? 'paquete-extra--on' : ''}`} onClick={() => toggleExtra(ex.key)}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.78rem', fontWeight: 700 }}>{ex.label}</span>
+                    <div className={`ai-toggle ${extras[ex.key] ? 'ai-toggle--on' : ''}`} style={{ width: 32, height: 18, flexShrink: 0 }} onClick={e => { e.stopPropagation(); toggleExtra(ex.key); }}>
+                      <span className="ai-toggle__knob" style={{ width: 12, height: 12, top: 2, left: extras[ex.key] ? 16 : 2 }} />
+                    </div>
+                  </div>
+                  <span style={{ fontSize: '0.62rem', color: 'var(--text-tertiary)' }}>{ex.note}</span>
+                  {extras[ex.key] && (
+                    <input type="number" value={ex.price} onChange={e => ex.setPrice(Number(e.target.value))} onClick={e => e.stopPropagation()} style={{ marginTop: '0.35rem', width: '100%', padding: '0.3rem 0.5rem', background: 'var(--bg-body)', border: '1px solid var(--border-color)', borderRadius: '0.4rem', color: 'var(--text-primary)', fontSize: '0.8rem' }} placeholder="Precio €" />
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Preview de 3 paquetes */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.75rem', marginBottom: '1.5rem' }}>
+            {(['basico', 'profesional', 'premium']).map(pkg => {
+              const p = PAQUETES_CONFIG[pkg];
+              const total = calcTotal(pkg);
+              const ls = buildLineas(pkg);
+              return (
+                <div key={pkg} className={`paquete-preview ${pkg === 'profesional' ? 'paquete-preview--featured' : ''}`} style={{ '--pkg-color': p.color }}>
+                  <div className="paquete-preview__head">
+                    <span>{p.emoji}</span>
+                    <strong>{p.label}</strong>
+                    <span className="paquete-preview__badge" style={{ background: `${p.color}20`, color: p.color }}>{p.badge}</span>
+                  </div>
+                  <div className="paquete-preview__price">{Math.round(total).toLocaleString('es-ES')}€</div>
+                  <div className="paquete-preview__lines">
+                    {ls.slice(0, 3).map((l, i) => <div key={i} className="paquete-preview__line">✓ {l.descripcion}</div>)}
+                    {ls.length > 3 && <div className="paquete-preview__line" style={{ color: 'var(--text-tertiary)' }}>+{ls.length - 3} más...</div>}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.65rem' }}>
+            <button className="btn btn--outline" onClick={onClose}>Cancelar</button>
+            <button className="btn btn--primary" onClick={() => onGenerar({ buildLineas, baseIva, clienteNombre, numeroBase })}>
+              <Layers size={14} /> Generar los 3 presupuestos
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function Presupuestos() {
   const { user } = useAuth();
   const [presupuestos, setPresupuestos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
+  const [showPaquetes, setShowPaquetes] = useState(false);
   const [editing, setEditing] = useState(null);
   const [saving, setSaving] = useState(false);
   const [negocio, setNegocio] = useState(null);
@@ -239,6 +346,26 @@ export default function Presupuestos() {
     setForm({ numero, cliente_nombre: '', cliente_email: '', cliente_empresa: '', lineas: [{ ...LINE_EMPTY }], iva: 21, descuento: 0, validez_dias: 30, notas: '', estado: 'borrador' });
     setEditing(null);
     setShowForm(true);
+  }
+
+  async function generarTresPaquetes({ buildLineas, baseIva, clienteNombre, numeroBase }) {
+    const paquetes = ['basico', 'profesional', 'premium'];
+    for (let i = 0; i < paquetes.length; i++) {
+      const pkg = paquetes[i];
+      const cfg = PAQUETES_CONFIG[pkg];
+      const lineas = buildLineas(pkg);
+      const numero = generarNumero([...presupuestos, ...paquetes.slice(0, i).map((_, j) => ({ numero: `PRES-${String(9990 + j).padStart(4, '0')}-2099` }))]);
+      const notas = `Paquete ${cfg.label} — ${cfg.desc}. ${cfg.badge}.`;
+      const payload = {
+        user_id: user.id, numero, estado: 'borrador',
+        cliente_nombre: clienteNombre || '', cliente_email: '', cliente_empresa: '',
+        lineas, iva: baseIva, descuento: 0, validez_dias: 30, notas,
+        updated_at: new Date().toISOString(),
+      };
+      await supabase.from('presupuestos').insert(payload);
+    }
+    setShowPaquetes(false);
+    load();
   }
 
   function openEdit(p) {
@@ -301,7 +428,12 @@ export default function Presupuestos() {
           <h1><FileText size={22} /> Presupuestos</h1>
           <p>Crea y gestiona tus presupuestos profesionales.</p>
         </div>
-        <button className="btn btn--primary" onClick={openNew}><Plus size={14} /> Nuevo presupuesto</button>
+        <div style={{ display: 'flex', gap: '0.6rem' }}>
+          <button className="btn btn--outline" onClick={() => setShowPaquetes(true)} title="Generar Básico + Profesional + Premium automáticamente">
+            <Layers size={14} /> 3 Paquetes
+          </button>
+          <button className="btn btn--primary" onClick={openNew}><Plus size={14} /> Nuevo presupuesto</button>
+        </div>
       </div>
 
       {/* Stats rápidas */}
@@ -472,6 +604,18 @@ export default function Presupuestos() {
             </form>
           </div>
         </div>
+      )}
+
+      {/* Modal 3 Paquetes */}
+      {showPaquetes && (
+        <ModalTresPaquetes
+          onClose={() => setShowPaquetes(false)}
+          onGenerar={generarTresPaquetes}
+          baseLineas={[{ descripcion: 'Diseño y desarrollo web', cantidad: 1, precio: 800 }]}
+          baseIva={21}
+          clienteNombre=""
+          numeroBase={generarNumero(presupuestos)}
+        />
       )}
     </div>
   );

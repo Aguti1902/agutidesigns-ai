@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react';
 import {
   Bot, Save, Check, Loader2, Zap, MessageSquare, Shield, Target,
   AlertCircle, ChevronDown, ChevronUp, Eye, EyeOff, Sparkles,
-  Calendar, Users, Euro, Lock, Clock, TrendingUp, Repeat, Link2
+  Calendar, Users, Euro, Lock, Clock, TrendingUp, Repeat, Link2,
+  Copy, BookOpen, CheckCircle
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../hooks/useAuth';
@@ -220,6 +221,30 @@ const RESTRICTIONS_BASE = [
   { id: 'confirmar_precios', label: 'Aclarar que los precios son orientativos', default: true },
   { id: 'pedir_datos', label: 'Siempre recoger datos de contacto', default: true },
 ];
+
+function PlantillaItem({ objecion, respuesta }) {
+  const [copiado, setCopiado] = useState(false);
+  const [expanded, setExpanded] = useState(false);
+  function copiar() {
+    navigator.clipboard.writeText(respuesta);
+    setCopiado(true);
+    setTimeout(() => setCopiado(false), 2000);
+  }
+  return (
+    <div className="plantilla-item">
+      <div className="plantilla-item__head" onClick={() => setExpanded(o => !o)}>
+        <span className="plantilla-item__objecion">{objecion}</span>
+        <div style={{ display: 'flex', gap: '0.4rem', flexShrink: 0 }}>
+          <button type="button" className="btn btn--outline btn--sm" onClick={e => { e.stopPropagation(); copiar(); }}>
+            {copiado ? <><CheckCircle size={12} /> Copiado</> : <><Copy size={12} /> Copiar</>}
+          </button>
+          {expanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+        </div>
+      </div>
+      {expanded && <div className="plantilla-item__respuesta">{respuesta}</div>}
+    </div>
+  );
+}
 
 export default function PromptBuilder() {
   const { user } = useAuth();
@@ -615,6 +640,41 @@ export default function PromptBuilder() {
         <div className="form-field form-field--full" style={{ marginTop: '1.25rem' }}>
           <label>Reglas adicionales personalizadas</label>
           <textarea value={customRules} onChange={e => setCustomRules(e.target.value)} rows={3} placeholder="Ej: Si preguntan por apps móviles, indicar que no las hacemos. Si el cliente menciona que tiene menos de 400€, no aceptar el proyecto..." />
+        </div>
+      </Block>
+
+      {/* ══ PLANTILLAS DE RESPUESTAS ══ */}
+      <Block letter="E" color="#25D366" title="Plantillas de respuesta a objeciones" desc="Respuestas optimizadas para las situaciones más comunes. La IA las usará como referencia." icon={<BookOpen size={16}/>} defaultOpen={false}>
+        {[
+          {
+            objecion: '"Es caro" / "Me parece mucho"',
+            respuesta: `Entiendo perfectamente, el precio es importante. Lo que incluye este presupuesto es [describir valor: diseño personalizado, desarrollo, SEO básico, soporte X meses...]. Si lo comparamos con lo que puede generarte en clientes —muchos negocios recuperan la inversión en los primeros meses— suele salir muy rentable. Dicho esto, podemos ver qué opciones encajan mejor con tu presupuesto. ¿Qué rango tienes en mente?`,
+          },
+          {
+            objecion: '"Me lo tengo que pensar"',
+            respuesta: `Sin ningún problema, sin prisa. ¿Hay alguna duda concreta que te haya surgido? A veces aclarar un detalle ayuda a decidir con más seguridad. Y si lo prefieres, podemos hacer una llamada de 20 minutos sin compromiso para que te vayas con toda la info clara.`,
+          },
+          {
+            objecion: '"Otro me lo hace más barato"',
+            respuesta: `Totalmente normal que compares, es lo que haría cualquiera. La diferencia suele estar en qué incluye exactamente cada propuesta: el diseño, el soporte posterior, los plazos de entrega, la experiencia del profesional... A veces lo más barato acaba siendo lo más caro si hay que rehacerlo. ¿Sabes qué incluye concretamente la otra oferta? Así puedo explicarte en qué se diferencia la mía.`,
+          },
+          {
+            objecion: '"No sé si lo necesito ahora"',
+            respuesta: `Te entiendo. La pregunta clave es: ¿tus clientes potenciales te buscan en Google ahora mismo? ¿Hay personas que podrían contratarte pero no saben que existes? Una web bien hecha trabaja por ti las 24h, incluso cuando estás con otros clientes. Si no es el momento perfecto, al menos queda con la info clara para cuando sí lo sea.`,
+          },
+          {
+            objecion: '"¿Puedes hacerme un descuento?"',
+            respuesta: `Mi precio está ajustado al trabajo real que implica el proyecto. Lo que sí puedo ofrecerte es ajustar el alcance si el presupuesto es un condicionante: por ejemplo, empezar con las páginas más importantes y ampliar después. ¿Qué es lo más prioritario para ti en este momento?`,
+          },
+          {
+            objecion: '"¿Cuánto tardas?"',
+            respuesta: `Depende del proyecto. Una web corporativa suele estar lista en 3-4 semanas desde que me das todo el material (textos, fotos, logo). Una landing page en 1-2 semanas. Trabajo con plazos cerrados —te doy fecha de entrega y la cumplo. ¿Tienes alguna fecha límite o presentación importante?`,
+          },
+        ].map((t, i) => (
+          <PlantillaItem key={i} objecion={t.objecion} respuesta={t.respuesta} />
+        ))}
+        <div style={{ marginTop: '1.25rem', padding: '1rem', background: 'rgba(37,211,102,0.05)', border: '1px solid rgba(37,211,102,0.15)', borderRadius: 'var(--radius-lg)', fontSize: '0.78rem', color: 'var(--text-secondary)', lineHeight: 1.6 }}>
+          <strong style={{ color: '#25D366' }}>Cómo funcionan:</strong> Estas plantillas se inyectan en el prompt de la IA bajo "Técnicas de venta". La IA las adaptará a cada conversación con tu tono y datos de tu negocio.
         </div>
       </Block>
 

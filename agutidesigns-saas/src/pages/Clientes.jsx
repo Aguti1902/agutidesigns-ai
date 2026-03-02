@@ -2,12 +2,72 @@ import { useState, useEffect } from 'react';
 import {
   Users, FileText, Receipt, MessageCircle, ChevronRight, Search,
   Loader2, TrendingUp, Repeat, Clock, Star, AlertCircle, Zap,
-  Plus, X, ArrowRight
+  Plus, X, ArrowRight, Flame, Target, AlertOctagon, RefreshCw,
+  Send, Copy, CheckCircle, BarChart3
 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { supabase } from '../lib/supabase';
 import './DashboardPages.css';
+
+/* ══ LEAD SCORING ══ */
+function calcLeadScore(cliente) {
+  let score = 30;
+  const warnings = [];
+  const signals = [];
+  const now = new Date();
+  const ultima = cliente.ultima ? new Date(cliente.ultima) : null;
+  const diasUltima = ultima ? Math.floor((now - ultima) / (1000 * 60 * 60 * 24)) : 999;
+
+  // Señales positivas
+  if (cliente.facturasEstado?.includes('pagada')) { score += 25; signals.push('Ha pagado facturas'); }
+  if (cliente.presupuestosEstado?.includes('aceptado')) { score += 20; signals.push('Ha aceptado presupuesto'); }
+  if (cliente.presupuestosEstado?.includes('enviado')) { score += 10; signals.push('Tiene presupuesto enviado'); }
+  if (cliente.facturas >= 2) { score += 15; signals.push('Cliente recurrente'); }
+  if (cliente.conversaciones >= 3) { score += 8; signals.push('Alta interacción'); }
+  if (diasUltima <= 7) { score += 7; signals.push('Activo esta semana'); }
+  else if (diasUltima <= 30) { score += 3; signals.push('Activo este mes'); }
+
+  // Señales negativas / alertas
+  if (cliente.presupuestosEstado?.includes('rechazado')) { score -= 20; warnings.push('Rechazó presupuesto'); }
+  if (diasUltima > 90) { score -= 15; warnings.push('Sin actividad +90 días'); }
+  if (diasUltima > 180) { score -= 10; warnings.push('Muy inactivo (+6 meses)'); }
+
+  // Detector de perfil tóxico
+  const rechazados = cliente.presupuestosEstado?.filter(e => e === 'rechazado').length || 0;
+  const total_presups = cliente.presupuestos || 0;
+  if (rechazados >= 2) warnings.push('⚠ Múltiples rechazos — posible comparador de precios');
+  if (cliente.conversaciones >= 5 && total_presups === 0) warnings.push('⚠ Mucha consulta sin avance — posible pérdida de tiempo');
+  if (total_presups >= 2 && !cliente.presupuestosEstado?.includes('aceptado')) warnings.push('⚠ Nunca acepta — revisar perfil');
+
+  score = Math.max(0, Math.min(100, score));
+
+  let tier, tierColor, tierEmoji;
+  if (score >= 75) { tier = 'Hot'; tierColor = '#ef4444'; tierEmoji = '🔥'; }
+  else if (score >= 45) { tier = 'Warm'; tierColor = '#f59e0b'; tierEmoji = '🟡'; }
+  else { tier = 'Cold'; tierColor = '#6b7280'; tierEmoji = '🔴'; }
+
+  const isToxic = warnings.some(w => w.startsWith('⚠'));
+
+  return { score, tier, tierColor, tierEmoji, signals, warnings, isToxic };
+}
+
+/* ── Generar mensaje de reactivación ── */
+function generarMensajeReactivacion(cliente, negocioName) {
+  const nombre = cliente.nombre?.split(' ')[0] || 'hola';
+  const proyectos = cliente.presupuestos > 0 ? 'tu proyecto web' : 'el trabajo que hicimos';
+  const now = new Date();
+  const ultima = cliente.ultima ? new Date(cliente.ultima) : null;
+  const meses = ultima ? Math.floor((now - ultima) / (1000 * 60 * 60 * 24 * 30)) : 12;
+
+  const plantillas = [
+    `¡Hola ${nombre}! 👋 Han pasado ${meses} ${meses === 1 ? 'mes' : 'meses'} desde que terminamos ${proyectos}. ¿Cómo está funcionando todo? Si en algún momento necesitas actualizarlo, añadir algo nuevo o mejorar el posicionamiento en Google, aquí estamos. Un saludo, ${negocioName || 'el equipo'}`,
+    `Hola ${nombre}, ¿qué tal va todo? Hace ${meses} ${meses === 1 ? 'mes' : 'meses'} que trabajamos juntos y me acordé de ti. ¿Has pensado en darle un empujón al SEO o añadir alguna funcionalidad nueva? Muchos clientes en esta época están optimizando sus webs para captar más clientes. Si te interesa charlamos. ${negocioName || ''}`,
+    `¡Hola ${nombre}! 🙌 Te escribo porque revisando clientes me di cuenta de que ya hace ${meses >= 12 ? 'más de un año' : `${meses} meses`} desde que entregamos tu web. Las webs necesitan mantenimiento y actualizaciones periódicas para seguir bien posicionadas. ¿Estarías interesado en un servicio de mantenimiento o en revisar el estado de tu web? Sin compromiso. ${negocioName || ''}`,
+  ];
+
+  return plantillas[Math.floor(Math.random() * plantillas.length)];
+}
 
 /* ── Calcular lifecycle del cliente ── */
 function getLifecycle(cliente) {
@@ -51,8 +111,23 @@ export default function Clientes() {
   const [detalle, setDetalle] = useState({ presupuestos: [], facturas: [] });
   const [filtro, setFiltro] = useState('todos');
   const [stats, setStats] = useState({ total: 0, leads: 0, activos: 0, recurrentes: 0, valorTotal: 0 });
+  const [tab, setTab] = useState('clientes'); // 'clientes' | 'reactivar' | 'toxicos'
+  const [negocioName, setNegocioName] = useState('');
+  const [msgCopiado, setMsgCopiado] = useState(null);
+  const [msgReact, setMsgReact] = useState({});
 
-  useEffect(() => { if (user) load(); }, [user]);
+  useEffect(() => { if (user) { load(); loadNeg(); } }, [user]);
+
+  async function loadNeg() {
+    const { data } = await supabase.from('businesses').select('name').eq('user_id', user.id).single();
+    setNegocioName(data?.name || '');
+  }
+
+  function copiarMensaje(key, texto) {
+    navigator.clipboard.writeText(texto);
+    setMsgCopiado(key);
+    setTimeout(() => setMsgCopiado(null), 2000);
+  }
 
   async function load() {
     setLoading(true);
@@ -157,13 +232,156 @@ export default function Clientes() {
 
   const valorCliente = (c) => calcClienteTotal([], c.lineasFacturas.filter(f => f.estado === 'pagada'));
 
+  const clientesReactivar = clientes.filter(c => {
+    const lc = getLifecycle(c);
+    const now = new Date();
+    const ultima = c.ultima ? new Date(c.ultima) : null;
+    const dias = ultima ? Math.floor((now - ultima) / (1000 * 60 * 60 * 24)) : 999;
+    return dias >= 60 && (lc.id === 'entregado' || lc.id === 'recurrente' || lc.id === 'inactivo');
+  });
+
+  const clientesToxicos = clientes.filter(c => {
+    const s = calcLeadScore(c);
+    return s.isToxic || s.score < 25;
+  });
+
   return (
     <div className="page">
       <div className="page__header">
         <h1><Users size={22} /> Clientes</h1>
-        <p>Ciclo de vida de cada cliente con historial completo.</p>
+        <p>Lead scoring, ciclo de vida y reactivación de clientes.</p>
       </div>
 
+      {/* Tabs */}
+      <div className="cl-tabs">
+        <button className={`cl-tab ${tab === 'clientes' ? 'cl-tab--on' : ''}`} onClick={() => setTab('clientes')}>
+          <Users size={14} /> Todos los clientes <span className="cl-tab__cnt">{clientes.length}</span>
+        </button>
+        <button className={`cl-tab ${tab === 'reactivar' ? 'cl-tab--on' : ''}`} onClick={() => setTab('reactivar')}>
+          <RefreshCw size={14} /> Reactivar <span className="cl-tab__cnt" style={{ background: 'rgba(37,211,102,0.2)', color: '#25D366' }}>{clientesReactivar.length}</span>
+        </button>
+        <button className={`cl-tab ${tab === 'toxicos' ? 'cl-tab--on' : ''}`} onClick={() => setTab('toxicos')}>
+          <AlertOctagon size={14} /> Perfil problemático <span className="cl-tab__cnt" style={{ background: 'rgba(239,68,68,0.15)', color: '#ef4444' }}>{clientesToxicos.length}</span>
+        </button>
+      </div>
+
+      {/* ── TAB: REACTIVAR ── */}
+      {tab === 'reactivar' && (
+        <div>
+          <div className="react-header">
+            <div className="react-header__info">
+              <Flame size={20} style={{ color: '#25D366' }} />
+              <div>
+                <h3>{clientesReactivar.length} clientes listos para reactivar</h3>
+                <p>Clientes con proyectos entregados que llevan +60 días sin contacto. Oro puro para ventas de mantenimiento, SEO o rediseño.</p>
+              </div>
+            </div>
+          </div>
+          {clientesReactivar.length === 0 ? (
+            <div className="empty-state"><RefreshCw size={36} /><h3>No hay clientes para reactivar ahora</h3><p>Cuando entregues proyectos y pase tiempo, aparecerán aquí con mensajes listos.</p></div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
+              {clientesReactivar.map((c, i) => {
+                const key = c.email || c.nombre;
+                const now = new Date();
+                const dias = c.ultima ? Math.floor((now - new Date(c.ultima)) / (1000 * 60 * 60 * 24)) : 0;
+                const val = valorCliente(c);
+                if (!msgReact[key]) {
+                  const msg = generarMensajeReactivacion(c, negocioName);
+                  setMsgReact(prev => ({ ...prev, [key]: msg }));
+                }
+                return (
+                  <div key={i} className="react-card">
+                    <div className="react-card__head">
+                      <div className="react-card__av">{(c.nombre || '?')[0]}</div>
+                      <div className="react-card__info">
+                        <b>{c.nombre || c.email}</b>
+                        {c.empresa && <span>{c.empresa}</span>}
+                        <div className="react-card__meta">
+                          <span style={{ color: '#f59e0b' }}><Clock size={11} /> Sin contacto hace {dias} días</span>
+                          {val > 0 && <span style={{ color: '#25D366' }}><Receipt size={11} /> {Math.round(val).toLocaleString('es-ES')}€ facturados</span>}
+                          <span><FileText size={11} /> {c.presupuestos} presupuesto{c.presupuestos !== 1 ? 's' : ''}</span>
+                        </div>
+                      </div>
+                      <div className="react-card__oportunidades">
+                        {dias >= 365 && <span className="react-pill react-pill--rediseno">Rediseño web</span>}
+                        <span className="react-pill react-pill--mant">Mantenimiento</span>
+                        <span className="react-pill react-pill--seo">SEO</span>
+                      </div>
+                    </div>
+                    <div className="react-card__msg">
+                      <textarea
+                        value={msgReact[key] || ''}
+                        onChange={e => setMsgReact(prev => ({ ...prev, [key]: e.target.value }))}
+                        rows={3}
+                      />
+                      <div className="react-card__actions">
+                        <button className="btn btn--outline btn--sm" onClick={() => copiarMensaje(key, msgReact[key] || '')}>
+                          {msgCopiado === key ? <><CheckCircle size={12} /> Copiado!</> : <><Copy size={12} /> Copiar mensaje</>}
+                        </button>
+                        <button className="btn btn--primary btn--sm" onClick={() => crearPresupuesto(c, 'Mantenimiento mensual web')}>
+                          <FileText size={12} /> Crear presupuesto
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── TAB: TÓXICOS ── */}
+      {tab === 'toxicos' && (
+        <div>
+          <div className="react-header">
+            <div className="react-header__info">
+              <AlertOctagon size={20} style={{ color: '#ef4444' }} />
+              <div>
+                <h3>{clientesToxicos.length} perfiles con señales de alerta</h3>
+                <p>Leads con comportamientos que suelen hacer perder tiempo. La IA los detecta para que decidas si priorizar o derivar.</p>
+              </div>
+            </div>
+          </div>
+          {clientesToxicos.length === 0 ? (
+            <div className="empty-state"><AlertOctagon size={36} /><h3>Sin perfiles problemáticos detectados</h3><p>¡Buenas noticias! Todos tus leads tienen perfil positivo.</p></div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+              {clientesToxicos.map((c, i) => {
+                const s = calcLeadScore(c);
+                return (
+                  <div key={i} className="toxic-card">
+                    <div className="toxic-card__left">
+                      <div className="toxic-card__av">{(c.nombre || '?')[0]}</div>
+                      <div>
+                        <b>{c.nombre || c.email || '—'}</b>
+                        {c.empresa && <span>{c.empresa}</span>}
+                        <div className="toxic-warnings">
+                          {s.warnings.map((w, wi) => <span key={wi} className="toxic-warn">{w}</span>)}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="toxic-card__score">
+                      <div className="score-ring score-ring--low">
+                        <span>{s.score}</span>
+                      </div>
+                      <span>Score</span>
+                    </div>
+                    <div className="toxic-card__actions">
+                      <span className="toxic-rec">No prioritario</span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── TAB: CLIENTES ── */}
+      {tab === 'clientes' && (
+      <div>
       {/* Stats de clientes */}
       <div className="stats-grid" style={{ marginBottom: '1.25rem' }}>
         {[
@@ -209,6 +427,7 @@ export default function Clientes() {
               {filtered.map((c, i) => {
                 const lc = getLifecycle(c);
                 const val = valorCliente(c);
+                const s = calcLeadScore(c);
                 return (
                   <button key={i} onClick={() => loadDetalle(c)} className="cl-row" style={{ background: selected?.nombre === c.nombre && selected?.email === c.email ? 'var(--bg-secondary)' : undefined }}>
                     <div className="cl-row__av">{(c.nombre || '?')[0].toUpperCase()}</div>
@@ -218,6 +437,7 @@ export default function Clientes() {
                         <span className="cl-badge" style={{ background: `${lc.color}18`, color: lc.color, borderColor: `${lc.color}33` }}>
                           {lc.icon} {lc.label}
                         </span>
+                        {s.isToxic && <span className="cl-badge" style={{ background: 'rgba(239,68,68,0.1)', color: '#ef4444', borderColor: 'rgba(239,68,68,0.25)' }}><AlertOctagon size={10} /> Revisar</span>}
                       </div>
                       {c.empresa && <div style={{ fontSize: '0.72rem', color: 'var(--text-tertiary)' }}>{c.empresa}</div>}
                       <div className="cl-row__meta">
@@ -227,7 +447,11 @@ export default function Clientes() {
                         {val > 0 && <span style={{ color: '#25D366', fontFamily: 'var(--font-mono)', fontWeight: 700 }}>{Math.round(val).toLocaleString('es-ES')}€</span>}
                       </div>
                     </div>
-                    <ChevronRight size={14} style={{ color: 'var(--text-tertiary)', flexShrink: 0 }} />
+                    <div style={{ display: 'flex', flex: 'column', alignItems: 'center', gap: '0.2rem', marginLeft: 'auto', flexShrink: 0 }}>
+                      <div className={`score-mini ${s.score >= 75 ? 'score-mini--hot' : s.score >= 45 ? 'score-mini--warm' : 'score-mini--cold'}`}>{s.score}</div>
+                      <span style={{ fontSize: '0.45rem', color: 'var(--text-tertiary)', fontFamily: 'var(--font-mono)' }}>SCORE</span>
+                    </div>
+                    <ChevronRight size={14} style={{ color: 'var(--text-tertiary)', flexShrink: 0, marginLeft: '0.35rem' }} />
                   </button>
                 );
               })}
@@ -253,14 +477,30 @@ export default function Clientes() {
                 <button onClick={() => setSelected(null)} style={{ background: 'none', border: 'none', color: 'var(--text-tertiary)', cursor: 'pointer', padding: '0.25rem' }}><X size={16} /></button>
               </div>
 
-              {/* Lifecycle badge grande */}
+              {/* Lifecycle + Lead Score */}
               {(() => {
                 const lc = getLifecycle(selected);
+                const s = calcLeadScore(selected);
                 return (
-                  <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', padding: '0.3rem 0.85rem', background: `${lc.color}12`, border: `1px solid ${lc.color}33`, borderRadius: '999px', fontSize: '0.75rem', fontFamily: 'var(--font-mono)', fontWeight: 700, color: lc.color, marginBottom: '1rem' }}>
-                    {lc.icon} {lc.label}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', marginBottom: '1rem', flexWrap: 'wrap' }}>
+                    <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', padding: '0.3rem 0.85rem', background: `${lc.color}12`, border: `1px solid ${lc.color}33`, borderRadius: '999px', fontSize: '0.75rem', fontFamily: 'var(--font-mono)', fontWeight: 700, color: lc.color }}>
+                      {lc.icon} {lc.label}
+                    </div>
+                    <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', padding: '0.3rem 0.85rem', background: `${s.tierColor}12`, border: `1px solid ${s.tierColor}33`, borderRadius: '999px', fontSize: '0.75rem', fontFamily: 'var(--font-mono)', fontWeight: 700, color: s.tierColor }}>
+                      {s.tierEmoji} Score {s.score}/100 · {s.tier}
+                    </div>
                   </div>
                 );
+              })()}
+              {/* Señales del score */}
+              {(() => {
+                const s = calcLeadScore(selected);
+                return (s.warnings.length > 0 || s.signals.length > 0) ? (
+                  <div style={{ marginBottom: '1rem', display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                    {s.signals.slice(0, 2).map((sig, i) => <div key={i} style={{ fontSize: '0.7rem', color: '#25D366', display: 'flex', alignItems: 'center', gap: '0.35rem' }}><CheckCircle size={11} /> {sig}</div>)}
+                    {s.warnings.map((w, i) => <div key={i} style={{ fontSize: '0.7rem', color: '#f59e0b', display: 'flex', alignItems: 'center', gap: '0.35rem' }}><AlertCircle size={11} /> {w}</div>)}
+                  </div>
+                ) : null;
               })()}
 
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.5rem', textAlign: 'center', marginBottom: '1.25rem' }}>
@@ -338,6 +578,8 @@ export default function Clientes() {
           </div>
         )}
       </div>
+      </div>
+      )}
     </div>
   );
 }
