@@ -965,3 +965,8 @@ a:hover > .kpi-card { border-color: var(--kpi-color); transform: translateY(-2px
 .plantilla-item__head:hover { background: rgba(255,255,255,0.02); }
 .plantilla-item__objecion { font-family: var(--font-mono); font-size: 0.8rem; font-weight: 700; color: #f59e0b; }
 .plantilla-item__respuesta { padding: 0.85rem 1rem; border-top: 1px solid var(--border-light); font-size: 0.82rem; color: var(--text-secondary); line-height: 1.65; white-space: pre-wrap; }
+
+/* ── KPI 4 cols ── */
+.kpi-grid--4 { grid-template-columns: repeat(4, 1fr); }
+@media (max-width: 1000px) { .kpi-grid--4 { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 600px) { .kpi-grid--4 { grid-template-columns: 1fr 1fr; } }

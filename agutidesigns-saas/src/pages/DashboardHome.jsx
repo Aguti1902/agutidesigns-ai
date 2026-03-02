@@ -230,110 +230,40 @@ export default function DashboardHome() {
         </div>
       </div>
 
-      {/* ── Gate: IA no activa ── */}
-      {!iaActiva && (
+      {/* ── Estado del agente ── */}
+      {!iaActiva ? (
         <div className="dash-gate">
           <div className="dash-gate__left">
             <AlertTriangle size={20} />
             <div>
               <strong>Tu IA no está activa todavía</strong>
-              <span>Completa la configuración para que el agente empiece a cualificar leads automáticamente.</span>
+              <span>Conecta WhatsApp y configura la IA para empezar a cualificar leads automáticamente.</span>
             </div>
           </div>
           <Link to="/app/agente" className="btn btn--primary btn--sm"><Zap size={12} /> Activar ahora</Link>
         </div>
-      )}
-
-      {/* ── IA activa status ── */}
-      {iaActiva && (
+      ) : (
         <div className="dash-status dash-status--on">
           <div className="dash-status__left">
             <div className="dash-status__dot dash-status__dot--on" />
             <div>
               <strong>Agente IA en línea</strong>
-              <span>{activeAgent?.whatsapp_number || 'WhatsApp conectado'} — Cualificando leads automáticamente</span>
+              <span>{activeAgent?.whatsapp_number || 'WhatsApp conectado'} — Cualificando leads y agendando citas automáticamente</span>
             </div>
           </div>
         </div>
       )}
 
-      {/* ── Alerta facturas vencidas ── */}
-      {vencidasCount > 0 && (
-        <div className="dash-alert dash-alert--danger">
-          <AlertTriangle size={16} />
-          <span><strong>{vencidasCount} factura{vencidasCount > 1 ? 's' : ''} vencida{vencidasCount > 1 ? 's' : ''}</strong> — Revísalas antes de que el cliente se olvide.</span>
-          <Link to="/app/facturas">Ver facturas <ChevronRight size={12} /></Link>
-        </div>
-      )}
-
-      {/* ── KPIs: fila 1 ── */}
-      <div className="kpi-grid">
-        <KpiCard label="Mensajes IA hoy" value={stats.messagesToday} icon={<MessageCircle size={18} />} color="#25D366" href="/app/whatsapp" />
-        <KpiCard label="Leads captados" value={stats.leads} sub="total acumulado" icon={<Users size={18} />} color="#3b82f6" href="/app/whatsapp" />
-        <KpiCard label="% Conversión" value={`${stats.conversion}%`} sub="leads → aceptados" icon={<TrendingUp size={18} />} color={stats.conversion > 20 ? '#25D366' : stats.conversion > 5 ? '#f59e0b' : '#ef4444'} />
-        <KpiCard label="Valor medio" value={stats.valorMedio > 0 ? `${stats.valorMedio.toLocaleString('es-ES')}€` : '—'} sub="por proyecto" icon={<Euro size={18} />} color="#8b5cf6" href="/app/facturas" />
-        <KpiCard label="Citas por IA" value={stats.aiAppts} sub="generadas automáticamente" icon={<CalendarCheck size={18} />} color="#06b6d4" href="/app/calendario" />
-        <KpiCard label="Por cobrar" value={`${pendienteTotal.toFixed(0)}€`} icon={<Receipt size={18} />} color={pendienteTotal > 0 ? '#f59e0b' : '#25D366'} href="/app/facturas" />
+      {/* ── 4 KPIs core ── */}
+      <div className="kpi-grid kpi-grid--4">
+        <KpiCard label="Leads generados" value={stats.leads} sub="total acumulado" icon={<Users size={18} />} color="#25D366" href="/app/whatsapp" />
+        <KpiCard label="Citas agendadas" value={stats.aiAppts} sub="por la IA" icon={<CalendarCheck size={18} />} color="#3b82f6" href="/app/calendario" />
+        <KpiCard label="Presupuestos enviados" value={pipeline.enviado.length + pipeline.aceptado.length} sub="activos" icon={<FileText size={18} />} color="#8b5cf6" href="/app/presupuestos" />
+        <KpiCard label="Ventas cerradas" value={pipeline.aceptado.length} sub="presupuestos aceptados" icon={<TrendingUp size={18} />} color="#f59e0b" href="/app/presupuestos" />
       </div>
 
-      {/* ── Banner ROI IA ── */}
-      {roiData.leadsIA > 0 && (
-        <div className="dash-roi">
-          <div className="dash-roi__inner">
-            <div className="dash-roi__left">
-              <Sparkles size={22} />
-              <div>
-                <span className="dash-roi__label">Dinero que habrías perdido sin la IA</span>
-                <span className="dash-roi__amount">{roiData.valorEstimado.toLocaleString('es-ES')}€ estimados</span>
-                <span className="dash-roi__sub">Basado en {roiData.leadsIA} leads atendidos automáticamente × valor medio de proyecto × 30% conversión del sector</span>
-              </div>
-            </div>
-            <div className="dash-roi__right">
-              <TrendingDown size={16} />
-              <span>Sin IA</span>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ── Pipeline ── */}
-      <div className="dash-pipeline">
-        <div className="dash-pipeline__head">
-          <h3><Target size={16} /> Pipeline de proyectos</h3>
-          <Link to="/app/presupuestos">Ver todos <ChevronRight size={12} /></Link>
-        </div>
-        <div className="dash-pipeline__cols">
-          {[
-            { key: 'borrador', label: 'Borrador', color: '#666', items: pipeline.borrador },
-            { key: 'enviado', label: 'Enviado', color: '#f59e0b', items: pipeline.enviado },
-            { key: 'aceptado', label: 'Aceptado', color: '#25D366', items: pipeline.aceptado },
-          ].map(col => (
-            <div key={col.key} className="dash-pipeline__col">
-              <div className="dash-pipeline__col-head" style={{ '--pcol': col.color }}>
-                <span>{col.label}</span>
-                <span className="dash-pipeline__count">{col.items.length}</span>
-              </div>
-              {col.items.length === 0 ? (
-                <div className="dash-pipeline__empty">—</div>
-              ) : (
-                col.items.slice(0, 4).map((p, i) => {
-                  const total = calcTotal(p.lineas, p.iva);
-                  return (
-                    <div key={i} className="dash-pipeline__item">
-                      <span className="dash-pipeline__name">{p.cliente_nombre || 'Sin nombre'}</span>
-                      <span className="dash-pipeline__amt" style={{ color: col.color }}>{total.toFixed(0)}€</span>
-                    </div>
-                  );
-                })
-              )}
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* ── Columnas ── */}
+      {/* ── Dos columnas: leads + citas ── */}
       <div className="dash-cols">
-        {/* Leads recientes */}
         <div className="dash-widget">
           <div className="dash-widget__head">
             <h3><MessageCircle size={16} /> Leads recientes</h3>
@@ -350,7 +280,9 @@ export default function DashboardHome() {
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.2rem' }}>
                     {c.is_lead && <span className="dash-lead-tag">Lead</span>}
-                    <small style={{ color: 'var(--text-tertiary)', fontSize: '0.62rem' }}>{c.last_message_at ? new Date(c.last_message_at).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }) : ''}</small>
+                    <small style={{ color: 'var(--text-tertiary)', fontSize: '0.62rem' }}>
+                      {c.last_message_at ? new Date(c.last_message_at).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }) : ''}
+                    </small>
                   </div>
                 </div>
               ))}
@@ -360,104 +292,34 @@ export default function DashboardHome() {
           )}
         </div>
 
-        {/* Citas de hoy */}
         <div className="dash-widget">
           <div className="dash-widget__head">
             <h3><CalendarCheck size={16} /> Citas de hoy</h3>
-            <Link to="/app/calendario">Calendario <ChevronRight size={12} /></Link>
+            <Link to="/app/calendario">Ver agenda <ChevronRight size={12} /></Link>
           </div>
           {todayAppts.length > 0 ? (
             <div className="dash-widget__list">
               {todayAppts.map((a, i) => (
                 <div key={i} className="dash-appt">
                   <div className={`dash-appt__time ${a.created_by === 'ai' ? 'dash-appt__time--ai' : ''}`}>{a.start_time?.substring(0, 5)}</div>
-                  <div className="dash-appt__info"><b>{a.client_name}</b><span>{a.service || 'Sin servicio especificado'}</span></div>
+                  <div className="dash-appt__info"><b>{a.client_name}</b><span>{a.service || 'Discovery call'}</span></div>
                   {a.created_by === 'ai' && <span className="dash-appt__badge">IA</span>}
                 </div>
               ))}
             </div>
           ) : (
-            <div className="dash-widget__empty"><CalendarCheck size={22} /><p>No hay citas para hoy.</p></div>
+            <div className="dash-widget__empty"><CalendarCheck size={22} /><p>No hay citas para hoy. La IA agendará automáticamente.</p></div>
           )}
         </div>
       </div>
 
-      {/* ── Facturas pendientes ── */}
-      {facturasPendientes.length > 0 && (
-        <div className="dash-widget">
-          <div className="dash-widget__head">
-            <h3><Receipt size={16} /> Facturas pendientes</h3>
-            <Link to="/app/facturas">Ver todas <ChevronRight size={12} /></Link>
-          </div>
-          <div className="dash-widget__list">
-            {facturasPendientes.map((f, i) => {
-              const total = calcTotal(f.lineas, f.iva);
-              const vencida = f.estado === 'vencida';
-              return (
-                <div key={i} className="dash-convo">
-                  <div className="dash-convo__av" style={{ background: vencida ? 'rgba(239,68,68,0.1)' : 'rgba(245,158,11,0.1)', color: vencida ? '#ef4444' : '#f59e0b' }}><Receipt size={14} /></div>
-                  <div className="dash-convo__info"><b>{f.cliente_nombre || 'Sin nombre'}</b><span style={{ color: vencida ? '#ef4444' : undefined }}>{vencida ? '¡VENCIDA!' : f.numero}</span></div>
-                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.82rem', fontWeight: 700, flexShrink: 0, color: vencida ? '#ef4444' : undefined }}>{total.toFixed(0)}€</div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
-
-      {/* ── Rentabilidad + Simulador ── */}
-      <div className="dash-cols">
-        {/* Panel de rentabilidad */}
-        {(rentabilidad.topClientes.length > 0 || rentabilidad.tiposMasRentables.length > 0) && (
-          <div className="dash-widget">
-            <div className="dash-widget__head">
-              <h3><Award size={16} /> Rentabilidad real</h3>
-              <Link to="/app/clientes">Ver clientes <ChevronRight size={12} /></Link>
-            </div>
-            {rentabilidad.topClientes.length > 0 && (
-              <div style={{ marginBottom: '1rem' }}>
-                <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.62rem', fontWeight: 700, color: 'var(--text-tertiary)', textTransform: 'uppercase', marginBottom: '0.5rem' }}>Clientes más rentables</div>
-                {rentabilidad.topClientes.map((c, i) => (
-                  <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.4rem 0', borderBottom: '1px solid var(--border-light)' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                      <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.6rem', color: '#25D366', fontWeight: 700, minWidth: 16 }}>#{i + 1}</span>
-                      <span style={{ fontSize: '0.78rem' }}>{c.nombre}</span>
-                    </div>
-                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.78rem', fontWeight: 700, color: '#25D366' }}>{c.valor.toLocaleString('es-ES')}€</span>
-                  </div>
-                ))}
-              </div>
-            )}
-            {rentabilidad.tiposMasRentables.length > 0 && (
-              <div>
-                <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.62rem', fontWeight: 700, color: 'var(--text-tertiary)', textTransform: 'uppercase', marginBottom: '0.5rem' }}>Proyectos más rentables</div>
-                {rentabilidad.tiposMasRentables.map((t, i) => (
-                  <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.4rem 0', borderBottom: '1px solid var(--border-light)' }}>
-                    <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{t.tipo}</span>
-                    <div style={{ textAlign: 'right' }}>
-                      <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.72rem', fontWeight: 700 }}>{t.media.toLocaleString('es-ES')}€ / proy.</div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-            {rentabilidad.topClientes.length === 0 && (
-              <div className="dash-widget__empty"><BarChart3 size={22} /><p>Aquí verás qué clientes y proyectos son más rentables cuando tengas facturas pagadas.</p></div>
-            )}
-          </div>
-        )}
-
-        {/* Simulador de ingresos */}
-        <SimuladorIngresos valorMedio={stats.valorMedio} conversion={stats.conversion} totalLeads={stats.leads} />
-      </div>
-
-      {/* ── Setup progress ── */}
+      {/* ── Configuración pendiente ── */}
       {!allSetup && (
         <div className="dash-setup">
           <div className="dash-setup__head">
             <div>
-              <h3>Configura tu agente IA</h3>
-              <span>{setupDone} de {setupSteps.length} pasos completados</span>
+              <h3>Configura tu agente</h3>
+              <span>{setupDone} de {setupSteps.length} pasos</span>
             </div>
             <span className="dash-setup__pct">{Math.round((setupDone / setupSteps.length) * 100)}%</span>
           </div>
@@ -475,15 +337,16 @@ export default function DashboardHome() {
         </div>
       )}
 
-      {/* ── Uso de mensajes ── */}
-      <div className="dash-usage">
-        <div className="dash-usage__top">
-          <span><BarChart3 size={14} /> Mensajes IA usados este mes</span>
-          <Link to="/app/mensajes">Ver detalle <ChevronRight size={12} /></Link>
+      {/* ── Uso de mensajes (mínimo, solo si cerca del límite) ── */}
+      {msgPercent > 70 && (
+        <div className="dash-usage">
+          <div className="dash-usage__top">
+            <span><BarChart3 size={14} /> Mensajes IA este mes</span>
+          </div>
+          <div className="dash-usage__bar"><div className="dash-usage__fill" style={{ width: `${msgPercent}%`, background: msgPercent > 95 ? '#ef4444' : '#f59e0b' }} /></div>
+          <span className="dash-usage__text">{totalMessages.toLocaleString('es-ES')} / {msgLimit.toLocaleString('es-ES')} mensajes — {msgPercent > 95 ? '¡Casi agotado!' : 'Límite próximo'}</span>
         </div>
-        <div className="dash-usage__bar"><div className="dash-usage__fill" style={{ width: `${msgPercent}%`, background: msgPercent > 95 ? '#ef4444' : msgPercent > 80 ? '#f59e0b' : '#25D366' }} /></div>
-        <span className="dash-usage__text">{totalMessages.toLocaleString('es-ES')} / {msgLimit.toLocaleString('es-ES')} mensajes</span>
-      </div>
+      )}
     </div>
   );
 }
