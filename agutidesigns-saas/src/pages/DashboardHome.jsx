@@ -221,36 +221,68 @@ export default function DashboardHome() {
   const allSetup = setupDone === setupSteps.length;
   const iaActiva = setupStatus.whatsapp && setupStatus.prompt;
 
+  // Calcular estado de mensajes con créditos extra
+  const msgCredits = profile?.message_credits || profile?.extra_messages || 0;
+  const msgQuota = profile?.message_quota_monthly || profile?.message_limit || 500;
+  const totalAvailable = msgQuota + msgCredits;
+  const msgUsedPct = totalAvailable > 0 ? Math.min(100, Math.round((totalMessages / totalAvailable) * 100)) : 0;
+  const iaPausada = msgUsedPct >= 100;
+  const msgWarning = msgUsedPct >= 80 && !iaPausada;
+
   return (
     <div className="page">
       <div className="page__header">
         <div>
           <h1>¡Hola, {profile?.full_name?.split(' ')[0] || 'diseñador'}! 👋</h1>
-          <p>Tu negocio de diseño web en un vistazo.</p>
+          <p>Tu agente IA, tus citas y tus presupuestos en un vistazo.</p>
         </div>
       </div>
 
-      {/* ── Estado del agente ── */}
-      {!iaActiva ? (
+      {/* ══ BARRA DE MENSAJES IA — primer elemento visual ══ */}
+      <div className={`msg-bar ${iaPausada ? 'msg-bar--paused' : msgWarning ? 'msg-bar--warning' : 'msg-bar--ok'}`}>
+        <div className="msg-bar__top">
+          <div className="msg-bar__left">
+            <div className={`msg-bar__dot ${iaPausada ? 'msg-bar__dot--paused' : msgWarning ? 'msg-bar__dot--warn' : 'msg-bar__dot--ok'}`} />
+            <div>
+              <strong className="msg-bar__title">
+                {iaPausada ? '⚠ IA pausada — Sin mensajes disponibles' : msgWarning ? '⚡ Mensajes al ' + msgUsedPct + '% — Recarga pronto' : 'Agente IA activo'}
+              </strong>
+              <span className="msg-bar__sub">
+                {totalMessages.toLocaleString('es-ES')} de {totalAvailable.toLocaleString('es-ES')} mensajes usados este mes
+                {msgCredits > 0 && <span className="msg-bar__credits"> · {msgCredits.toLocaleString('es-ES')} créditos extra</span>}
+              </span>
+            </div>
+          </div>
+          <div className="msg-bar__right">
+            <span className="msg-bar__pct" style={{ color: iaPausada ? '#ef4444' : msgWarning ? '#f59e0b' : '#25D366' }}>{msgUsedPct}%</span>
+            {(iaPausada || msgWarning) && (
+              <Link to="/app/billing" className={`btn btn--sm ${iaPausada ? 'btn--danger' : 'btn--warning'}`}>
+                <Zap size={12} /> {iaPausada ? 'Reactivar IA' : 'Comprar mensajes'}
+              </Link>
+            )}
+          </div>
+        </div>
+        <div className="msg-bar__track">
+          <div className="msg-bar__fill" style={{ width: `${msgUsedPct}%` }} />
+        </div>
+        {iaPausada && (
+          <div className="msg-bar__paused-msg">
+            Tu agente IA ha dejado de responder porque agotaste tu cuota. Compra un pack de mensajes para reactivarlo ahora.
+          </div>
+        )}
+      </div>
+
+      {/* ── Estado del agente (solo si no está activo) ── */}
+      {!iaActiva && !iaPausada && (
         <div className="dash-gate">
           <div className="dash-gate__left">
             <AlertTriangle size={20} />
             <div>
-              <strong>Tu IA no está activa todavía</strong>
+              <strong>Tu IA no está configurada todavía</strong>
               <span>Conecta WhatsApp y configura la IA para empezar a cualificar leads automáticamente.</span>
             </div>
           </div>
-          <Link to="/app/agente" className="btn btn--primary btn--sm"><Zap size={12} /> Activar ahora</Link>
-        </div>
-      ) : (
-        <div className="dash-status dash-status--on">
-          <div className="dash-status__left">
-            <div className="dash-status__dot dash-status__dot--on" />
-            <div>
-              <strong>Agente IA en línea</strong>
-              <span>{activeAgent?.whatsapp_number || 'WhatsApp conectado'} — Cualificando leads y agendando citas automáticamente</span>
-            </div>
-          </div>
+          <Link to="/app/agente" className="btn btn--primary btn--sm"><Zap size={12} /> Configurar ahora</Link>
         </div>
       )}
 
@@ -337,16 +369,6 @@ export default function DashboardHome() {
         </div>
       )}
 
-      {/* ── Uso de mensajes (mínimo, solo si cerca del límite) ── */}
-      {msgPercent > 70 && (
-        <div className="dash-usage">
-          <div className="dash-usage__top">
-            <span><BarChart3 size={14} /> Mensajes IA este mes</span>
-          </div>
-          <div className="dash-usage__bar"><div className="dash-usage__fill" style={{ width: `${msgPercent}%`, background: msgPercent > 95 ? '#ef4444' : '#f59e0b' }} /></div>
-          <span className="dash-usage__text">{totalMessages.toLocaleString('es-ES')} / {msgLimit.toLocaleString('es-ES')} mensajes — {msgPercent > 95 ? '¡Casi agotado!' : 'Límite próximo'}</span>
-        </div>
-      )}
     </div>
   );
 }

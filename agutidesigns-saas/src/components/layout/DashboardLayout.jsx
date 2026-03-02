@@ -6,23 +6,23 @@ import { supabase } from '../../lib/supabase';
 import AgentSelector from '../dashboard/AgentSelector';
 import './DashboardLayout.css';
 
-// v1.0 — 7 items core
+// v1.0 — MVP (6 items)
 const navItems = [
-  { to: '/app', icon: <LayoutDashboard size={18} />, label: 'Dashboard', end: true },
-  { to: '/app/whatsapp', icon: <MessageCircle size={18} />, label: 'WhatsApp' },
-  { to: '/app/calendario', icon: <Calendar size={18} />, label: 'Citas' },
-  { to: '/app/presupuestos', icon: <FileText size={18} />, label: 'Presupuestos' },
-  { to: '/app/agente', icon: <Bot size={18} />, label: 'Configuración' },
-  { to: '/app/mensajes', icon: <BarChart3 size={18} />, label: 'Mensajes' },
-  { to: '/app/billing', icon: <CreditCard size={18} />, label: 'Suscripción' },
+  { to: '/app',             icon: <LayoutDashboard size={18} />, label: 'Dashboard',        end: true },
+  { to: '/app/whatsapp',   icon: <MessageCircle size={18} />,   label: 'WhatsApp' },
+  { to: '/app/calendario', icon: <Calendar size={18} />,        label: 'Citas' },
+  { to: '/app/presupuestos',icon: <FileText size={18} />,       label: 'Presupuestos' },
+  { to: '/app/agente',     icon: <Bot size={18} />,             label: 'Configuración IA' },
+  { to: '/app/billing',    icon: <CreditCard size={18} />,      label: 'Suscripción' },
 ];
 
 // v2.0 — ocultos hasta próxima versión
-// { to: '/app/facturas', icon: <Receipt size={18} />, label: 'Facturas' },
-// { to: '/app/clientes', icon: <Users size={18} />, label: 'Clientes' },
-// { to: '/app/negocio', icon: <Building size={18} />, label: 'Mi Negocio' },
-// { to: '/app/tutoriales', icon: <BookOpen size={18} />, label: 'Tutoriales' },
-// { to: '/app/soporte', icon: <HelpCircle size={18} />, label: 'Soporte', badge: true },
+// { to: '/app/mensajes',   icon: <BarChart3 size={18} />,  label: 'Mensajes' },
+// { to: '/app/facturas',   icon: <Receipt size={18} />,    label: 'Facturas' },
+// { to: '/app/clientes',   icon: <Users size={18} />,      label: 'Clientes' },
+// { to: '/app/negocio',    icon: <Building size={18} />,   label: 'Mi Negocio' },
+// { to: '/app/tutoriales', icon: <BookOpen size={18} />,   label: 'Tutoriales' },
+// { to: '/app/soporte',    icon: <HelpCircle size={18} />, label: 'Soporte', badge: true },
 
 function TrialCountdown({ endsAt }) {
   const [timeLeft, setTimeLeft] = useState('');

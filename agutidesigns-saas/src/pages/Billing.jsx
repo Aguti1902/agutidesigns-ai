@@ -434,8 +434,37 @@ export default function Billing() {
         </>
       )}
 
+      {/* ══ COMPRAR MENSAJES ══ */}
+      <div className="billing-section-header" style={{ marginTop: '2rem' }}>
+        <h3 className="page__section-title"><MessageCircle size={18} /> Comprar mensajes extra</h3>
+        <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>
+          Si tu agente IA alcanza el límite mensual, se pausa automáticamente. Los packs se suman a tu cuota y no caducan hasta agotar.
+        </p>
+      </div>
+      <div className="msg-packs">
+        {[
+          { id: 'pack_500', label: '500 mensajes', price: '9€', tag: null, credits: 500, perMsg: '1,8 ct/msg' },
+          { id: 'pack_1000', label: '1.000 mensajes', price: '15€', tag: '🔥 Popular', credits: 1000, perMsg: '1,5 ct/msg' },
+          { id: 'pack_3000', label: '3.000 mensajes', price: '35€', tag: '💡 Mejor precio', credits: 3000, perMsg: '1,2 ct/msg' },
+          { id: 'pack_10000', label: '10.000 mensajes', price: '90€', tag: '🚀 Agencias', credits: 10000, perMsg: '0,9 ct/msg' },
+        ].map(pack => (
+          <div key={pack.id} className={`msg-pack-card ${pack.tag ? 'msg-pack-card--featured' : ''}`}>
+            {pack.tag && <span className="msg-pack-card__tag">{pack.tag}</span>}
+            <div className="msg-pack-card__label">{pack.label}</div>
+            <div className="msg-pack-card__price">{pack.price}</div>
+            <div className="msg-pack-card__per">{pack.perMsg}</div>
+            <button
+              className="btn btn--primary btn--full"
+              onClick={() => navigate(`/app/checkout?pack=${pack.id}&credits=${pack.credits}`)}
+            >
+              <Zap size={13} /> Comprar
+            </button>
+          </div>
+        ))}
+      </div>
+
       {/* Plans */}
-      <div className="billing-section-header">
+      <div className="billing-section-header" style={{ marginTop: '2rem' }}>
         <h3 className="page__section-title"><Sparkles size={18} /> {isSubscribed ? 'Cambiar plan' : 'Elige tu plan'}</h3>
         <div className="billing-section-badges">
           <span className="billing-badge"><Shield size={12} /> Pago 100% seguro</span>
