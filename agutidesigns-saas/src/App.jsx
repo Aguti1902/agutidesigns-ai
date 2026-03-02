@@ -10,6 +10,7 @@ import DashboardHome from './pages/DashboardHome';
 import WhatsAppConnect from './pages/WhatsAppConnect';
 import BusinessInfo from './pages/BusinessInfo';
 import PromptBuilder from './pages/PromptBuilder';
+import Ajustes from './pages/Ajustes';
 import Tutorials from './pages/Tutorials';
 import Billing from './pages/Billing';
 import Checkout from './pages/Checkout';
@@ -77,6 +78,7 @@ export default function App() {
       <Route path="/app" element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
         <Route index element={<DashboardHome />} />
         <Route path="whatsapp" element={<WhatsAppConnect />} />
+        <Route path="ajustes" element={<Ajustes />} />
         <Route path="negocio" element={<BusinessInfo />} />
         <Route path="agente" element={<PromptBuilder />} />
         <Route path="tutoriales" element={<Tutorials />} />

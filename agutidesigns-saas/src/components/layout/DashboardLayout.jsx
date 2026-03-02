@@ -6,18 +6,16 @@ import { supabase } from '../../lib/supabase';
 import AgentSelector from '../dashboard/AgentSelector';
 import './DashboardLayout.css';
 
-// v1.0 — MVP (7 items)
+// v1.0 — MVP (5 items)
 const navItems = [
-  { to: '/app',             icon: <LayoutDashboard size={18} />, label: 'Dashboard',        end: true },
-  { to: '/app/whatsapp',   icon: <MessageCircle size={18} />,   label: 'WhatsApp' },
-  { to: '/app/calendario', icon: <Calendar size={18} />,        label: 'Citas' },
-  { to: '/app/presupuestos',icon: <FileText size={18} />,       label: 'Presupuestos' },
-  { to: '/app/negocio',    icon: <Building size={18} />,        label: 'Mi Negocio' },
-  { to: '/app/agente',     icon: <Bot size={18} />,             label: 'Configuración IA' },
-  { to: '/app/billing',    icon: <CreditCard size={18} />,      label: 'Suscripción' },
+  { to: '/app',              icon: <LayoutDashboard size={18} />, label: 'Dashboard',    end: true },
+  { to: '/app/whatsapp',    icon: <MessageCircle size={18} />,   label: 'WhatsApp' },
+  { to: '/app/calendario',  icon: <Calendar size={18} />,        label: 'Citas' },
+  { to: '/app/presupuestos', icon: <FileText size={18} />,       label: 'Presupuestos' },
+  { to: '/app/ajustes',     icon: <Building size={18} />,        label: 'Ajustes' },
 ];
 
-// v2.0 — ocultos hasta próxima versión
+// v2.0 — ocultos
 // { to: '/app/mensajes',   icon: <BarChart3 size={18} />,  label: 'Mensajes' },
 // { to: '/app/facturas',   icon: <Receipt size={18} />,    label: 'Facturas' },
 // { to: '/app/clientes',   icon: <Users size={18} />,      label: 'Clientes' },

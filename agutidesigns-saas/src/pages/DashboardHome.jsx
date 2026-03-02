@@ -107,11 +107,40 @@ export default function DashboardHome() {
   const [setupStatus, setSetupStatus] = useState({ whatsapp: false, business: false, prompt: false, booking: false, fiscal: false, servicios: false });
   const [roiData, setRoiData] = useState({ leadsIA: 0, valorEstimado: 0 });
 
+  // Ajustes rápidos
+  const [quickPrecioMin, setQuickPrecioMin] = useState('');
+  const [quickDisponible, setQuickDisponible] = useState(true);
+  const [quickTono, setQuickTono] = useState('cercano');
+  const [quickSaving, setQuickSaving] = useState(false);
+
   useEffect(() => {
     if (!user) return;
     if (activeAgent) loadAll();
     else loadSetupOnly();
+    loadQuickSettings();
   }, [activeAgent?.id, user?.id]);
+
+  async function loadQuickSettings() {
+    const { data } = await supabase.from('businesses').select('extra_context').eq('user_id', user.id).single();
+    if (data?.extra_context) {
+      try {
+        const e = JSON.parse(data.extra_context);
+        if (e.precio_minimo) setQuickPrecioMin(e.precio_minimo);
+        if (e.disponible !== undefined) setQuickDisponible(e.disponible !== 'no');
+        if (e.tono_rapido) setQuickTono(e.tono_rapido);
+      } catch {}
+    }
+  }
+
+  async function saveQuickSettings(patch) {
+    setQuickSaving(true);
+    const { data } = await supabase.from('businesses').select('id, extra_context').eq('user_id', user.id).maybeSingle();
+    const prev = (() => { try { return data?.extra_context ? JSON.parse(data.extra_context) : {}; } catch { return {}; } })();
+    const merged = { ...prev, ...patch };
+    if (data) await supabase.from('businesses').update({ extra_context: JSON.stringify(merged), updated_at: new Date().toISOString() }).eq('id', data.id);
+    else await supabase.from('businesses').insert({ user_id: user.id, name: 'Mi Negocio', extra_context: JSON.stringify(merged) });
+    setQuickSaving(false);
+  }
 
   async function loadSetupOnly() {
     const bizRes = await supabase.from('businesses').select('name, extra_context').eq('user_id', user.id).single();
@@ -212,9 +241,8 @@ export default function DashboardHome() {
 
   const setupSteps = [
     { key: 'whatsapp', label: 'Conectar WhatsApp', done: setupStatus.whatsapp, to: '/app/whatsapp', icon: <MessageCircle size={14} /> },
-    { key: 'fiscal', label: 'Datos fiscales', done: setupStatus.fiscal, to: '/app/negocio', icon: <Building size={14} /> },
-    { key: 'servicios', label: 'Servicios y precios', done: setupStatus.servicios, to: '/app/negocio', icon: <FileText size={14} /> },
-    { key: 'prompt', label: 'Configurar IA', done: setupStatus.prompt, to: '/app/agente', icon: <Bot size={14} /> },
+    { key: 'servicios', label: 'Añadir servicios y precios', done: setupStatus.servicios, to: '/app/ajustes', icon: <FileText size={14} /> },
+    { key: 'prompt', label: 'Configurar IA', done: setupStatus.prompt, to: '/app/ajustes?tab=ia', icon: <Bot size={14} /> },
     { key: 'booking', label: 'Activar agendamiento', done: setupStatus.booking, to: '/app/calendario', icon: <CalendarCheck size={14} /> },
   ];
   const setupDone = setupSteps.filter(s => s.done).length;
@@ -236,6 +264,57 @@ export default function DashboardHome() {
           <h1>¡Hola, {profile?.full_name?.split(' ')[0] || 'diseñador'}! 👋</h1>
           <p>Tu agente IA, tus citas y tus presupuestos en un vistazo.</p>
         </div>
+      </div>
+
+      {/* ── Ajustes rápidos ── */}
+      <div className="quick-chips">
+        {/* Chip 1: Presupuesto mínimo */}
+        <div className="quick-chip">
+          <span className="quick-chip__label"><Euro size={12} /> Presupuesto mínimo</span>
+          <div className="quick-chip__input-wrap">
+            <input
+              type="number"
+              value={quickPrecioMin}
+              onChange={e => setQuickPrecioMin(e.target.value)}
+              onBlur={() => saveQuickSettings({ precio_minimo: quickPrecioMin })}
+              placeholder="400"
+              className="quick-chip__input"
+            />
+            <span className="quick-chip__unit">€</span>
+          </div>
+        </div>
+
+        {/* Chip 2: Disponibilidad */}
+        <button
+          type="button"
+          className={`quick-chip quick-chip--toggle ${quickDisponible ? 'quick-chip--on' : 'quick-chip--off'}`}
+          onClick={() => {
+            const next = !quickDisponible;
+            setQuickDisponible(next);
+            saveQuickSettings({ disponible: next ? 'si' : 'no' });
+          }}
+        >
+          <span className="quick-chip__dot" />
+          <span className="quick-chip__label">{quickDisponible ? 'Disponible esta semana' : 'No disponible'}</span>
+        </button>
+
+        {/* Chip 3: Tono */}
+        <div className="quick-chip">
+          <span className="quick-chip__label"><Bot size={12} /> Tono</span>
+          <div className="quick-chip__select-wrap">
+            {['cercano', 'profesional', 'directo'].map(t => (
+              <button key={t} type="button"
+                className={`quick-chip__opt ${quickTono === t ? 'quick-chip__opt--on' : ''}`}
+                onClick={() => { setQuickTono(t); saveQuickSettings({ tono_rapido: t }); }}>
+                {t}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <Link to="/app/ajustes" className="quick-chip quick-chip--link">
+          <Building size={12} /> Ajustes completos <ChevronRight size={11} />
+        </Link>
       </div>
 
       {/* ══ BARRA DE MENSAJES IA — primer elemento visual ══ */}
@@ -272,17 +351,28 @@ export default function DashboardHome() {
         )}
       </div>
 
-      {/* ── Estado del agente (solo si no está activo) ── */}
+      {/* ── Bloqueo inteligente: pasos pendientes ── */}
       {!iaActiva && !iaPausada && (
         <div className="dash-gate">
           <div className="dash-gate__left">
             <AlertTriangle size={20} />
             <div>
-              <strong>Tu IA no está configurada todavía</strong>
-              <span>Conecta WhatsApp y configura la IA para empezar a cualificar leads automáticamente.</span>
+              <strong>
+                {setupDone === 0
+                  ? 'Configura tu agente para empezar'
+                  : `Te ${setupSteps.length - setupDone === 1 ? 'falta 1 paso' : `faltan ${setupSteps.length - setupDone} pasos`} para activar el agente`}
+              </strong>
+              <span>
+                {!setupStatus.whatsapp && 'WhatsApp no conectado · '}
+                {!setupStatus.servicios && 'Servicios y precios vacíos · '}
+                {!setupStatus.prompt && 'IA no configurada'}
+              </span>
             </div>
           </div>
-          <Link to="/app/agente" className="btn btn--primary btn--sm"><Zap size={12} /> Configurar ahora</Link>
+          <div style={{ display: 'flex', gap: '0.5rem' }}>
+            {!setupStatus.whatsapp && <Link to="/app/whatsapp" className="btn btn--outline btn--sm"><MessageCircle size={12} /> WhatsApp</Link>}
+            <Link to="/app/ajustes" className="btn btn--primary btn--sm"><Zap size={12} /> Completar ajustes</Link>
+          </div>
         </div>
       )}
 
