@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 import {
   Rocket, Building, FileText, Bot, MessageCircle, Check, ArrowRight,
   ArrowLeft, CheckCircle, Circle, Zap, Target, Euro, Clock, Globe, Users
@@ -50,6 +51,7 @@ function ProgressBar({ step, total }) {
 
 export default function OnboardingFlow({ onComplete }) {
   const { updateProfile, user, profile } = useAuth();
+  const navigate = useNavigate();
   const [step, setStep] = useState(0);
   const [saving, setSaving] = useState(false);
 
@@ -183,6 +185,7 @@ export default function OnboardingFlow({ onComplete }) {
       }).catch(() => {});
     } catch {}
     onComplete();
+    navigate('/app');
   }
 
   const steps = [
@@ -196,6 +199,12 @@ export default function OnboardingFlow({ onComplete }) {
 
   return (
     <div className="onboard">
+      {/* Logo */}
+      <div className="onboard__logo">
+        <span className="onboard__logo-text">wasap<span className="onboard__logo-y">y</span></span>
+        <span className="onboard__logo-badge">.io</span>
+      </div>
+
       <div className="onboard__card onboard__card--wide">
         {/* Steps indicator */}
         <div className="ob-steps">
@@ -449,7 +458,7 @@ SEO: 300€ - 800€`}
 
         {step < TOTAL_STEPS - 1 && (
           <button className="onboard__skip" onClick={handleFinish}>
-            Saltar configuración (no recomendado)
+            Saltar y configurar más tarde →
           </button>
         )}
       </div>
