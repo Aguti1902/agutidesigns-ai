@@ -24,28 +24,39 @@ export default function AuthPage() {
     setLoading(true);
     try {
       if (mode === 'register') {
-        if (!form.name) throw new Error('Introduce tu nombre');
-        if (!form.phone || form.phone.replace(/\s/g, '').length < 9) throw new Error('Introduce un número de teléfono válido');
+        if (!form.name.trim()) throw new Error('Introduce tu nombre');
+        if (!form.email.trim()) throw new Error('Introduce tu email');
+        if (form.password.length < 6) throw new Error('La contraseña debe tener al menos 6 caracteres');
 
-        // Check if phone already used for a trial
-        const phoneAvailable = await checkPhoneAvailable(form.phone);
-        if (!phoneAvailable) {
-          throw new Error('Este número de teléfono ya ha sido utilizado para una prueba gratuita. Si necesitas ayuda, contacta con soporte.');
+        // Phone check: only if phone was provided
+        if (form.phone && form.phone.replace(/\s/g, '').length >= 9) {
+          try {
+            const phoneAvailable = await checkPhoneAvailable(form.phone);
+            if (!phoneAvailable) {
+              throw new Error('Este número de teléfono ya ha sido utilizado para una prueba gratuita. Contacta con soporte si necesitas ayuda.');
+            }
+          } catch (phoneErr) {
+            // If the error is about phone already used, rethrow it
+            if (phoneErr.message.includes('ya ha sido utilizado')) throw phoneErr;
+            // Otherwise (DB error, table missing, etc.) just continue silently
+            console.warn('Phone check skipped:', phoneErr.message);
+          }
         }
 
         const data = await signUp(form.email, form.password, form.name);
 
-        // Wait for profile to be created by trigger, then register phone
-        if (data?.user?.id) {
-          let profileReady = false;
-          for (let i = 0; i < 8; i++) {
-            await new Promise(r => setTimeout(r, 500));
-            const { data: p } = await supabase.from('profiles').select('id').eq('id', data.user.id).single();
-            if (p) { profileReady = true; break; }
-          }
-          if (profileReady) {
-            try { await registerTrialPhone(form.phone, data.user.id); } catch (e) { console.warn('Phone registration:', e.message); }
-          }
+        // Register phone if provided (non-blocking)
+        if (data?.user?.id && form.phone && form.phone.replace(/\s/g, '').length >= 9) {
+          setTimeout(async () => {
+            for (let i = 0; i < 8; i++) {
+              await new Promise(r => setTimeout(r, 500));
+              const { data: p } = await supabase.from('profiles').select('id').eq('id', data.user.id).single();
+              if (p) {
+                try { await registerTrialPhone(form.phone, data.user.id); } catch {}
+                break;
+              }
+            }
+          }, 0);
         }
 
         setEmailSent(true);
@@ -53,7 +64,22 @@ export default function AuthPage() {
         await signIn(form.email, form.password);
       }
     } catch (err) {
-      setError(err.message || 'Ha habido un error');
+      // Translate Supabase English errors to Spanish
+      const msg = err.message || '';
+      if (msg.includes('rate limit') || msg.includes('email rate')) {
+        setError('Demasiados intentos. Espera unos minutos e inténtalo de nuevo.');
+      } else if (msg.includes('already registered') || msg.includes('User already registered')) {
+        setError('Este email ya tiene una cuenta. ¿Quieres iniciar sesión?');
+        setMode('login');
+      } else if (msg.includes('Invalid login credentials') || msg.includes('invalid_credentials')) {
+        setError('Email o contraseña incorrectos.');
+      } else if (msg.includes('Email not confirmed')) {
+        setError('Confirma tu email antes de entrar. Revisa tu bandeja de entrada (y la carpeta de spam).');
+      } else if (msg.includes('Password should be at least')) {
+        setError('La contraseña debe tener al menos 6 caracteres.');
+      } else {
+        setError(msg || 'Ha habido un error. Inténtalo de nuevo.');
+      }
     } finally {
       setLoading(false);
     }
@@ -182,9 +208,9 @@ export default function AuthPage() {
                 <input type="text" placeholder="Tu nombre" value={form.name} onChange={e => update('name', e.target.value)} />
               </div>
               <div className="auth__field">
-                <label><Phone size={14} /> Teléfono / WhatsApp</label>
+                <label><Phone size={14} /> Teléfono / WhatsApp <span style={{ fontWeight: 400, color: 'var(--text-tertiary)', fontSize: '0.7rem' }}>(opcional)</span></label>
                 <input type="tel" placeholder="+34 600 000 000" value={form.phone} onChange={e => update('phone', e.target.value)} />
-                <span className="auth__field-hint">Este número se usará para vincular tu agente IA</span>
+                <span className="auth__field-hint">Para vincular tu agente IA cuando lo configures</span>
               </div>
             </>
           )}
