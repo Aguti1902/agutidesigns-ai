@@ -61,16 +61,23 @@ function OBWhatsAppConnector({ userId, onConnected }) {
 
   useEffect(() => () => { if (pollRef.current) clearInterval(pollRef.current); }, []);
 
-  async function getAgentId() {
+  async function getOrCreateAgentId() {
     const { data } = await supabase.from('agents').select('id').eq('user_id', userId).maybeSingle();
-    return data?.id;
+    if (data?.id) return data.id;
+    // No existe aún → crear agente por defecto
+    const { data: created, error } = await supabase
+      .from('agents')
+      .insert({ user_id: userId, name: 'Asistente' })
+      .select('id')
+      .single();
+    if (error) throw new Error('No se pudo preparar el agente. Inténtalo de nuevo.');
+    return created?.id;
   }
 
   async function connectQR() {
     setConnecting(true); setError(''); setQrCode(null);
     try {
-      const agentId = await getAgentId();
-      if (!agentId) throw new Error('Guarda el paso anterior antes de conectar');
+      const agentId = await getOrCreateAgentId();
       const res  = await fetch(`${API_URL}/evolution-create`, { method: 'POST', headers: apiHeaders(), body: JSON.stringify({ agentId, userId }) });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Error generando QR');
@@ -86,8 +93,7 @@ function OBWhatsAppConnector({ userId, onConnected }) {
     if (clean.length < 11) { setError('Incluye el prefijo de país (ej: 34612345678 para España)'); return; }
     setConnecting(true); setError(''); setPairingCode(null);
     try {
-      const agentId = await getAgentId();
-      if (!agentId) throw new Error('Guarda el paso anterior antes de conectar');
+      const agentId = await getOrCreateAgentId();
       const res  = await fetch(`${API_URL}/evolution-create`, { method: 'POST', headers: apiHeaders(), body: JSON.stringify({ agentId, userId, number: clean }) });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Error');
