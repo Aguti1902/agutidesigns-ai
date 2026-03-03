@@ -605,6 +605,8 @@
   .reviews__rating { flex-direction: column; gap: 0.5rem; }
   .story__grid { grid-template-columns: 1fr; gap: 2rem; }
   .story__photo { aspect-ratio: 1/1; }
+  .story__img  { order: 2; }
+  .story__text { order: 1; }
   .sc-cal__grid { padding: 0.4rem; }
   .sc-slot { height: 22px; }
   .dash-mk__side { display: none; }
