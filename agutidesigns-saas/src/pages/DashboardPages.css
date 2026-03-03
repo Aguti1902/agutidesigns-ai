@@ -1223,6 +1223,22 @@ a:hover > .kpi-card { border-color: var(--kpi-color); transform: translateY(-2px
 .wz-section-divider::before, .wz-section-divider::after { content: ''; flex: 1; height: 1px; background: var(--border-color); }
 .wz-section-divider::before { display: none; }
 
+/* ══ EXTRAS LIST ══ */
+.wz-extras-list { display: flex; flex-direction: column; gap: 0.45rem; }
+.wz-extra-row { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 0.7rem 1rem; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: var(--radius-md); transition: all 0.15s; }
+.wz-extra-row:hover { border-color: rgba(37,211,102,0.18); }
+.wz-extra-row--on { border-color: rgba(37,211,102,0.28); background: rgba(37,211,102,0.03); }
+.wz-extra-row__left { display: flex; align-items: center; gap: 0.75rem; flex: 1; cursor: pointer; min-width: 0; }
+.wz-extra-row__label { display: block; font-family: var(--font-mono); font-size: 0.8rem; font-weight: 600; color: var(--text-primary); }
+.wz-extra-row__hint { display: block; font-size: 0.68rem; color: var(--text-tertiary); margin-top: 0.1rem; }
+.wz-extra-row__price { flex-shrink: 0; }
+.wz-extra-row__price input { width: 110px; padding: 0.35rem 0.65rem; background: var(--bg-input); border: 1px solid var(--border-color); border-radius: var(--radius-md); color: var(--text-primary); font-family: var(--font-mono); font-size: 0.8rem; font-weight: 600; text-align: right; }
+.wz-extra-row__price input:focus { outline: none; border-color: #25D366; }
+
+@media (max-width: 768px) {
+  .wz-extra-row__price input { width: 90px; }
+}
+
 /* ══ QUICK CHIPS (dashboard) ══ */
 .quick-chips { display: flex; flex-wrap: wrap; gap: 0.55rem; margin-bottom: 1.25rem; }
 .quick-chip { display: flex; align-items: center; gap: 0.55rem; padding: 0.45rem 0.85rem; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-full); font-family: var(--font-mono); font-size: 0.72rem; font-weight: 600; color: var(--text-secondary); transition: all 0.15s; white-space: nowrap; }
