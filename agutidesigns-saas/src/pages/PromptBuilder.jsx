@@ -391,6 +391,15 @@ export default function PromptBuilder() {
   async function loadBusiness() {
     const { data } = await supabase.from('businesses').select('*').eq('user_id', user.id).single();
     setBusinessData(data);
+    // Si el agente aún no tiene presupuestoMinimo en config, leer del negocio como fallback
+    if (data?.extra_context) {
+      try {
+        const extra = JSON.parse(data.extra_context);
+        if (extra.precio_minimo) {
+          setPresupuestoMin(prev => prev || extra.precio_minimo);
+        }
+      } catch {}
+    }
   }
 
   async function toggleBooking() {
@@ -406,7 +415,7 @@ export default function PromptBuilder() {
     setSaving(true);
     const extraSaved = (() => { try { return businessData?.extra_context ? JSON.parse(businessData.extra_context) : {}; } catch { return {}; } })();
     // Sincronizar tono con extra_context.tono_rapido para que el Dashboard lo lea
-    const extraUpdated = { ...extraSaved, ofertasText, upsellingServices, seguimientoMsg, derivarContacto, tono_rapido: tono };
+    const extraUpdated = { ...extraSaved, ofertasText, upsellingServices, seguimientoMsg, derivarContacto, tono_rapido: tono, precio_minimo: presupuestoMin };
     if (businessData) {
       await supabase.from('businesses').update({ extra_context: JSON.stringify(extraUpdated), updated_at: new Date().toISOString() }).eq('user_id', user.id);
     }
