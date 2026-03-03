@@ -4,11 +4,23 @@ import { useNavigate } from 'react-router-dom';
 import {
   Rocket, Building, FileText, Bot, MessageCircle, Check, ArrowRight,
   ArrowLeft, CheckCircle, Circle, Zap, Target, Euro, Clock, Globe, Users,
-  Smile, Briefcase, TrendingUp
+  Smile, Briefcase, TrendingUp, ShoppingCart, Wrench, Search, Pen,
+  RefreshCw, Code, ChevronDown
 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { supabase } from '../../lib/supabase';
 import './OnboardingFlow.css';
+
+const SERVICIOS_WEB = [
+  { id: 'web_corp',      label: 'Web corporativa',      desc: 'WordPress + diseño responsive',       icon: Globe,        placeholder: '800€ – 2.500€' },
+  { id: 'landing',       label: 'Landing page',          desc: 'Captación de leads / ventas',         icon: Target,       placeholder: '500€ – 1.200€' },
+  { id: 'ecommerce',     label: 'Tienda online',          desc: 'WooCommerce / Shopify',               icon: ShoppingCart, placeholder: '1.500€ – 5.000€' },
+  { id: 'rediseno',      label: 'Rediseño web',           desc: 'Mejora de sitio existente',           icon: RefreshCw,    placeholder: '600€ – 2.000€' },
+  { id: 'mantenimiento', label: 'Mantenimiento mensual',  desc: 'Actualizaciones y soporte continuo',  icon: Wrench,       placeholder: '50€ – 200€/mes' },
+  { id: 'seo',           label: 'SEO',                    desc: 'Posicionamiento en buscadores',       icon: Search,       placeholder: '300€ – 800€' },
+  { id: 'copy',          label: 'Copy / Branding',        desc: 'Contenido y diseño de marca',         icon: Pen,          placeholder: '400€ – 1.500€' },
+  { id: 'apps',          label: 'Apps / Web app',         desc: 'Desarrollo a medida',                 icon: Code,         placeholder: '2.000€ – 10.000€' },
+];
 
 const PERSONALITIES = [
   { id: 'cercano', label: 'Cercano', icon: Smile },
@@ -64,9 +76,12 @@ export default function OnboardingFlow({ onComplete }) {
   const [negocioPhone, setNegocioPhone] = useState('');
   const [negocioEmail, setNegocioEmail] = useState('');
 
-  // Step 3 — Servicios y precios
-  const [servicios, setServicios] = useState('');
-  const [precios, setPrecios] = useState('');
+  // Step 3 — Servicios y precios (estructurado)
+  const [serviciosActivos, setServiciosActivos] = useState([]);
+  const [servicioPrecios, setServicioPrecios] = useState({}); // { id: { rango: '' } }
+
+  const toggleServicio = (id) => setServiciosActivos(p => p.includes(id) ? p.filter(s => s !== id) : [...p, id]);
+  const setPrecioRango = (id, val) => setServicioPrecios(p => ({ ...p, [id]: { ...p[id], rango: val } }));
 
   // Step 4 — Estrategia comercial
   const [presupuestoMin, setPresupuestoMin] = useState('400');
@@ -112,9 +127,27 @@ export default function OnboardingFlow({ onComplete }) {
     if (!user) return;
     setSaving(true);
     try {
+      // Construir texto para la IA a partir de los toggles
+      const serviciosText = serviciosActivos.map(id => {
+        const s = SERVICIOS_WEB.find(s => s.id === id);
+        const rango = servicioPrecios[id]?.rango;
+        return `${s?.label?.toUpperCase()}: ${s?.desc}${rango ? `. Precio: ${rango}` : ''}.`;
+      }).join('\n');
+      const preciosText = serviciosActivos.map(id => {
+        const s = SERVICIOS_WEB.find(s => s.id === id);
+        const rango = servicioPrecios[id]?.rango;
+        return rango ? `${s?.label}: ${rango}` : null;
+      }).filter(Boolean).join('\n');
+
       const { data: existing } = await supabase.from('businesses').select('id, extra_context').eq('user_id', user.id).maybeSingle();
       const prevExtra = (() => { try { return existing?.extra_context ? JSON.parse(existing.extra_context) : {}; } catch { return {}; } })();
-      const merged = { ...prevExtra, web_services_detail: servicios, prices_list: precios };
+      const merged = {
+        ...prevExtra,
+        servicios_toggles: JSON.stringify(serviciosActivos),
+        servicios_precios: JSON.stringify(servicioPrecios),
+        web_services_detail: serviciosText,
+        prices_list: preciosText,
+      };
       if (existing) {
         await supabase.from('businesses').update({ extra_context: JSON.stringify(merged), updated_at: new Date().toISOString() }).eq('id', existing.id);
       } else {
@@ -294,35 +327,50 @@ export default function OnboardingFlow({ onComplete }) {
                   <span className="ob-form__ico" style={{ background: 'rgba(139,92,246,0.12)', color: '#8b5cf6' }}><FileText size={22} /></span>
                   <div>
                     <h2>Servicios y precios</h2>
-                    <p>Esto es lo más importante. La IA usará estos datos para responder "¿cuánto cuesta?" con tus tarifas reales.</p>
+                    <p>Activa los servicios que ofreces y añade tu rango de precio. La IA usará exactamente estos datos.</p>
                   </div>
                 </div>
-                <div className="ob-field ob-field--full">
-                  <label>Servicios que ofreces *</label>
-                  <textarea
-                    value={servicios}
-                    onChange={e => setServicios(e.target.value)}
-                    rows={5}
-                    placeholder={`WEB CORPORATIVA: Diseño + desarrollo WordPress. Desde 800€. Incluye diseño responsive, SEO básico, 1 año soporte.
-LANDING PAGE: Desde 500€. Captación de leads, formulario, integración email marketing.
-TIENDA ONLINE: WooCommerce/Shopify desde 1.500€. Gestión de productos, pasarela de pago.
-MANTENIMIENTO: Desde 50€/mes. Actualizaciones, seguridad y soporte.`}
-                  />
+
+                <div className="ob-services">
+                  {SERVICIOS_WEB.map(svc => {
+                    const active = serviciosActivos.includes(svc.id);
+                    const Icon = svc.icon;
+                    return (
+                      <div key={svc.id} className={`ob-svc ${active ? 'ob-svc--on' : ''}`}>
+                        <div className="ob-svc__row" onClick={() => toggleServicio(svc.id)}>
+                          <div className="ob-svc__left">
+                            <div className="ob-svc__icon"><Icon size={16} /></div>
+                            <div className="ob-svc__info">
+                              <span className="ob-svc__name">{svc.label}</span>
+                              <span className="ob-svc__desc">{svc.desc}</span>
+                            </div>
+                          </div>
+                          <div className={`ob-svc__toggle ${active ? 'ob-svc__toggle--on' : ''}`}>
+                            <span className="ob-svc__knob" />
+                          </div>
+                        </div>
+                        {active && (
+                          <div className="ob-svc__price">
+                            <Euro size={12} />
+                            <input
+                              type="text"
+                              value={servicioPrecios[svc.id]?.rango || ''}
+                              onChange={e => setPrecioRango(svc.id, e.target.value)}
+                              placeholder={`Ej: ${svc.placeholder}`}
+                              onClick={e => e.stopPropagation()}
+                            />
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
-                <div className="ob-field ob-field--full">
-                  <label>Rangos de precio orientativos *</label>
-                  <textarea
-                    value={precios}
-                    onChange={e => setPrecios(e.target.value)}
-                    rows={4}
-                    placeholder={`Web corporativa: 800€ - 2.500€
-Landing page: 500€ - 1.200€
-Ecommerce: 1.500€ - 5.000€
-Mantenimiento: 50€ - 200€/mes
-SEO: 300€ - 800€`}
-                  />
-                </div>
-                <div className="ob-hint"><Zap size={13} /> La IA nunca inventará precios. Usará exactamente lo que escribas aquí.</div>
+
+                {serviciosActivos.length === 0 && (
+                  <p className="ob-svc__empty">Activa al menos un servicio para continuar.</p>
+                )}
+
+                <div className="ob-hint" style={{ marginTop: '1rem' }}><Zap size={13} /> La IA nunca inventará precios. Usará exactamente lo que configures aquí.</div>
               </div>
             )}
 
