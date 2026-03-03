@@ -733,16 +733,17 @@ export default function SaasLanding() {
         </div>
         <AnimatePresence>
           {mobileNav && (
-            <motion.div className="ln__fullmenu" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.18 }}>
-              <button className="ln__fullmenu-close" onClick={() => setMobileNav(false)} aria-label="Cerrar menú"><X size={24} /></button>
-              <nav className="ln__fullmenu-links">
-                <a href="#como-funciona" onClick={() => setMobileNav(false)}>Producto</a>
-                <a href="#precios" onClick={() => setMobileNav(false)}>Precios</a>
-                <a href="#faq" onClick={() => setMobileNav(false)}>FAQ</a>
-                <Link to="/auth" onClick={() => setMobileNav(false)}>Entrar</Link>
-              </nav>
-              <Link to="/auth?mode=register" className="ln__fullmenu-cta" onClick={() => setMobileNav(false)}>
-                <Zap size={16} /> 2 días gratis
+            <motion.div className="ln__mobile"
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.2 }}>
+              <a href="#como-funciona" onClick={() => setMobileNav(false)}>Producto</a>
+              <a href="#precios" onClick={() => setMobileNav(false)}>Precios</a>
+              <a href="#faq" onClick={() => setMobileNav(false)}>FAQ</a>
+              <Link to="/auth" onClick={() => setMobileNav(false)}>Entrar</Link>
+              <Link to="/auth?mode=register" className="ln__mobile-cta" onClick={() => setMobileNav(false)}>
+                <Zap size={13} /> 2 días gratis
               </Link>
             </motion.div>
           )}
