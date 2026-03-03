@@ -22,7 +22,7 @@ const PLANS = [
   {
     id: 'starter', name: 'Starter',
     price: '29',       priceId: 'price_1T1qSzFjBSJ299OpJBLCMTrn',
-    priceAnnual: '24', priceIdAnnual: 'REEMPLAZAR_price_annual_starter', // Crear en Stripe: 288€/año
+    priceAnnual: '24', priceIdAnnual: 'price_1T6ioWFjBSJ299OpXuEpXFbj',
     icon: <Package size={20} />,
     color: '#60a5fa',
     agents: '1 número de WhatsApp', messages: '1.000 mensajes/mes',
@@ -31,7 +31,7 @@ const PLANS = [
   {
     id: 'pro', name: 'Pro',
     price: '79',       priceId: 'price_1T1qTcFjBSJ299OpSxVO6ZFM', popular: true,
-    priceAnnual: '66', priceIdAnnual: 'REEMPLAZAR_price_annual_pro', // Crear en Stripe: 792€/año
+    priceAnnual: '66', priceIdAnnual: 'price_1T6ioXFjBSJ299OpDFsxfPMr',
     icon: <Crown size={20} />,
     color: '#25D366',
     agents: '3 números de WhatsApp', messages: '3.000 mensajes/mes',
@@ -40,7 +40,7 @@ const PLANS = [
   {
     id: 'agency', name: 'Agency',
     price: '149',       priceId: 'price_1T1qU1FjBSJ299OpTOdjIRya',
-    priceAnnual: '124', priceIdAnnual: 'REEMPLAZAR_price_annual_agency', // Crear en Stripe: 1.488€/año
+    priceAnnual: '124', priceIdAnnual: 'price_1T6ioXFjBSJ299OpVkAwU2Ds',
     icon: <Infinity size={20} />,
     color: '#a78bfa',
     agents: 'Agentes ilimitados', messages: '8.000 mensajes/mes',
