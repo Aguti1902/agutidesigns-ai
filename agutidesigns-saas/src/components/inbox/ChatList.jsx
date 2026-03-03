@@ -1,4 +1,4 @@
-import { Search, MessageCircle, Check, ArrowUpRight, Filter } from 'lucide-react';
+import { Search, MessageCircle, Check, ArrowUpRight, Filter, ZapOff } from 'lucide-react';
 import '../../pages/DashboardPages.css';
 
 /**
@@ -141,6 +141,11 @@ export default function ChatList({
                         <span style={styles.tagPill}>+{conv.tags.length - 2}</span>
                       )}
                     </div>
+                  )}
+                  {conv.ai_paused && (
+                    <span style={styles.pausedBadge}>
+                      <ZapOff size={10} /> Manual
+                    </span>
                   )}
                   {conv.messages_count != null && (
                     <span style={styles.msgCount}>
@@ -319,5 +324,18 @@ const styles = {
     fontSize: '0.65rem',
     color: '#555',
     fontFamily: 'var(--font-mono)',
+  },
+  pausedBadge: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: '0.2rem',
+    fontSize: '0.6rem',
+    fontWeight: 700,
+    padding: '0.15rem 0.45rem',
+    background: 'rgba(245,158,11,0.12)',
+    color: '#f59e0b',
+    borderRadius: 'var(--radius-full)',
+    fontFamily: 'var(--font-mono)',
+    border: '1px solid rgba(245,158,11,0.25)',
   },
 };

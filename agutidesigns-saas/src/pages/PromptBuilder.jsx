@@ -600,12 +600,12 @@ export default function PromptBuilder() {
         <div className="form-field" style={{ marginBottom: '1.5rem' }}>
           <label><MessageSquare size={13} /> Derivar a humano después de</label>
           <div className="chips">
-            {[5, 10, 15, 20].map(n => (
+            {[20, 50, 100, 200].map(n => (
               <button key={n} type="button" className={`chip ${umbralMensajes === n ? 'chip--active' : ''}`} onClick={() => setUmbralMensajes(n)}>{n} mensajes</button>
             ))}
             <button type="button" className={`chip ${umbralMensajes === 0 ? 'chip--active' : ''}`} onClick={() => setUmbralMensajes(0)}>Sin límite</button>
           </div>
-          <span className="form-field__hint" style={{ marginTop: '0.6rem' }}>Si el cliente no decide, la IA escala al profesional humano</span>
+          <span className="form-field__hint" style={{ marginTop: '0.6rem' }}>Cuando se alcance el límite la IA avisa al cliente y se pausa — tú respondes manualmente desde el inbox</span>
         </div>
 
         <div style={{ marginTop: '0.5rem' }}>

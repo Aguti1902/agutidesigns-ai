@@ -231,6 +231,43 @@ export default function WhatsAppConnect() {
     setEditingName(false); refreshAgents();
   }
 
+  async function handleSendManualMessage(text) {
+    if (!selectedConvo || !activeAgent || !text.trim()) return;
+    const phone = selectedConvo.contact_phone?.replace('@s.whatsapp.net', '');
+    const instanceName = `agent-${activeAgent.id}`;
+    // Pause AI immediately
+    await supabase.from('conversations').update({ ai_paused: true }).eq('id', selectedConvo.id);
+    setSelectedConvo(prev => ({ ...prev, ai_paused: true }));
+    // Save message to DB
+    await supabase.from('messages').insert({
+      conversation_id: selectedConvo.id,
+      role: 'assistant',
+      sender: 'human_agent',
+      content: text.trim(),
+    });
+    await supabase.from('conversations').update({
+      messages_count: (selectedConvo.messages_count || 0) + 1,
+      last_message_at: new Date().toISOString(),
+    }).eq('id', selectedConvo.id);
+    // Send via Evolution API through edge function
+    try {
+      const ANON = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
+      const SUPA_URL = import.meta.env.VITE_SUPABASE_URL || '';
+      await fetch(`${SUPA_URL}/functions/v1/send-whatsapp-message`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${ANON}` },
+        body: JSON.stringify({ agentId: activeAgent.id, phone, text: text.trim() }),
+      });
+    } catch (e) { console.warn('Evolution send failed:', e); }
+  }
+
+  async function handleToggleAI(pause) {
+    if (!selectedConvo) return;
+    await supabase.from('conversations').update({ ai_paused: pause }).eq('id', selectedConvo.id);
+    setSelectedConvo(prev => ({ ...prev, ai_paused: pause }));
+    setConversations(prev => prev.map(c => c.id === selectedConvo.id ? { ...c, ai_paused: pause } : c));
+  }
+
   async function handleHandoffSave() {
     if (!activeAgent) return;
     setHandoffSaving(true);
@@ -388,6 +425,8 @@ export default function WhatsAppConnect() {
               onTagsOpen={() => setTagsConvo(selectedConvo)}
               onBack={() => setSelectedConvo(null)}
               showBackButton={true}
+              onSendMessage={handleSendManualMessage}
+              onToggleAI={handleToggleAI}
             />
           ) : (
             <div className="wa-inbox__empty">
