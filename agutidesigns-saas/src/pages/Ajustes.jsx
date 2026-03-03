@@ -14,12 +14,14 @@ const Billing = lazy(() => import('./Billing'));
 
 /* ══ SERVICIOS TOGGLES ══ */
 const SERVICIOS_OPS = [
-  { id: 'web_info', label: 'Web informativa' },
-  { id: 'landing', label: 'Landing page' },
-  { id: 'ecommerce', label: 'Ecommerce' },
+  { id: 'web_corp',      label: 'Web corporativa' },
+  { id: 'landing',       label: 'Landing page' },
+  { id: 'ecommerce',     label: 'Ecommerce' },
+  { id: 'rediseno',      label: 'Rediseño web' },
   { id: 'mantenimiento', label: 'Mantenimiento mensual' },
-  { id: 'seo', label: 'SEO básico' },
-  { id: 'copy', label: 'Copy / Branding' },
+  { id: 'seo',           label: 'SEO' },
+  { id: 'copy',          label: 'Copy / Branding' },
+  { id: 'apps',          label: 'Apps / Web app' },
 ];
 
 const NICHOS = ['Restaurantes', 'Clínicas / Salud', 'Inmobiliarias', 'Moda / Retail', 'Consultoras', 'Educación', 'Hostelería', 'Otros'];
@@ -474,6 +476,23 @@ export default function Ajustes() {
     const { data } = await supabase.from('businesses').select('*').eq('user_id', user.id).single();
     if (data) {
       const extra = (() => { try { return data.extra_context ? JSON.parse(data.extra_context) : {}; } catch { return {}; } })();
+
+      // Migrar precios del onboarding (servicios_precios) → campos rango_* si aún no existen
+      const sp = (() => { try { return extra.servicios_precios ? JSON.parse(extra.servicios_precios) : {}; } catch { return {}; } })();
+      if (sp && Object.keys(sp).length > 0) {
+        extra.rango_web      = extra.rango_web      || sp.web_corp?.rango      || sp.web_info?.rango      || '';
+        extra.rango_landing  = extra.rango_landing  || sp.landing?.rango       || '';
+        extra.rango_ecommerce= extra.rango_ecommerce|| sp.ecommerce?.rango     || '';
+      }
+
+      // Migrar web_info → web_corp en servicios_toggles si viene de versión antigua
+      if (extra.servicios_toggles) {
+        try {
+          const toggles = JSON.parse(extra.servicios_toggles);
+          extra.servicios_toggles = JSON.stringify(toggles.map((id) => id === 'web_info' ? 'web_corp' : id));
+        } catch {}
+      }
+
       setBizData({ ...data, ...extra });
     }
     setBizLoaded(true);

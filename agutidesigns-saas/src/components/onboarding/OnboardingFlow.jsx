@@ -348,15 +348,22 @@ export default function OnboardingFlow({ onComplete }) {
     const err = getValidError();
     if (err) { setValidErr(err); return; }
     setFinishing(true);
-    await saveAgent();
-    await updateProfile({ onboarding_completed: true });
-    try {
-      await fetch(`${API_URL}/send-email`, {
+    const t0 = Date.now();
+
+    // Save data in background (don't await here to not block animation)
+    saveAgent().then(() => {
+      fetch(`${API_URL}/send-email`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ to: user.email, subject: '¡Bienvenido a Wasapy!', template: 'welcome', data: { name: profile?.full_name || 'ahí', trialDays: 7 } })
       }).catch(() => {});
-    } catch {}
-    setTimeout(() => { onComplete(); navigate('/app'); }, 4500);
+    }).catch(() => {});
+
+    // Always wait at least 4.5s before redirecting — updateProfile last to avoid unmounting early
+    setTimeout(async () => {
+      await updateProfile({ onboarding_completed: true });
+      onComplete();
+      navigate('/app');
+    }, 4500);
   }
 
   const steps = [
@@ -536,9 +543,23 @@ export default function OnboardingFlow({ onComplete }) {
                   <span className="ob-form__ico" style={{ background: 'rgba(37,211,102,0.12)', color: '#25D366' }}><MessageCircle size={22} /></span>
                   <div><h2>Conecta tu WhatsApp</h2><p>Tu agente IA necesita un número de WhatsApp para atender a los clientes.</p></div>
                 </div>
-                <OBWhatsAppConnector userId={user?.id} onConnected={() => setWaConnected(true)} />
                 {!waConnected && (
-                  <p className="ob-wa-skip">¿No tienes el teléfono a mano? Puedes conectarlo más tarde desde el dashboard.</p>
+                  <OBWhatsAppConnector userId={user?.id} onConnected={() => setWaConnected(true)} />
+                )}
+                {waConnected && (
+                  <div className="ob-wa-ok">
+                    <CheckCircle size={36} className="ob-wa-ok__ico" />
+                    <b>¡WhatsApp conectado!</b>
+                    <span>Tu agente ya está activo y listo para responder.</span>
+                  </div>
+                )}
+                {!waConnected && (
+                  <div className="ob-wa-later">
+                    <button type="button" className="ob-wa-later__btn" onClick={() => setStep(s => s + 1)}>
+                      Conectar más tarde →
+                    </button>
+                    <p>Podrás hacerlo desde el dashboard en cualquier momento</p>
+                  </div>
                 )}
               </div>
             )}
@@ -600,7 +621,7 @@ export default function OnboardingFlow({ onComplete }) {
             </button>
           ) : (
             <button className="ob-btn ob-btn--success" onClick={handleFinish} disabled={saving}>
-              {saving ? 'Activando...' : <><Zap size={15} /> Activar mi IA</>}
+              {saving ? 'Creando...' : <><Zap size={15} /> Crear mi IA</>}
             </button>
           )}
         </div>
