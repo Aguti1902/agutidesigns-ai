@@ -166,10 +166,13 @@ serve(async (req) => {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'apikey': EVOLUTION_KEY },
         body: JSON.stringify({
-          enabled: true,
-          url: WEBHOOK_URL,
-          webhook_by_events: false,
-          events: ['MESSAGES_UPSERT', 'CONNECTION_UPDATE'],
+          webhook: {
+            enabled: true,
+            url: WEBHOOK_URL,
+            byEvents: false,
+            base64: false,
+            events: ['MESSAGES_UPSERT', 'CONNECTION_UPDATE', 'QRCODE_UPDATED'],
+          }
         })
       })
       console.log('Webhook configured:', WEBHOOK_URL)
