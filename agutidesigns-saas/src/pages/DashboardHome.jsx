@@ -121,12 +121,26 @@ export default function DashboardHome() {
   }, [activeAgent?.id, user?.id]);
 
   async function loadQuickSettings() {
-    const { data } = await supabase.from('businesses').select('extra_context').eq('user_id', user.id).single();
-    if (data?.extra_context) {
+    const [bizRes, agentRes] = await Promise.all([
+      supabase.from('businesses').select('extra_context').eq('user_id', user.id).single(),
+      activeAgent?.id ? supabase.from('agents').select('config').eq('id', activeAgent.id).single() : Promise.resolve({ data: null }),
+    ]);
+    if (bizRes.data?.extra_context) {
       try {
-        const e = JSON.parse(data.extra_context);
+        const e = JSON.parse(bizRes.data.extra_context);
         if (e.precio_minimo) setQuickPrecioMin(e.precio_minimo);
         if (e.disponible !== undefined) setQuickDisponible(e.disponible !== 'no');
+      } catch {}
+    }
+    // Leer tono desde la config del agente (fuente de verdad compartida con Configuración IA)
+    if (agentRes.data?.config) {
+      try {
+        const cfg = JSON.parse(agentRes.data.config);
+        if (cfg.tono) setQuickTono(cfg.tono);
+      } catch {}
+    } else if (bizRes.data?.extra_context) {
+      try {
+        const e = JSON.parse(bizRes.data.extra_context);
         if (e.tono_rapido) setQuickTono(e.tono_rapido);
       } catch {}
     }
@@ -139,6 +153,13 @@ export default function DashboardHome() {
     const merged = { ...prev, ...patch };
     if (data) await supabase.from('businesses').update({ extra_context: JSON.stringify(merged), updated_at: new Date().toISOString() }).eq('id', data.id);
     else await supabase.from('businesses').insert({ user_id: user.id, name: 'Mi Negocio', extra_context: JSON.stringify(merged) });
+    // Sincronizar tono con agents.config (misma fuente que Configuración IA)
+    if (patch.tono_rapido && activeAgent?.id) {
+      const { data: agentData } = await supabase.from('agents').select('config').eq('id', activeAgent.id).single();
+      const agentCfg = (() => { try { return agentData?.config ? JSON.parse(agentData.config) : {}; } catch { return {}; } })();
+      agentCfg.tono = patch.tono_rapido;
+      await supabase.from('agents').update({ config: JSON.stringify(agentCfg) }).eq('id', activeAgent.id);
+    }
     setQuickSaving(false);
   }
 
@@ -261,7 +282,7 @@ export default function DashboardHome() {
     <div className="page">
       <div className="page__header">
         <div>
-          <h1>¡Hola, {profile?.full_name?.split(' ')[0] || 'diseñador'}! 👋</h1>
+          <h1>¡Hola, {profile?.full_name?.split(' ')[0] || 'diseñador'}!</h1>
           <p>Tu agente IA, tus citas y tus presupuestos en un vistazo.</p>
         </div>
       </div>
@@ -318,13 +339,19 @@ export default function DashboardHome() {
       </div>
 
       {/* ══ BARRA DE MENSAJES IA — primer elemento visual ══ */}
-      <div className={`msg-bar ${iaPausada ? 'msg-bar--paused' : msgWarning ? 'msg-bar--warning' : 'msg-bar--ok'}`}>
+      <div className={`msg-bar ${iaPausada ? 'msg-bar--paused' : !setupStatus.whatsapp ? 'msg-bar--warning' : msgWarning ? 'msg-bar--warning' : 'msg-bar--ok'}`}>
         <div className="msg-bar__top">
           <div className="msg-bar__left">
-            <div className={`msg-bar__dot ${iaPausada ? 'msg-bar__dot--paused' : msgWarning ? 'msg-bar__dot--warn' : 'msg-bar__dot--ok'}`} />
+            <div className={`msg-bar__dot ${iaPausada ? 'msg-bar__dot--paused' : !setupStatus.whatsapp ? 'msg-bar__dot--warn' : msgWarning ? 'msg-bar__dot--warn' : 'msg-bar__dot--ok'}`} />
             <div>
               <strong className="msg-bar__title">
-                {iaPausada ? '⚠ IA pausada — Sin mensajes disponibles' : msgWarning ? '⚡ Mensajes al ' + msgUsedPct + '% — Recarga pronto' : 'Agente IA activo'}
+                {iaPausada
+                  ? <><AlertTriangle size={13} /> IA pausada — Sin mensajes disponibles</>
+                  : !setupStatus.whatsapp
+                    ? <><AlertTriangle size={13} /> WhatsApp no conectado</>
+                    : msgWarning
+                      ? <><Zap size={13} /> Mensajes al {msgUsedPct}% — Recarga pronto</>
+                      : 'Agente IA activo'}
               </strong>
               <span className="msg-bar__sub">
                 {totalMessages.toLocaleString('es-ES')} de {totalAvailable.toLocaleString('es-ES')} mensajes usados este mes

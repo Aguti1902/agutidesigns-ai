@@ -103,14 +103,18 @@ export default function WhatsAppConnect() {
     load();
   }, [selectedConvo?.id]);
 
-  // Realtime subscriptions
+  // Ref to avoid re-subscribing realtime when selected conversation changes
+  const selectedConvoRef = useRef(selectedConvo);
+  useEffect(() => { selectedConvoRef.current = selectedConvo; }, [selectedConvo]);
+
+  // Realtime subscriptions — only re-subscribes when agent changes, not on every convo select
   useEffect(() => {
     if (!activeAgent) return;
     const channel = supabase
       .channel(`inbox-${activeAgent.id}`)
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, (payload) => {
         const msg = payload.new;
-        if (selectedConvo && msg.conversation_id === selectedConvo.id) {
+        if (selectedConvoRef.current && msg.conversation_id === selectedConvoRef.current.id) {
           setMessages(prev => [...prev, msg]);
         }
         loadConversations();
@@ -121,7 +125,7 @@ export default function WhatsAppConnect() {
       .subscribe();
 
     return () => { supabase.removeChannel(channel); };
-  }, [activeAgent?.id, selectedConvo?.id, loadConversations]);
+  }, [activeAgent?.id]);
 
   // Connection handlers
   async function handleConnect() {
@@ -150,7 +154,12 @@ export default function WhatsAppConnect() {
     try {
       let agent = activeAgent;
       if (!agent) { agent = await createAgent('Mi Agente IA'); if (!agent) throw new Error('No se pudo crear el agente'); }
-      const cleanNumber = phoneInput.replace(/[^0-9]/g, '');
+      let cleanNumber = phoneInput.replace(/[^0-9]/g, '');
+      if (cleanNumber.length < 11) {
+        setError('Introduce el número con código de país obligatorio (ej: 34612345678 para España).');
+        setConnecting(false);
+        return;
+      }
       const res = await fetch(`${API_URL}/evolution-create`, {
         method: 'POST', headers: getHeaders(),
         body: JSON.stringify({ agentId: agent.id, userId: user?.id, number: cleanNumber }),
@@ -337,8 +346,8 @@ export default function WhatsAppConnect() {
                       </div>
                     ) : (
                       <div className="wa-connect-method">
-                        <p className="wa-connect-method__hint">Introduce tu número de WhatsApp con código de país</p>
-                        <input type="tel" className="wa-phone-input" value={phoneInput} onChange={e => setPhoneInput(e.target.value)} placeholder="34600000000" />
+                        <p className="wa-connect-method__hint">Introduce tu número con código de país (obligatorio)</p>
+                        <input type="tel" className="wa-phone-input" value={phoneInput} onChange={e => setPhoneInput(e.target.value)} placeholder="34612345678" />
                         <button className="btn btn--primary btn--sm" onClick={handleConnectPairing}><Phone size={14} /> Obtener código</button>
                       </div>
                     )}

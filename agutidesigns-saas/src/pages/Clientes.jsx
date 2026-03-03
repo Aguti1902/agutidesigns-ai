@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
 import {
   Users, FileText, Receipt, MessageCircle, ChevronRight, Search,
-  Loader2, TrendingUp, Repeat, Clock, Star, AlertCircle, Zap,
+  Loader2, TrendingUp, TrendingDown, Repeat, Clock, Star, AlertCircle, Zap,
   Plus, X, ArrowRight, Flame, Target, AlertOctagon, RefreshCw,
-  Send, Copy, CheckCircle, BarChart3
+  Send, Copy, CheckCircle, BarChart3, Minus
 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
@@ -36,20 +36,19 @@ function calcLeadScore(cliente) {
   // Detector de perfil tóxico
   const rechazados = cliente.presupuestosEstado?.filter(e => e === 'rechazado').length || 0;
   const total_presups = cliente.presupuestos || 0;
-  if (rechazados >= 2) warnings.push('⚠ Múltiples rechazos — posible comparador de precios');
-  if (cliente.conversaciones >= 5 && total_presups === 0) warnings.push('⚠ Mucha consulta sin avance — posible pérdida de tiempo');
-  if (total_presups >= 2 && !cliente.presupuestosEstado?.includes('aceptado')) warnings.push('⚠ Nunca acepta — revisar perfil');
+  let isToxic = false;
+  if (rechazados >= 2) { isToxic = true; warnings.push('Múltiples rechazos — posible comparador de precios'); }
+  if (cliente.conversaciones >= 5 && total_presups === 0) { isToxic = true; warnings.push('Mucha consulta sin avance — posible pérdida de tiempo'); }
+  if (total_presups >= 2 && !cliente.presupuestosEstado?.includes('aceptado')) { isToxic = true; warnings.push('Nunca acepta — revisar perfil'); }
 
   score = Math.max(0, Math.min(100, score));
 
-  let tier, tierColor, tierEmoji;
-  if (score >= 75) { tier = 'Hot'; tierColor = '#ef4444'; tierEmoji = '🔥'; }
-  else if (score >= 45) { tier = 'Warm'; tierColor = '#f59e0b'; tierEmoji = '🟡'; }
-  else { tier = 'Cold'; tierColor = '#6b7280'; tierEmoji = '🔴'; }
+  let tier, tierColor, TierIcon;
+  if (score >= 75) { tier = 'Hot'; tierColor = '#ef4444'; TierIcon = Flame; }
+  else if (score >= 45) { tier = 'Warm'; tierColor = '#f59e0b'; TierIcon = TrendingUp; }
+  else { tier = 'Cold'; tierColor = '#6b7280'; TierIcon = TrendingDown; }
 
-  const isToxic = warnings.some(w => w.startsWith('⚠'));
-
-  return { score, tier, tierColor, tierEmoji, signals, warnings, isToxic };
+  return { score, tier, tierColor, TierIcon, signals, warnings, isToxic };
 }
 
 /* ── Generar mensaje de reactivación ── */
@@ -61,9 +60,9 @@ function generarMensajeReactivacion(cliente, negocioName) {
   const meses = ultima ? Math.floor((now - ultima) / (1000 * 60 * 60 * 24 * 30)) : 12;
 
   const plantillas = [
-    `¡Hola ${nombre}! 👋 Han pasado ${meses} ${meses === 1 ? 'mes' : 'meses'} desde que terminamos ${proyectos}. ¿Cómo está funcionando todo? Si en algún momento necesitas actualizarlo, añadir algo nuevo o mejorar el posicionamiento en Google, aquí estamos. Un saludo, ${negocioName || 'el equipo'}`,
+    `¡Hola ${nombre}! Han pasado ${meses} ${meses === 1 ? 'mes' : 'meses'} desde que terminamos ${proyectos}. ¿Cómo está funcionando todo? Si en algún momento necesitas actualizarlo, añadir algo nuevo o mejorar el posicionamiento en Google, aquí estamos. Un saludo, ${negocioName || 'el equipo'}`,
     `Hola ${nombre}, ¿qué tal va todo? Hace ${meses} ${meses === 1 ? 'mes' : 'meses'} que trabajamos juntos y me acordé de ti. ¿Has pensado en darle un empujón al SEO o añadir alguna funcionalidad nueva? Muchos clientes en esta época están optimizando sus webs para captar más clientes. Si te interesa charlamos. ${negocioName || ''}`,
-    `¡Hola ${nombre}! 🙌 Te escribo porque revisando clientes me di cuenta de que ya hace ${meses >= 12 ? 'más de un año' : `${meses} meses`} desde que entregamos tu web. Las webs necesitan mantenimiento y actualizaciones periódicas para seguir bien posicionadas. ¿Estarías interesado en un servicio de mantenimiento o en revisar el estado de tu web? Sin compromiso. ${negocioName || ''}`,
+    `¡Hola ${nombre}! Te escribo porque revisando clientes me di cuenta de que ya hace ${meses >= 12 ? 'más de un año' : `${meses} meses`} desde que entregamos tu web. Las webs necesitan mantenimiento y actualizaciones periódicas para seguir bien posicionadas. ¿Estarías interesado en un servicio de mantenimiento o en revisar el estado de tu web? Sin compromiso. ${negocioName || ''}`,
   ];
 
   return plantillas[Math.floor(Math.random() * plantillas.length)];
@@ -224,8 +223,8 @@ export default function Clientes() {
     const lc = getLifecycle(c);
     const matchFiltro = filtro === 'todos' || lc.id === filtro;
     const matchSearch = !search ||
-      (c.nombre || '').toLowerCase().includes(search.toLowerCase()) ||
-      (c.email || '').toLowerCase().includes(search.toLowerCase()) ||
+    (c.nombre || '').toLowerCase().includes(search.toLowerCase()) ||
+    (c.email || '').toLowerCase().includes(search.toLowerCase()) ||
       (c.empresa || '').toLowerCase().includes(search.toLowerCase());
     return matchFiltro && matchSearch;
   });
@@ -438,8 +437,8 @@ export default function Clientes() {
                           {lc.icon} {lc.label}
                         </span>
                         {s.isToxic && <span className="cl-badge" style={{ background: 'rgba(239,68,68,0.1)', color: '#ef4444', borderColor: 'rgba(239,68,68,0.25)' }}><AlertOctagon size={10} /> Revisar</span>}
-                      </div>
-                      {c.empresa && <div style={{ fontSize: '0.72rem', color: 'var(--text-tertiary)' }}>{c.empresa}</div>}
+                  </div>
+                    {c.empresa && <div style={{ fontSize: '0.72rem', color: 'var(--text-tertiary)' }}>{c.empresa}</div>}
                       <div className="cl-row__meta">
                         {c.presupuestos > 0 && <span style={{ color: '#f59e0b' }}><FileText size={10} /> {c.presupuestos}</span>}
                         {c.facturas > 0 && <span style={{ color: '#25D366' }}><Receipt size={10} /> {c.facturas}</span>}
@@ -450,9 +449,9 @@ export default function Clientes() {
                     <div style={{ display: 'flex', flex: 'column', alignItems: 'center', gap: '0.2rem', marginLeft: 'auto', flexShrink: 0 }}>
                       <div className={`score-mini ${s.score >= 75 ? 'score-mini--hot' : s.score >= 45 ? 'score-mini--warm' : 'score-mini--cold'}`}>{s.score}</div>
                       <span style={{ fontSize: '0.45rem', color: 'var(--text-tertiary)', fontFamily: 'var(--font-mono)' }}>SCORE</span>
-                    </div>
+                  </div>
                     <ChevronRight size={14} style={{ color: 'var(--text-tertiary)', flexShrink: 0, marginLeft: '0.35rem' }} />
-                  </button>
+                </button>
                 );
               })}
             </div>
@@ -466,9 +465,9 @@ export default function Clientes() {
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
                   <div style={{ width: 48, height: 48, borderRadius: '50%', background: 'rgba(37,211,102,0.1)', color: '#25D366', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: '1.1rem' }}>
-                    {(selected.nombre || '?')[0].toUpperCase()}
-                  </div>
-                  <div>
+                  {(selected.nombre || '?')[0].toUpperCase()}
+                </div>
+                <div>
                     <div style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '0.95rem' }}>{selected.nombre}</div>
                     {selected.empresa && <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{selected.empresa}</div>}
                     {selected.email && <div style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)', fontFamily: 'var(--font-mono)' }}>{selected.email}</div>}
@@ -487,7 +486,7 @@ export default function Clientes() {
                       {lc.icon} {lc.label}
                     </div>
                     <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', padding: '0.3rem 0.85rem', background: `${s.tierColor}12`, border: `1px solid ${s.tierColor}33`, borderRadius: '999px', fontSize: '0.75rem', fontFamily: 'var(--font-mono)', fontWeight: 700, color: s.tierColor }}>
-                      {s.tierEmoji} Score {s.score}/100 · {s.tier}
+                      <s.TierIcon size={12} /> Score {s.score}/100 · {s.tier}
                     </div>
                   </div>
                 );

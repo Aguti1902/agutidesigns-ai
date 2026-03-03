@@ -33,12 +33,13 @@ function generarNumero(presupuestos) {
   return `PRES-${String(max + 1).padStart(4, '0')}-${year}`;
 }
 
-function calcularTotales(lineas, iva, descuento) {
+function calcularTotales(lineas, iva, descuento, irpf = 0) {
   const subtotal = lineas.reduce((s, l) => s + (parseFloat(l.cantidad) || 0) * (parseFloat(l.precio) || 0), 0);
   const desc = subtotal * ((parseFloat(descuento) || 0) / 100);
   const base = subtotal - desc;
   const ivaAmt = base * ((parseFloat(iva) || 0) / 100);
-  return { subtotal, descAmt: desc, base, ivaAmt, total: base + ivaAmt };
+  const irpfAmt = base * ((parseFloat(irpf) || 0) / 100);
+  return { subtotal, descAmt: desc, base, ivaAmt, irpfAmt, total: base + ivaAmt - irpfAmt };
 }
 
 const PAYMENT_LABELS = { transferencia: 'Transferencia bancaria', bizum: 'Bizum', paypal: 'PayPal', tarjeta: 'Tarjeta (Stripe)', efectivo: 'Efectivo', facturacion_30: 'Facturación 30 días', facturacion_60: 'Facturación 60 días' };
@@ -78,7 +79,7 @@ async function exportarPDF(pres, negocio) {
   const autoTable = (await import('jspdf-autotable')).default;
   const doc = new jsPDF();
   const f = parseFiscal(negocio);
-  const { subtotal, descAmt, base, ivaAmt, total } = calcularTotales(pres.lineas || [], pres.iva, pres.descuento);
+  const { subtotal, descAmt, base, ivaAmt, irpfAmt, total } = calcularTotales(pres.lineas || [], pres.iva, pres.descuento, pres.irpf || 0);
 
   // ── Franja verde superior ──
   doc.setFillColor(37, 211, 102);
@@ -155,16 +156,24 @@ async function exportarPDF(pres, negocio) {
   // ── Totales ──
   let fy = (doc.lastAutoTable?.finalY || tableY + 30) + 6;
   const rx = 196;
+  const irpfAplicado = (parseFloat(pres.irpf) || 0) > 0;
+  const boxRows = 2 + (descAmt > 0 ? 1 : 0) + (irpfAplicado ? 1 : 0);
   doc.setFillColor(248, 248, 248);
-  doc.roundedRect(120, fy - 4, 76, descAmt > 0 ? 28 : 22, 2, 2, 'F');
+  doc.roundedRect(120, fy - 4, 76, boxRows * 6 + 4, 2, 2, 'F');
   doc.setFontSize(8.5); doc.setFont('helvetica', 'normal'); doc.setTextColor(80, 80, 80);
-  doc.text('Subtotal:', 125, fy + 2); doc.text(`${subtotal.toFixed(2)}€`, rx, fy + 2, { align: 'right' });
+  doc.text('Base imponible:', 125, fy + 2); doc.text(`${subtotal.toFixed(2)}€`, rx, fy + 2, { align: 'right' });
   if (descAmt > 0) {
     fy += 6;
     doc.text(`Descuento (${pres.descuento}%):`, 125, fy + 2); doc.text(`-${descAmt.toFixed(2)}€`, rx, fy + 2, { align: 'right' });
   }
   fy += 6;
-  doc.text(`IVA (${pres.iva}%):`, 125, fy + 2); doc.text(`${ivaAmt.toFixed(2)}€`, rx, fy + 2, { align: 'right' });
+  doc.text(`IVA (${pres.iva || 0}%):`, 125, fy + 2); doc.text(`+${ivaAmt.toFixed(2)}€`, rx, fy + 2, { align: 'right' });
+  if (irpfAplicado) {
+    fy += 6;
+    doc.setTextColor(180, 60, 60);
+    doc.text(`IRPF (${pres.irpf}%) retención:`, 125, fy + 2); doc.text(`-${irpfAmt.toFixed(2)}€`, rx, fy + 2, { align: 'right' });
+    doc.setTextColor(80, 80, 80);
+  }
   fy += 6;
   doc.setDrawColor(37, 211, 102); doc.setLineWidth(0.6);
   doc.line(120, fy, rx, fy);
@@ -172,7 +181,12 @@ async function exportarPDF(pres, negocio) {
   doc.setFillColor(37, 211, 102);
   doc.roundedRect(120, fy - 4, 76, 10, 2, 2, 'F');
   doc.setFont('helvetica', 'bold'); doc.setFontSize(10); doc.setTextColor(0, 0, 0);
-  doc.text('TOTAL:', 125, fy + 2); doc.text(`${total.toFixed(2)}€`, rx, fy + 2, { align: 'right' });
+  doc.text('TOTAL A COBRAR:', 125, fy + 2); doc.text(`${total.toFixed(2)}€`, rx, fy + 2, { align: 'right' });
+  if (irpfAplicado) {
+    fy += 10;
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(7); doc.setTextColor(130, 130, 130);
+    doc.text(`* IRPF retenido (${irpfAmt.toFixed(2)}€) ingresado a Hacienda por el cliente (Modelo 111).`, 120, fy + 2);
+  }
 
   // ── Notas ──
   if (pres.notas) {
@@ -209,9 +223,9 @@ async function exportarPDF(pres, negocio) {
 
 /* ── Generador de 3 paquetes ── */
 const PAQUETES_CONFIG = {
-  basico:      { label: 'Básico',      emoji: '⚡', color: '#6b7280', multi: 1.0, desc: 'Lo esencial para empezar', badge: 'Económico' },
-  profesional: { label: 'Profesional', emoji: '⭐', color: '#3b82f6', multi: 1.55, desc: 'Equilibrio calidad-precio', badge: 'Más popular' },
-  premium:     { label: 'Premium',     emoji: '👑', color: '#f59e0b', multi: 2.1, desc: 'Solución completa y avanzada', badge: 'Máximo valor' },
+  basico:      { label: 'Básico',      Icon: Zap,   color: '#6b7280', multi: 1.0, desc: 'Lo esencial para empezar', badge: 'Económico' },
+  profesional: { label: 'Profesional', Icon: Star,  color: '#3b82f6', multi: 1.55, desc: 'Equilibrio calidad-precio', badge: 'Más popular' },
+  premium:     { label: 'Premium',     Icon: Crown, color: '#f59e0b', multi: 2.1, desc: 'Solución completa y avanzada', badge: 'Máximo valor' },
 };
 
 function ModalTresPaquetes({ onClose, onGenerar, baseLineas, baseIva, clienteNombre, numeroBase }) {
@@ -287,13 +301,13 @@ function ModalTresPaquetes({ onClose, onGenerar, baseLineas, baseIva, clienteNom
               return (
                 <div key={pkg} className={`paquete-preview ${pkg === 'profesional' ? 'paquete-preview--featured' : ''}`} style={{ '--pkg-color': p.color }}>
                   <div className="paquete-preview__head">
-                    <span>{p.emoji}</span>
+                    <p.Icon size={18} style={{ color: p.color }} />
                     <strong>{p.label}</strong>
                     <span className="paquete-preview__badge" style={{ background: `${p.color}20`, color: p.color }}>{p.badge}</span>
                   </div>
                   <div className="paquete-preview__price">{Math.round(total).toLocaleString('es-ES')}€</div>
                   <div className="paquete-preview__lines">
-                    {ls.slice(0, 3).map((l, i) => <div key={i} className="paquete-preview__line">✓ {l.descripcion}</div>)}
+                    {ls.slice(0, 3).map((l, i) => <div key={i} className="paquete-preview__line"><Check size={11} /> {l.descripcion}</div>)}
                     {ls.length > 3 && <div className="paquete-preview__line" style={{ color: 'var(--text-tertiary)' }}>+{ls.length - 3} más...</div>}
                   </div>
                 </div>
@@ -322,9 +336,10 @@ export default function Presupuestos() {
   const [editing, setEditing] = useState(null);
   const [saving, setSaving] = useState(false);
   const [negocio, setNegocio] = useState(null);
+  const [negocioDefaults, setNegocioDefaults] = useState({ iva: 21, irpf: 0 });
   const [form, setForm] = useState({
     numero: '', cliente_nombre: '', cliente_email: '', cliente_empresa: '',
-    lineas: [{ ...LINE_EMPTY }], iva: 21, descuento: 0, validez_dias: 30, notas: '', estado: 'borrador',
+    lineas: [{ ...LINE_EMPTY }], iva: 21, irpf: 0, descuento: 0, validez_dias: 30, notas: '', estado: 'borrador',
   });
 
   useEffect(() => { if (user) { load(); loadNegocio(); } }, [user]);
@@ -339,11 +354,19 @@ export default function Presupuestos() {
   async function loadNegocio() {
     const { data } = await supabase.from('businesses').select('name,email,phone,website,extra_context').eq('user_id', user.id).single();
     setNegocio(data);
+    if (data?.extra_context) {
+      try {
+        const ex = JSON.parse(data.extra_context);
+        const defaults = { iva: parseInt(ex.iva_default || '21'), irpf: parseInt(ex.irpf_default || '0') };
+        setNegocioDefaults(defaults);
+        setForm(f => ({ ...f, iva: defaults.iva, irpf: defaults.irpf }));
+      } catch {}
+    }
   }
 
   function openNew() {
     const numero = generarNumero(presupuestos);
-    setForm({ numero, cliente_nombre: '', cliente_email: '', cliente_empresa: '', lineas: [{ ...LINE_EMPTY }], iva: 21, descuento: 0, validez_dias: 30, notas: '', estado: 'borrador' });
+    setForm({ numero, cliente_nombre: '', cliente_email: '', cliente_empresa: '', lineas: [{ ...LINE_EMPTY }], iva: negocioDefaults.iva, irpf: negocioDefaults.irpf, descuento: 0, validez_dias: 30, notas: '', estado: 'borrador' });
     setEditing(null);
     setShowForm(true);
   }
@@ -418,8 +441,8 @@ export default function Presupuestos() {
     alert(`Factura ${numeroF} creada correctamente`);
   }
 
-  const totales = calcularTotales(form.lineas, form.iva, form.descuento);
-  const totalPendiente = presupuestos.filter(p => p.estado === 'enviado' || p.estado === 'borrador').reduce((s, p) => s + calcularTotales(p.lineas || [], p.iva, p.descuento).total, 0);
+  const totales = calcularTotales(form.lineas, form.iva, form.descuento, form.irpf);
+  const totalPendiente = presupuestos.filter(p => p.estado === 'enviado' || p.estado === 'borrador').reduce((s, p) => s + calcularTotales(p.lineas || [], p.iva, p.descuento, p.irpf || 0).total, 0);
 
   return (
     <div className="page">
@@ -478,7 +501,7 @@ export default function Presupuestos() {
             </thead>
             <tbody>
               {presupuestos.map(p => {
-                const { total } = calcularTotales(p.lineas || [], p.iva, p.descuento);
+                const { total } = calcularTotales(p.lineas || [], p.iva, p.descuento, p.irpf || 0);
                 const est = ESTADOS[p.estado] || ESTADOS.borrador;
                 return (
                   <tr key={p.id} style={{ borderBottom: '1px solid var(--border-light)' }}>
@@ -565,11 +588,24 @@ export default function Presupuestos() {
                 <button type="button" className="btn btn--outline btn--sm" onClick={addLinea}><Plus size={12} /> Añadir línea</button>
               </div>
 
-              {/* Totales y config */}
+              {/* Impuestos y config */}
               <div className="form-grid" style={{ marginBottom: '1rem' }}>
                 <div className="form-field">
                   <label>IVA (%)</label>
-                  <input type="number" min="0" max="100" value={form.iva} onChange={e => upd('iva', e.target.value)} />
+                  <div className="chips" style={{ flexWrap: 'wrap' }}>
+                    {['0','4','10','21'].map(v => (
+                      <button key={v} type="button" className={`chip ${String(form.iva) === v ? 'chip--active' : ''}`} onClick={() => upd('iva', v)}>{v}%</button>
+                    ))}
+                  </div>
+                </div>
+                <div className="form-field">
+                  <label>IRPF — retención (%)</label>
+                  <div className="chips" style={{ flexWrap: 'wrap' }}>
+                    {['0','7','15','19'].map(v => (
+                      <button key={v} type="button" className={`chip ${String(form.irpf || 0) === v ? 'chip--active' : ''}`} onClick={() => upd('irpf', v)}>{v}%{v === '0' ? ' (no aplica)' : ''}</button>
+                    ))}
+                  </div>
+                  <span className="form-field__hint">El cliente retiene este % y lo ingresa a Hacienda. Reduce lo que cobras.</span>
                 </div>
                 <div className="form-field">
                   <label>Descuento (%)</label>
@@ -583,10 +619,14 @@ export default function Presupuestos() {
 
               {/* Resumen */}
               <div style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-lg)', padding: '1rem', marginBottom: '1rem', display: 'flex', flexDirection: 'column', gap: '0.35rem', alignItems: 'flex-end', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-                <span>Subtotal: <strong>{totales.subtotal.toFixed(2)}€</strong></span>
+                <span>Base imponible: <strong>{totales.subtotal.toFixed(2)}€</strong></span>
                 {totales.descAmt > 0 && <span>Descuento: <strong>-{totales.descAmt.toFixed(2)}€</strong></span>}
-                <span>IVA ({form.iva}%): <strong>{totales.ivaAmt.toFixed(2)}€</strong></span>
-                <span style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--text-primary)' }}>TOTAL: {totales.total.toFixed(2)}€</span>
+                <span>+ IVA ({form.iva || 0}%): <strong style={{ color: '#25D366' }}>+{totales.ivaAmt.toFixed(2)}€</strong></span>
+                {(parseFloat(form.irpf) || 0) > 0 && (
+                  <span>– IRPF ({form.irpf}%) retención: <strong style={{ color: '#ef4444' }}>-{totales.irpfAmt.toFixed(2)}€</strong></span>
+                )}
+                <div style={{ width: '100%', height: '1px', background: 'var(--border-color)', margin: '0.25rem 0' }} />
+                <span style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--text-primary)' }}>TOTAL A COBRAR: {totales.total.toFixed(2)}€</span>
               </div>
 
               <div className="form-field" style={{ marginBottom: '1.5rem' }}>

@@ -1,11 +1,12 @@
 import { useState, useEffect, useRef } from 'react';
-import { Calendar, Check, Loader2, X, RefreshCw, ChevronLeft, ChevronRight, Clock, MapPin, FileText, User, Plus, Phone, Trash2, Edit3, Lock, Bot, Power, Link as LinkIcon, AlertTriangle } from 'lucide-react';
+import { Calendar, Check, Loader2, X, RefreshCw, ChevronLeft, ChevronRight, Clock, FileText, Plus, Phone, Trash2, Edit3, Bot, Power, Link as LinkIcon, Save, ExternalLink, Copy, CheckCircle, AlertCircle, Zap, ChevronDown, ChevronUp } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { useAgents } from '../hooks/useAgents';
 import { supabase } from '../lib/supabase';
 import './DashboardPages.css';
 
 const API_URL = import.meta.env.VITE_API_URL || 'https://xzyhrloiwapbrqmglxeo.supabase.co/functions/v1';
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || 'https://xzyhrloiwapbrqmglxeo.supabase.co';
 const HOURS = Array.from({ length: 15 }, (_, i) => i + 7); // 7:00 to 21:00
 const DAY_NAMES = ['LUN', 'MAR', 'MIÉ', 'JUE', 'VIE', 'SÁB', 'DOM'];
 const STATUS_LABELS = { pending: 'Pendiente', confirmed: 'Confirmada', cancelled: 'Cancelada', completed: 'Completada' };
@@ -71,10 +72,15 @@ export default function CalendarIntegration() {
   const [saving, setSaving] = useState(false);
   const [bookingEnabled, setBookingEnabled] = useState(false);
   const [togglingBooking, setTogglingBooking] = useState(false);
-  const [gcalConnected, setGcalConnected] = useState(false);
-  const [gcalInfo, setGcalInfo] = useState(null);
-  const [gcalConnecting, setGcalConnecting] = useState(false);
-  const [gcalError, setGcalError] = useState('');
+  const [calendlyUrl, setCalendlyUrl] = useState('');
+  const [calendlyToken, setCalendlyToken] = useState('');
+  const [calendlyConnected, setCalendlyConnected] = useState(false);
+  const [calendlyConnecting, setCalendlyConnecting] = useState(false);
+  const [calendlyError, setCalendlyError] = useState('');
+  const [webhookCopied, setWebhookCopied] = useState(false);
+  const [savingLinks, setSavingLinks] = useState(false);
+  const [linksSaved, setLinksSaved] = useState(false);
+  const [showCalendly, setShowCalendly] = useState(false);
   const popupRef = useRef(null);
   const formRef = useRef(null);
 
@@ -83,35 +89,102 @@ export default function CalendarIntegration() {
   const weekDays = getWeekDays(currentDate);
   const today = new Date();
 
-  useEffect(() => { if (user) { loadAppointments(); loadBusinessSchedule(); loadGcalStatus(); } }, [user]);
+  useEffect(() => { if (user) { loadAppointments(); loadBusinessSchedule(); loadBookingLinks(); } }, [user]);
   useEffect(() => { if (user) loadAppointments(); }, [currentDate]);
   useEffect(() => { if (activeAgent) setBookingEnabled(!!activeAgent.booking_enabled); }, [activeAgent]);
 
-  async function loadGcalStatus() {
+  async function loadBookingLinks() {
     if (!user) return;
     try {
-      const { data } = await supabase.from('google_calendar_tokens').select('calendar_id, calendar_name, connected_at').eq('user_id', user.id).single();
-      if (data) { setGcalConnected(true); setGcalInfo(data); }
+      const { data } = await supabase.from('businesses').select('extra_context').eq('user_id', user.id).single();
+      if (data?.extra_context) {
+        const ex = JSON.parse(data.extra_context);
+        if (ex.calendly_url) setCalendlyUrl(ex.calendly_url);
+        if (ex.calendly_token) setCalendlyToken(ex.calendly_token);
+        if (ex.calendly_connected) setCalendlyConnected(true);
+      }
     } catch {}
   }
 
-  async function handleGcalConnect() {
-    setGcalConnecting(true); setGcalError('');
-    try {
-      const res = await fetch(`${API_URL}/google-calendar-auth`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: user.id }) });
-      const data = await res.json();
-      if (!res.ok || !data.authUrl) throw new Error(data.error || 'Error al conectar');
-      window.location.href = data.authUrl;
-    } catch (err) { setGcalError(err.message); setGcalConnecting(false); }
+  function getWebhookUrl() {
+    return `${SUPABASE_URL}/functions/v1/calendly-webhook?uid=${user?.id}`;
   }
 
-  async function handleGcalDisconnect() {
-    if (!confirm('¿Desconectar Google Calendar?')) return;
+  function copyWebhook() {
+    navigator.clipboard.writeText(getWebhookUrl());
+    setWebhookCopied(true);
+    setTimeout(() => setWebhookCopied(false), 2500);
+  }
+
+  async function connectCalendly() {
+    if (!calendlyToken.trim()) { setCalendlyError('Introduce tu Personal Access Token de Calendly'); return; }
+    setCalendlyConnecting(true); setCalendlyError('');
     try {
-      await supabase.from('google_calendar_tokens').delete().eq('user_id', user.id);
-      if (activeAgent) await fetch(`${API_URL}/toggle-calendar`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ agentId: activeAgent.id, enabled: false }) });
-      setGcalConnected(false); setGcalInfo(null); refreshAgents();
+      // 1. Validate token & get user URI
+      const meRes = await fetch('https://api.calendly.com/users/me', {
+        headers: { Authorization: `Bearer ${calendlyToken.trim()}` },
+      });
+      if (!meRes.ok) throw new Error('Token inválido. Verifica que es correcto y tiene permisos.');
+      const meData = await meRes.json();
+      const userUri = meData.resource?.uri;
+      if (!userUri) throw new Error('No se pudo obtener tu URI de usuario de Calendly.');
+
+      // 2. Register webhook subscription
+      const webhookUrl = getWebhookUrl();
+      const whRes = await fetch('https://api.calendly.com/webhook_subscriptions', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${calendlyToken.trim()}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          url: webhookUrl,
+          events: ['invitee.created', 'invitee.canceled'],
+          organization: meData.resource?.current_organization,
+          user: userUri,
+          scope: 'user',
+        }),
+      });
+      // 409 = webhook already exists, that's fine
+      if (!whRes.ok && whRes.status !== 409) {
+        const whErr = await whRes.json();
+        throw new Error(whErr.message || `Error registrando webhook (${whRes.status})`);
+      }
+
+      // 3. Save to DB
+      const { data: biz } = await supabase.from('businesses').select('id, extra_context').eq('user_id', user.id).single();
+      const prev = (() => { try { return biz?.extra_context ? JSON.parse(biz.extra_context) : {}; } catch { return {}; } })();
+      const merged = { ...prev, calendly_url: calendlyUrl.trim(), calendly_token: calendlyToken.trim(), calendly_connected: true };
+      await supabase.from('businesses').update({ extra_context: JSON.stringify(merged), updated_at: new Date().toISOString() }).eq('id', biz.id);
+
+      setCalendlyConnected(true);
+    } catch (err) {
+      setCalendlyError(err.message);
+    } finally {
+      setCalendlyConnecting(false);
+    }
+  }
+
+  async function disconnectCalendly() {
+    if (!confirm('¿Desconectar Calendly? Las nuevas reservas no se sincronizarán.')) return;
+    try {
+      const { data: biz } = await supabase.from('businesses').select('id, extra_context').eq('user_id', user.id).single();
+      const prev = (() => { try { return biz?.extra_context ? JSON.parse(biz.extra_context) : {}; } catch { return {}; } })();
+      const merged = { ...prev, calendly_connected: false, calendly_token: '' };
+      await supabase.from('businesses').update({ extra_context: JSON.stringify(merged), updated_at: new Date().toISOString() }).eq('id', biz.id);
+      setCalendlyConnected(false);
+      setCalendlyToken('');
     } catch (err) { alert('Error: ' + err.message); }
+  }
+
+  async function saveCalendlyUrl() {
+    setSavingLinks(true);
+    try {
+      const { data: biz } = await supabase.from('businesses').select('id, extra_context').eq('user_id', user.id).single();
+      const prev = (() => { try { return biz?.extra_context ? JSON.parse(biz.extra_context) : {}; } catch { return {}; } })();
+      const merged = { ...prev, calendly_url: calendlyUrl.trim() };
+      await supabase.from('businesses').update({ extra_context: JSON.stringify(merged), updated_at: new Date().toISOString() }).eq('id', biz.id);
+      setLinksSaved(true);
+      setTimeout(() => setLinksSaved(false), 2500);
+    } catch (err) { alert('Error: ' + err.message); }
+    finally { setSavingLinks(false); }
   }
 
   async function toggleBooking() {
@@ -300,28 +373,119 @@ export default function CalendarIntegration() {
         </button>
       </div>
 
-      {/* Google Calendar Connection */}
-      <div className={`cal-gcal ${gcalConnected ? 'cal-gcal--on' : ''}`}>
-        <div className="cal-gcal__info">
-          <Calendar size={18} />
-          <div>
-            {gcalConnected ? (
-              <><strong>Google Calendar conectado</strong><span>Sincronizado con {gcalInfo?.calendar_name || 'Google Calendar'}</span></>
+      {/* Calendly Sync — Desplegable opcional */}
+      <div className={`cal-calendly-collapsible ${calendlyConnected ? 'cal-calendly-collapsible--connected' : ''}`}>
+        <button
+          type="button"
+          className="cal-calendly-collapsible__trigger"
+          onClick={() => setShowCalendly(v => !v)}
+        >
+          <div className="cal-calendly-collapsible__left">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+              <circle cx="12" cy="12" r="11" fill="#006BFF"/>
+              <path d="M7 12.5C7 9.46 9.46 7 12.5 7c1.58 0 3 .65 4.02 1.69" stroke="#fff" strokeWidth="2" strokeLinecap="round"/>
+              <path d="M17 11.5C17 14.54 14.54 17 11.5 17c-1.58 0-3-.65-4.02-1.69" stroke="#fff" strokeWidth="2" strokeLinecap="round"/>
+              <circle cx="17" cy="8" r="1.5" fill="#fff"/>
+              <circle cx="7" cy="16" r="1.5" fill="#fff"/>
+            </svg>
+            <span>Sincronizar con Calendly</span>
+            <span className="cal-calendly-collapsible__optional">Opcional</span>
+            {calendlyConnected && <span className="cal-calendly__badge"><CheckCircle size={11} /> Conectado</span>}
+          </div>
+          {showCalendly ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+        </button>
+
+        {showCalendly && (
+          <div className="cal-calendly-collapsible__body">
+            <p className="cal-calendly__desc" style={{ marginBottom: '1rem' }}>
+              {calendlyConnected
+                ? 'Las reservas de Calendly se sincronizan automáticamente.'
+                : 'Si usas Calendly, conéctalo para que las reservas se sincronicen. Si no lo usas, la IA agenda directamente desde WhatsApp.'
+              }
+            </p>
+
+            <div className="form-field" style={{ marginBottom: '0.75rem' }}>
+              <label>Tu link de reserva en Calendly</label>
+              <div style={{ display: 'flex', gap: '0.5rem' }}>
+                <input
+                  value={calendlyUrl}
+                  onChange={e => setCalendlyUrl(e.target.value)}
+                  placeholder="https://calendly.com/tu-nombre/discovery-call"
+                  style={{ flex: 1 }}
+                />
+                {calendlyUrl && (
+                  <a href={calendlyUrl} target="_blank" rel="noopener" className="btn btn--outline btn--sm">
+                    <ExternalLink size={12} />
+                  </a>
+                )}
+                <button className="btn btn--outline btn--sm" onClick={saveCalendlyUrl} disabled={savingLinks}>
+                  {savingLinks ? <Loader2 size={12} className="spin" /> : linksSaved ? <Check size={12} /> : <Save size={12} />}
+                </button>
+              </div>
+              <span className="form-field__hint">La IA envía este link por WhatsApp cuando el cliente quiere agendar</span>
+            </div>
+
+            {!calendlyConnected ? (
+              <div className="cal-calendly__connect">
+                <div className="cal-calendly__steps">
+                  <div className="cal-calendly__step">
+                    <span className="cal-calendly__step-n">1</span>
+                    <span>Ve a <a href="https://calendly.com/integrations/api_webhooks" target="_blank" rel="noopener" style={{ color: '#006BFF' }}>Calendly → Integraciones → API & Webhooks</a> y crea un <strong>Personal Access Token</strong></span>
+                  </div>
+                  <div className="cal-calendly__step">
+                    <span className="cal-calendly__step-n">2</span>
+                    <span>Pégalo aquí y pulsa <strong>Conectar</strong> — registraremos el webhook automáticamente</span>
+                  </div>
+                  <div className="cal-calendly__step">
+                    <span className="cal-calendly__step-n">3</span>
+                    <span>Cada reserva nueva aparecerá aquí al instante</span>
+                  </div>
+                </div>
+
+                <div className="form-field" style={{ marginTop: '1rem', marginBottom: '0.5rem' }}>
+                  <label>Personal Access Token de Calendly</label>
+                  <input
+                    type="password"
+                    value={calendlyToken}
+                    onChange={e => setCalendlyToken(e.target.value)}
+                    placeholder="eyJraWQiOiIxY..."
+                  />
+                </div>
+
+                {calendlyError && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#ef4444', fontSize: '0.78rem', marginBottom: '0.75rem' }}>
+                    <AlertCircle size={13} /> {calendlyError}
+                  </div>
+                )}
+
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.75rem', flexWrap: 'wrap' }}>
+                  <div className="cal-calendly__webhook-row">
+                    <span style={{ fontSize: '0.72rem', color: 'var(--text-tertiary)' }}>URL de tu webhook:</span>
+                    <code className="cal-calendly__webhook-url">{user ? `...calendly-webhook?uid=${user.id.substring(0,8)}...` : '—'}</code>
+                    <button type="button" className="btn btn--outline btn--sm" onClick={copyWebhook}>
+                      {webhookCopied ? <><CheckCircle size={11} /> Copiado</> : <><Copy size={11} /> Copiar</>}
+                    </button>
+                  </div>
+                  <button className="btn btn--primary btn--sm" onClick={connectCalendly} disabled={calendlyConnecting || !calendlyToken.trim()}>
+                    {calendlyConnecting ? <><Loader2 size={12} className="spin" /> Conectando...</> : <><Zap size={12} /> Conectar Calendly</>}
+                  </button>
+                </div>
+              </div>
             ) : (
-              <><strong>Google Calendar</strong><span>Sincroniza tus citas con Google Calendar</span></>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', padding: '0.65rem 1rem', background: 'rgba(37,211,102,0.06)', border: '1px solid rgba(37,211,102,0.2)', borderRadius: 'var(--radius-md)' }}>
+                <CheckCircle size={16} style={{ color: '#25D366', flexShrink: 0 }} />
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: '0.82rem', fontWeight: 700, color: '#25D366' }}>Webhook activo</div>
+                  <div style={{ fontSize: '0.72rem', color: 'var(--text-tertiary)' }}>Las reservas se sincronizan automáticamente</div>
+                </div>
+                <button className="btn btn--outline btn--sm" style={{ color: '#888', flexShrink: 0 }} onClick={disconnectCalendly}>
+                  <X size={12} /> Desconectar
+                </button>
+              </div>
             )}
           </div>
-        </div>
-        {gcalConnected ? (
-          <button className="btn btn--outline btn--sm" onClick={handleGcalDisconnect}><X size={12} /> Desconectar</button>
-        ) : (
-          <button className="btn btn--primary btn--sm" onClick={handleGcalConnect} disabled={gcalConnecting}>
-            {gcalConnecting ? <Loader2 size={12} className="spin" /> : <LinkIcon size={12} />}
-            Conectar
-          </button>
         )}
       </div>
-      {gcalError && <p style={{ fontSize: '0.75rem', color: '#ef4444', marginTop: '0.25rem' }}>{gcalError}</p>}
 
       {/* Week Navigation */}
       <div className="cal-nav">

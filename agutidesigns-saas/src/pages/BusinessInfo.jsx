@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Building, Save, Check, ChevronDown, ChevronUp, Upload, X, ImageIcon, CreditCard } from 'lucide-react';
+import { Building, Save, Check, ChevronDown, ChevronUp, Upload, X, ImageIcon, CreditCard, Building2, Smartphone, Banknote, CalendarDays, Wallet } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../hooks/useAuth';
 import './DashboardPages.css';
@@ -136,13 +136,13 @@ const SECTIONS = [
 ];
 
 const PAYMENT_METHODS_OPTIONS = [
-  { id: 'transferencia', label: 'Transferencia bancaria', emoji: '🏦' },
-  { id: 'bizum', label: 'Bizum', emoji: '📱' },
-  { id: 'paypal', label: 'PayPal', emoji: '🅿️' },
-  { id: 'tarjeta', label: 'Tarjeta (Stripe)', emoji: '💳' },
-  { id: 'efectivo', label: 'Efectivo', emoji: '💵' },
-  { id: 'facturacion_30', label: 'Facturación a 30 días', emoji: '📅' },
-  { id: 'facturacion_60', label: 'Facturación a 60 días', emoji: '📅' },
+  { id: 'transferencia', label: 'Transferencia bancaria', Icon: Building2 },
+  { id: 'bizum', label: 'Bizum', Icon: Smartphone },
+  { id: 'paypal', label: 'PayPal', Icon: Wallet },
+  { id: 'tarjeta', label: 'Tarjeta (Stripe)', Icon: CreditCard },
+  { id: 'efectivo', label: 'Efectivo', Icon: Banknote },
+  { id: 'facturacion_30', label: 'Facturación a 30 días', Icon: CalendarDays },
+  { id: 'facturacion_60', label: 'Facturación a 60 días', Icon: CalendarDays },
 ];
 
 const PAYMENT_TERMS_PRESETS = [
@@ -164,7 +164,7 @@ function PaymentMethodsSelector({ value, onChange }) {
     <div className="payment-methods-grid">
       {PAYMENT_METHODS_OPTIONS.map(m => (
         <button key={m.id} type="button" className={`pm-chip ${selected.includes(m.id) ? 'pm-chip--on' : ''}`} onClick={() => toggle(m.id)}>
-          <span>{m.emoji}</span> {m.label}
+          <m.Icon size={13} /> {m.label}
           {selected.includes(m.id) && <Check size={12} />}
         </button>
       ))}

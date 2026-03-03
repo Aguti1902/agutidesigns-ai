@@ -1,51 +1,231 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useInView } from 'react-intersection-observer';
 import { Link } from 'react-router-dom';
 import {
-  Zap, CheckCircle, ArrowRight, Shield, Brain,
-  BarChart3, ChevronDown, Bot, CalendarCheck,
-  Star, Sparkles, X, Check, FileText, Receipt, Users,
-  Smartphone, Calendar, Video, Clock, Bell, Wifi, Link2
+  Zap, CheckCircle, ArrowRight, BarChart3, ChevronDown, Bot, CalendarCheck,
+  Sparkles, X, Check, FileText, Calendar, MessageCircle, Send,
+  TrendingUp, Calculator, Target, UserCheck, PhoneCall, Menu,
+  Globe, Layers, Star, Mail, ExternalLink
 } from 'lucide-react';
 import './SaasLanding.css';
 
-/* ── Chat demo ── */
-function ChatDemo() {
-  const msgs = [
-    { from: 'user', text: '¿Cuánto cuesta una web para mi restaurante?' },
-    { from: 'bot', text: 'Hola! Una web corporativa para restaurante con carta online está entre *800€ y 1.500€*. Incluye diseño, desarrollo, formulario de reservas y 1 año de mantenimiento. ¿Quieres que agendemos una llamada para ver los detalles?' },
-    { from: 'user', text: 'Sí, ¿cuándo puedes?' },
-    { from: 'bot', text: '✅ Tengo disponible *mañana a las 11:00* o el *jueves a las 16:00*. ¿Cuál te viene mejor?' },
-  ];
-  const [vis, setVis] = useState(0);
-  useEffect(() => {
-    if (vis < msgs.length) {
-      const t = setTimeout(() => setVis(v => v + 1), vis === 0 ? 800 : 1500);
-      return () => clearTimeout(t);
-    }
-  }, [vis]);
+/* ═══════════════════════════════════════════
+   COOKIE BANNER
+═══════════════════════════════════════════ */
+function CookieBanner() {
+  const [visible, setVisible] = useState(() => {
+    try { return localStorage.getItem('wasapy_cookies') === null; } catch { return false; }
+  });
+  const [expanded, setExpanded] = useState(false);
+
+  const accept = (all) => {
+    try { localStorage.setItem('wasapy_cookies', all ? 'all' : 'essential'); } catch {}
+    setVisible(false);
+  };
+
+  if (!visible) return null;
+
   return (
-    <div className="mk">
-      <div className="mk__bar"><span /><span /><span /></div>
-      <div className="mk__head"><div className="mk__av"><Bot size={14} /></div><div><b>Guti Diseño Web</b><small>en línea · IA activa</small></div></div>
-      <div className="mk__chat">
-        {msgs.slice(0, vis).map((m, i) => (
-          <motion.div key={i} className={`mk__m mk__m--${m.from}`} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }}>
-            <span dangerouslySetInnerHTML={{ __html: m.text.replace(/\*(.*?)\*/g, '<b>$1</b>') }} />
-          </motion.div>
-        ))}
-        {vis < msgs.length && <div className="mk__typing"><span /><span /><span /></div>}
+    <motion.div className="ck-banner"
+      initial={{ opacity: 0, y: 24 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: 24 }}
+      transition={{ duration: 0.3, delay: 1.5 }}>
+      <div className="ck-banner__top">
+        <div className="ck-banner__txt">
+          <strong>Usamos cookies</strong>
+          <p>Las esenciales son necesarias para el funcionamiento de la plataforma. Las analíticas nos ayudan a mejorar el servicio.{' '}
+            <Link to="/cookies" className="ck-banner__link">Política de cookies</Link>
+          </p>
+        </div>
+        <div className="ck-banner__btns">
+          <button className="ck-banner__btn ck-banner__btn--ghost" onClick={() => accept(false)}>Solo esenciales</button>
+          <button className="ck-banner__btn ck-banner__btn--primary" onClick={() => accept(true)}>Aceptar todas</button>
+        </div>
       </div>
-      <div className="mk__input"><span>Escribe un mensaje...</span></div>
+    </motion.div>
+  );
+}
+
+/* ═══════════════════════════════════════════
+   SOCIAL PROOF TOAST (bottom-left)
+═══════════════════════════════════════════ */
+const SP_USERS = [
+  { name: 'María S.', city: 'Barcelona', ago: 'hace 2 min' },
+  { name: 'Carlos M.', city: 'Madrid', ago: 'hace 5 min' },
+  { name: 'Ana R.', city: 'Valencia', ago: 'hace 1 min' },
+  { name: 'Pablo G.', city: 'Sevilla', ago: 'hace 8 min' },
+  { name: 'Lucía F.', city: 'Bilbao', ago: 'hace 3 min' },
+  { name: 'Diego H.', city: 'Málaga', ago: 'hace 6 min' },
+  { name: 'Sara N.', city: 'Zaragoza', ago: 'hace 4 min' },
+  { name: 'Javier L.', city: 'Alicante', ago: 'hace 7 min' },
+  { name: 'Marta C.', city: 'Murcia', ago: 'hace 2 min' },
+  { name: 'Rubén P.', city: 'Vigo', ago: 'hace 10 min' },
+];
+
+function SocialProofToast() {
+  const [visible, setVisible] = useState(false);
+  const [idx, setIdx] = useState(0);
+
+  useEffect(() => {
+    let current = 0;
+    let hideTimer;
+    const show = () => {
+      setIdx(current % SP_USERS.length);
+      current++;
+      setVisible(true);
+      hideTimer = setTimeout(() => setVisible(false), 4000);
+    };
+    const startTimer = setTimeout(() => {
+      show();
+      const iv = setInterval(show, 9000);
+      return () => clearInterval(iv);
+    }, 5000);
+    return () => { clearTimeout(startTimer); clearTimeout(hideTimer); };
+  }, []);
+
+  const u = SP_USERS[idx];
+  return (
+    <AnimatePresence>
+      {visible && (
+        <motion.div className="sp-toast"
+          initial={{ opacity: 0, x: -16, scale: 0.95 }}
+          animate={{ opacity: 1, x: 0, scale: 1 }}
+          exit={{ opacity: 0, x: -16, scale: 0.95 }}
+          transition={{ duration: 0.22 }}>
+          <div className="sp-toast__av">{u.name.charAt(0)}</div>
+          <div>
+            <div className="sp-toast__text"><strong>{u.name}</strong> de {u.city}</div>
+            <div className="sp-toast__sub">acaba de registrarse en Wasapy · {u.ago}</div>
+          </div>
+          <div className="sp-toast__dot" />
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
+}
+
+/* ═══════════════════════════════════════════
+   USER COUNTER STRIP
+═══════════════════════════════════════════ */
+function UserCounter() {
+  const [count, setCount] = useState(1180);
+  const [ref, inView] = useInView({ threshold: 0.5, triggerOnce: true });
+
+  useEffect(() => {
+    if (!inView) return;
+    const target = 1247;
+    let current = 1180;
+    const iv = setInterval(() => {
+      current += 3;
+      if (current >= target) { setCount(target); clearInterval(iv); }
+      else setCount(current);
+    }, 28);
+    return () => clearInterval(iv);
+  }, [inView]);
+
+  return (
+    <div className="uctr" ref={ref}>
+      <div className="lc uctr__in">
+        <div className="uctr__left">
+          <div className="uctr__avatars">
+            {['MF','LG','IP','CR','AS','PD'].map((av, i) => (
+              <div key={i} className="uctr__av" style={{ '--i': i }}>{av}</div>
+            ))}
+          </div>
+          <div className="uctr__text">
+            <span className="uctr__num">{count.toLocaleString('es-ES')}+</span>
+            <span>diseñadores web ya usan Wasapy</span>
+          </div>
+        </div>
+        <div className="uctr__right">
+          <div className="uctr__stars">
+            {[...Array(5)].map((_, i) => <Star key={i} size={13} fill="#f59e0b" color="#f59e0b" />)}
+          </div>
+          <span className="uctr__rating">4.9/5 valoración media</span>
+          <div className="uctr__sep" />
+          <span className="uctr__tag"><span className="uctr__pulse" />En directo ahora</span>
+        </div>
+      </div>
     </div>
   );
 }
 
-/* ── Dashboard mockup ── */
+/* ═══════════════════════════════════════════
+   ANNOUNCEMENT BAR
+═══════════════════════════════════════════ */
+function AnnouncementBar() {
+  const [closed, setClosed] = useState(() => {
+    try { return localStorage.getItem('wasapy_ann') === '1'; } catch { return false; }
+  });
+  if (closed) return null;
+  return (
+    <div className="ann">
+      <div className="ann__inner">
+        <span className="ann__dot" />
+        <span>Nuevo · Presupuestos IA con tu branding se generan y envían solos</span>
+        <a href="#precios" className="ann__cta">Ver planes <ArrowRight size={11} /></a>
+      </div>
+      <button className="ann__x" onClick={() => { setClosed(true); try { localStorage.setItem('wasapy_ann', '1'); } catch {} }} aria-label="Cerrar"><X size={12} /></button>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════
+   HERO NOTIFICATION — live toast on mockup
+═══════════════════════════════════════════ */
+function HeroNotif() {
+  const [idx, setIdx] = useState(-1);
+  const NOTIFS = [
+    { icon: <MessageCircle size={12} />, text: 'Nuevo lead — Carlos pregunta por web', sub: 'Tu IA ya respondió · hace 3s', col: 'green' },
+    { icon: <CalendarCheck size={12} />, text: 'Discovery call agendada — Mar 11:00', sub: 'Ana García · confirmada automáticamente', col: 'blue' },
+    { icon: <FileText size={12} />, text: 'Presupuesto enviado por WhatsApp', sub: '1.370€ · Restaurante La Mar', col: 'green' },
+    { icon: <UserCheck size={12} />, text: 'Lead cualificado — Budget 1.200€+', sub: 'Clínica Salud · score alto', col: 'purple' },
+  ];
+
+  useEffect(() => {
+    let current = 0;
+    let hideTimer;
+    const show = () => {
+      setIdx(current % NOTIFS.length);
+      current++;
+      hideTimer = setTimeout(() => setIdx(-1), 3200);
+    };
+    const t = setTimeout(() => {
+      show();
+      const iv = setInterval(show, 5000);
+      return () => clearInterval(iv);
+    }, 1600);
+    return () => { clearTimeout(t); clearTimeout(hideTimer); };
+  }, []);
+
+  return (
+    <AnimatePresence>
+      {idx >= 0 && (
+        <motion.div className={`h-notif h-notif--${NOTIFS[idx].col}`}
+          initial={{ opacity: 0, y: -10, scale: 0.94 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          exit={{ opacity: 0, y: -8, scale: 0.94 }}
+          transition={{ duration: 0.22 }}>
+          <div className="h-notif__ico">{NOTIFS[idx].icon}</div>
+          <div>
+            <div className="h-notif__text">{NOTIFS[idx].text}</div>
+            <div className="h-notif__sub">{NOTIFS[idx].sub}</div>
+          </div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
+}
+
+/* ═══════════════════════════════════════════
+   DASHBOARD MOCKUP (hero right)
+═══════════════════════════════════════════ */
 function DashMockup() {
   return (
     <div className="dash-mk">
+      <div className="dash-mk__shimmer" />
       <div className="dash-mk__bar"><span /><span /><span /></div>
       <div className="dash-mk__body">
         <div className="dash-mk__side">
@@ -54,20 +234,20 @@ function DashMockup() {
             <div className="dash-mk__ni dash-mk__ni--on">Dashboard</div>
             <div className="dash-mk__ni">WhatsApp</div>
             <div className="dash-mk__ni">Presupuestos</div>
-            <div className="dash-mk__ni">Facturas</div>
             <div className="dash-mk__ni">Clientes</div>
+            <div className="dash-mk__ni">Config. IA</div>
           </div>
         </div>
         <div className="dash-mk__main">
           <div className="dash-mk__stats">
-            <div className="dash-mk__st"><strong>12</strong><span>Leads hoy</span></div>
-            <div className="dash-mk__st"><strong>3.200€</strong><span>Presup. pendientes</span></div>
-            <div className="dash-mk__st"><strong>5</strong><span>Citas esta semana</span></div>
+            <div className="dash-mk__st"><strong>8</strong><span>Leads hoy</span></div>
+            <div className="dash-mk__st"><strong>4.200€</strong><span>Presup. activos</span></div>
+            <div className="dash-mk__st"><strong>3</strong><span>Calls esta semana</span></div>
           </div>
           <div className="dash-mk__table">
             <div className="dash-mk__row dash-mk__row--head"><span>Cliente</span><span>Proyecto</span><span>Importe</span><span>Estado</span></div>
-            <div className="dash-mk__row"><span>Bar Mediterráneo</span><span>Web + reservas</span><span>1.200€</span><span className="tag tag--g">Aceptado</span></div>
-            <div className="dash-mk__row"><span>Clínica Salud+</span><span>Landing + SEO</span><span>850€</span><span className="tag tag--y">Enviado</span></div>
+            <div className="dash-mk__row"><span>Clínica Salud+</span><span>Landing + SEO</span><span>1.100€</span><span className="tag tag--g">Aceptado</span></div>
+            <div className="dash-mk__row"><span>Bar Mediterráneo</span><span>Web + reservas</span><span>950€</span><span className="tag tag--y">Enviado</span></div>
             <div className="dash-mk__row"><span>Tienda ModaMujer</span><span>Ecommerce</span><span>2.400€</span><span className="tag tag--b">Borrador</span></div>
           </div>
         </div>
@@ -76,633 +256,804 @@ function DashMockup() {
   );
 }
 
-/* ── Phone Mockup (App) ── */
-function PhoneMockup() {
+/* ═══════════════════════════════════════════
+   SHOWCASE 1 — Animated inbox (lead arrives)
+═══════════════════════════════════════════ */
+function ShowcaseInbox() {
+  const [stage, setStage] = useState(0);
+  const DELAYS = [1400, 1800, 2200, 2000, 3200];
+
+  useEffect(() => {
+    const t = setTimeout(() => setStage(s => (s + 1) % 5), DELAYS[stage]);
+    return () => clearTimeout(t);
+  }, [stage]);
+
   return (
-    <div className="phone">
-      <div className="phone__notch" />
-      <div className="phone__screen">
-        <div className="phone__status">
-          <span>10:42</span>
-          <div className="phone__status-r"><Wifi size={9} /><span className="phone__batt" /></div>
+    <div className="sc-mock">
+      <div className="sc-mock__bar"><span /><span /><span /></div>
+      <div className="sc-mock__head">
+        <div className="sc-mock__av"><MessageCircle size={13} /></div>
+        <div>
+          <b>Carlos Ruiz</b>
+          <small>WhatsApp · hace un momento</small>
         </div>
-        <div className="phone__head">
-          <div className="phone__av-sm">W</div>
-          <strong>Agenda</strong>
-        </div>
-        <div className="phone__day">
-          <div><b>Lunes</b><small>24 febrero</small></div>
-          <div className="phone__tabs">
-            <span className="phone__tab phone__tab--on">Día</span>
-            <span className="phone__tab">Semana</span>
+        <div className="sc-mock__badge">IA activa</div>
+      </div>
+      <div className="sc-mock__chat">
+        {stage === 0 && (
+          <div className="sc-mock__idle">
+            <div className="sc-mock__pulse" />
+            <span>Esperando mensajes...</span>
           </div>
-        </div>
-        <div className="phone__team">
-          <span style={{background:'#25D366'}}>Alejandro</span>
-          <span style={{background:'#3B82F6'}}>Laura</span>
-          <span style={{background:'#8B5CF6'}}>Mario</span>
-        </div>
-        <div className="phone__slots-bar">
-          <span>Huecos disponibles</span>
-          <em>7 libres</em>
-        </div>
-        <div className="phone__slots">
-          {['10:00','10:30','11:00','12:30','16:00','17:30','18:00'].map(t => (
-            <span key={t} className="phone__slot">{t}</span>
-          ))}
-        </div>
-        <div className="phone__appts">
-          <div className="phone__appt">
-            <span className="phone__time">09:00</span>
-            <div className="phone__ainfo"><b>Ana García</b><small>Corte + Peinado · 45 min</small></div>
-            <span className="phone__ast phone__ast--ok">Confirmado</span>
+        )}
+        {stage >= 1 && (
+          <div className="sc-msg sc-msg--in sc-anim">
+            Hola, busco diseñador para hacerme la web de mi restaurante. ¿Cuánto cobras?
           </div>
-          <div className="phone__appt phone__appt--hl">
-            <span className="phone__time">10:00</span>
-            <div className="phone__ainfo"><b>Seleccionado</b><small>Toca para reservar</small></div>
-            <span className="phone__ast phone__ast--av">Disponible</span>
+        )}
+        {stage === 2 && (
+          <div className="sc-typing sc-anim">
+            <span /><span /><span />
           </div>
-          <div className="phone__appt">
-            <span className="phone__time">12:00</span>
-            <div className="phone__ainfo"><b>Carlos López</b><small>Barba completa · 30 min</small></div>
-            <span className="phone__ast phone__ast--pend">Pendiente</span>
+        )}
+        {stage >= 3 && (
+          <div className="sc-msg sc-msg--out sc-anim">
+            ¡Hola! Web restaurante con carta digital y sistema de reservas desde <strong>900€</strong>. ¿Tienes fecha de apertura? Te propongo una llamada rápida para darte precio exacto.
           </div>
-          <div className="phone__appt">
-            <span className="phone__time">16:00</span>
-            <div className="phone__ainfo"><b>María Ruiz</b><small>Mechas · 90 min</small></div>
-            <span className="phone__ast phone__ast--ok">Confirmado</span>
+        )}
+        {stage >= 4 && (
+          <div className="sc-lead-card sc-anim">
+            <div className="sc-lead-card__head"><UserCheck size={11} /> Lead cualificado automáticamente</div>
+            <div className="sc-lead-card__row"><span>Proyecto</span><span>Web restaurante</span></div>
+            <div className="sc-lead-card__row"><span>Budget est.</span><span>900€ – 1.400€</span></div>
+            <div className="sc-lead-card__row"><span>Score</span><span className="sc-hot">Caliente</span></div>
           </div>
-          <div className="phone__appt">
-            <span className="phone__time">18:00</span>
-            <div className="phone__ainfo"><b>Juan Martínez</b><small>Corte degradado · 30 min</small></div>
-            <span className="phone__ast phone__ast--ok">Confirmado</span>
-          </div>
-        </div>
-        <div className="phone__fab">+</div>
-        <div className="phone__bnav">
-          <div className="phone__bnav-i phone__bnav-i--on"><Calendar size={12}/><span>Agenda</span></div>
-          <div className="phone__bnav-i"><Users size={12}/><span>Equipo</span></div>
-          <div className="phone__bnav-i"><Bell size={12}/><span>Avisos</span></div>
-        </div>
+        )}
       </div>
     </div>
   );
 }
 
-/* ── Integration Logos (SVG) ── */
-function GoogleCalendarLogo() {
-  return (
-    <svg width="36" height="36" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <rect x="4" y="7" width="28" height="25" rx="3" fill="#fff"/>
-      <path d="M4 10a3 3 0 013-3h22a3 3 0 013 3v3H4v-3z" fill="#4285F4"/>
-      <rect x="9" y="5" width="3" height="5" rx="1.5" fill="#1A73E8"/>
-      <rect x="24" y="5" width="3" height="5" rx="1.5" fill="#1A73E8"/>
-      <rect x="9" y="17" width="5" height="2" rx="1" fill="#4285F4"/>
-      <rect x="9" y="22" width="5" height="2" rx="1" fill="#EA4335"/>
-      <rect x="16" y="17" width="5" height="2" rx="1" fill="#34A853"/>
-      <rect x="16" y="22" width="5" height="2" rx="1" fill="#FBBC04"/>
-      <rect x="23" y="17" width="5" height="2" rx="1" fill="#EA4335"/>
-      <rect x="23" y="22" width="5" height="2" rx="1" fill="#34A853"/>
-    </svg>
-  );
-}
+/* ═══════════════════════════════════════════
+   SHOWCASE 2 — Animated calendar booking
+═══════════════════════════════════════════ */
+function ShowcaseCalendar() {
+  const [stage, setStage] = useState(0);
+  const DELAYS = [1500, 2000, 2000, 2200, 3200];
 
-function CalendlyLogo() {
-  return (
-    <svg width="36" height="36" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <circle cx="18" cy="18" r="15" fill="#006BFF"/>
-      <circle cx="18" cy="18" r="8" stroke="#fff" strokeWidth="2.5" fill="none"/>
-      <path d="M18 13v6l4 3" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
-    </svg>
-  );
-}
+  useEffect(() => {
+    const t = setTimeout(() => setStage(s => (s + 1) % 5), DELAYS[stage]);
+    return () => clearTimeout(t);
+  }, [stage]);
 
-function TeamsLogo() {
-  return (
-    <svg width="36" height="36" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <rect x="3" y="3" width="30" height="30" rx="6" fill="#6264A7"/>
-      <path d="M11 13h14v1.5H19.25V25h-2.5V14.5H11V13z" fill="#fff"/>
-      <circle cx="27" cy="11" r="4" fill="#7B83EB"/>
-      <circle cx="27" cy="11" r="2.5" fill="#fff"/>
-    </svg>
-  );
-}
+  const days = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie'];
+  const slots = ['9:00', '10:00', '11:00', '12:00', '16:00'];
 
-function ZoomLogo() {
   return (
-    <svg width="36" height="36" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <rect x="3" y="3" width="30" height="30" rx="8" fill="#2D8CFF"/>
-      <rect x="8" y="12" width="14" height="12" rx="2.5" fill="#fff"/>
-      <path d="M24 14.5l5-2.5v12l-5-2.5v-7z" fill="#fff"/>
-    </svg>
-  );
-}
-
-/* ── Animated CRM Module Mockups ── */
-function ReservasMock() {
-  return (
-    <div className="cw cw--rv">
-      <div className="cw__bar"><span /><span /><span /></div>
-      <div className="cw__top">Calendario de Reservas</div>
-      <div className="cw__body">
-        <div className="rv__days">{['Lun','Mar','Mié','Jue','Vie'].map(d => <span key={d}>{d}</span>)}</div>
-        {['09:00','10:00','11:00','12:00'].map((t, ti) => (
-          <div key={t} className="rv__row">
-            <span className="rv__t">{t}</span>
-            {[0,1,2,3,4].map(di => {
-              const busy = (ti===0&&di===2)||(ti===3&&di===0)||(ti===1&&di===4);
-              const a1 = ti===1&&di===1;
-              const a2 = ti===2&&di===3;
+    <div className="sc-mock sc-mock--cal">
+      <div className="sc-mock__bar"><span /><span /><span /></div>
+      <div className="sc-cal__head">
+        <Calendar size={13} /> Agenda · Esta semana
+      </div>
+      <div className="sc-cal__grid">
+        <div className="sc-cal__cols">
+          <div className="sc-cal__tc" />
+          {days.map(d => <div key={d} className="sc-cal__dh">{d}</div>)}
+        </div>
+        {slots.map((time, ti) => (
+          <div key={time} className="sc-cal__row">
+            <div className="sc-cal__time">{time}</div>
+            {days.map((d, di) => {
+              const isTarget = ti === 2 && di === 1;
+              const isBooked = stage >= 3 && isTarget;
+              const isPulsing = stage >= 1 && stage < 3 && isTarget;
               return (
-                <div key={di} className={`rv__c${busy?' rv__c--bsy':''}${a1?' rv__c--a1':''}${a2?' rv__c--a2':''}`}>
-                  {ti===0&&di===2&&<small>Ana G.</small>}
-                  {ti===3&&di===0&&<small>María</small>}
-                  {ti===1&&di===4&&<small>Carlos</small>}
-                  {a1&&<small className="rv__fill">Reservado</small>}
-                  {a2&&<small className="rv__fill rv__fill--2">Reservado</small>}
+                <div key={d} className={`sc-slot ${isPulsing ? 'sc-slot--pulse' : ''} ${isBooked ? 'sc-slot--booked' : ''}`}>
+                  {isBooked && <span>Ana G.</span>}
                 </div>
               );
             })}
           </div>
         ))}
-        <div className="rv__toast"><CheckCircle size={10} /> Reserva confirmada — Mar 10:00</div>
-        <div className="ani-cur" />
       </div>
+      {stage >= 2 && stage < 4 && (
+        <div className="sc-cal__notif sc-anim">
+          <Bot size={11} /> Ana G. quiere agendar — propongo Mar 11:00
+        </div>
+      )}
+      {stage >= 4 && (
+        <div className="sc-cal__confirm sc-anim">
+          <Check size={11} /><Check size={11} /> Cita confirmada · Mar 11:00 · Enlace enviado
+        </div>
+      )}
     </div>
   );
 }
 
-function PresupMock() {
-  return (
-    <div className="cw cw--ps">
-      <div className="cw__bar"><span /><span /><span /></div>
-      <div className="cw__top">Nuevo Presupuesto</div>
-      <div className="cw__body">
-        <div className="ps__client"><small>Cliente</small><b>Bar Mediterráneo</b></div>
-        <div className="ps__lines">
-          <div className="ps__ln"><span>Diseño web corporativo</span><b>800 €</b></div>
-          <div className="ps__ln"><span>SEO básico (3 meses)</span><b>350 €</b></div>
-          <div className="ps__ln ps__ln--new"><span>Hosting anual</span><b>120 €</b></div>
-        </div>
-        <div className="ps__sep" />
-        <div className="ps__total"><span>Total (IVA incl.)</span><b className="ps__tnum">1.270 €</b></div>
-        <div className="ps__actions">
-          <div className="ps__btn ps__btn--add">+ Añadir línea</div>
-          <div className="ps__btn ps__btn--send">Enviar PDF</div>
-        </div>
-        <div className="ps__toast"><CheckCircle size={10} /> PDF enviado al cliente</div>
-        <div className="ani-cur" />
-      </div>
-    </div>
-  );
-}
+/* ═══════════════════════════════════════════
+   SHOWCASE 3 — Animated budget generation
+═══════════════════════════════════════════ */
+function ShowcaseBudget() {
+  const [stage, setStage] = useState(0);
+  const DELAYS = [1000, 1600, 1600, 1800, 2000, 3000];
 
-function FacturasMock() {
-  return (
-    <div className="cw cw--fc">
-      <div className="cw__bar"><span /><span /><span /></div>
-      <div className="cw__top">Facturación</div>
-      <div className="cw__body">
-        <div className="fc__card">
-          <div className="fc__head"><div><small>Presupuesto</small><b>#PS-042</b></div><span className="fc__st">Aceptado ✓</span></div>
-          <div className="fc__info"><span>Bar Mediterráneo</span><b>1.270 €</b></div>
-          <div className="fc__btn">Generar factura →</div>
-        </div>
-        <div className="fc__result">
-          <div className="fc__check"><CheckCircle size={24} /></div>
-          <b>Factura #FC-042 generada</b>
-          <span>1.270 € — Lista para enviar</span>
-        </div>
-        <div className="ani-cur" />
-      </div>
-    </div>
-  );
-}
+  useEffect(() => {
+    const t = setTimeout(() => setStage(s => (s + 1) % 6), DELAYS[stage]);
+    return () => clearTimeout(t);
+  }, [stage]);
 
-function ClientesMock() {
   return (
-    <div className="cw cw--cm">
-      <div className="cw__bar"><span /><span /><span /></div>
-      <div className="cw__top">Clientes</div>
-      <div className="cw__body">
-        <div className="cm__search"><span>Buscar clientes...</span></div>
-        <div className="cm__list">
-          <div className="cm__row"><div className="cm__av" style={{background:'#25D366'}}>A</div><div className="cm__nfo"><b>Ana García</b><small>3 proyectos · 2.450 €</small></div></div>
-          <div className="cm__row cm__row--hl">
-            <div className="cm__av" style={{background:'#3B82F6'}}>C</div>
-            <div className="cm__nfo"><b>Carlos López</b><small>5 proyectos · 4.800 €</small></div>
-            <div className="cm__detail"><div><small>Último proyecto</small><span>Web corporativa</span></div><div><small>Última actividad</small><span>Hace 3 días</span></div></div>
+    <div className="sc-mock sc-mock--budget">
+      <div className="sc-mock__bar"><span /><span /><span /></div>
+      <div className="sc-budget">
+        {stage === 0 && (
+          <div className="sc-budget__empty sc-anim">
+            <FileText size={28} />
+            <span>Generando presupuesto...</span>
           </div>
-          <div className="cm__row"><div className="cm__av" style={{background:'#8B5CF6'}}>M</div><div className="cm__nfo"><b>María Ruiz</b><small>2 proyectos · 1.200 €</small></div></div>
-        </div>
-        <div className="ani-cur" />
+        )}
+        {stage >= 1 && (
+          <div className="sc-budget__header sc-anim">
+            <div className="sc-budget__logo">Tu Estudio Web</div>
+            <div>
+              <div className="sc-budget__ref">Propuesta #042</div>
+              <div className="sc-budget__client">Para: Carlos Ruiz · Restaurante La Mar</div>
+            </div>
+          </div>
+        )}
+        {stage >= 2 && (
+          <div className="sc-budget__lines sc-anim">
+            <div className="sc-budget__line"><span>Web corporativa</span><span>900€</span></div>
+            <div className="sc-budget__line"><span>Carta digital</span><span>200€</span></div>
+            <div className="sc-budget__line"><span>Sistema reservas</span><span>150€</span></div>
+            <div className="sc-budget__line"><span>Hosting año 1</span><span>120€</span></div>
+          </div>
+        )}
+        {stage >= 3 && (
+          <div className="sc-budget__total sc-anim">
+            <span>Total</span>
+            <span>1.370€ + IVA</span>
+          </div>
+        )}
+        {stage >= 4 && stage < 5 && (
+          <div className="sc-budget__sending sc-anim">
+            <div className="sc-budget__prog"><div className="sc-budget__prog-fill" /></div>
+            <span>Enviando por WhatsApp...</span>
+          </div>
+        )}
+        {stage >= 5 && (
+          <div className="sc-budget__sent sc-anim">
+            <Check size={11} /><Check size={11} /> Presupuesto enviado · hace un momento
+          </div>
+        )}
       </div>
     </div>
   );
 }
 
-const PAIN_POINTS = [
-  { q: '¿Cuánto cuesta una web?', t: 'La IA responde por ti', d: 'Mientras maquetar, la IA responde con tus tarifas reales, tipos de proyecto y tiempos de entrega. Filtrada y cualificada.' },
-  { q: 'Leads que se enfrían', t: 'Responde en segundos, no en horas', d: 'El 78% de los leads contratan al primero que responde. Con Wasapy, tú siempre eres el primero, incluso a las 2 de la mañana.' },
-  { q: 'Llamadas de discovery perdidas', t: 'Agenda automáticamente', d: 'La IA cualifica al cliente — presupuesto, plazo, tipo de proyecto — y agenda la llamada de discovery directamente en tu calendario.' },
-  { q: 'Presupuestos en Word', t: 'Presupuestos y facturas profesionales', d: 'Crea presupuestos con líneas de servicio, IVA, exporta en PDF y conviértelos en factura con un clic.' },
+/* ═══════════════════════════════════════════
+   ROI CALCULATOR
+═══════════════════════════════════════════ */
+function RoiCalculator() {
+  const [leads, setLeads] = useState(20);
+  const [ticket, setTicket] = useState(1200);
+  const conversionSin = 0.08;
+  const conversionCon = 0.22;
+  const sinWasapy = Math.round(leads * conversionSin * ticket);
+  const conWasapy = Math.round(leads * conversionCon * ticket);
+  const diff = conWasapy - sinWasapy;
+
+  return (
+    <div className="roi-calc">
+      <div className="roi-calc__inputs">
+        <div className="roi-calc__field">
+          <label>Consultas de diseño web / mes por WhatsApp</label>
+          <input type="range" min="5" max="80" value={leads} onChange={e => setLeads(+e.target.value)} />
+          <span className="roi-calc__val">{leads}</span>
+        </div>
+        <div className="roi-calc__field">
+          <label>Ticket medio de tu proyecto (€)</label>
+          <input type="range" min="300" max="5000" step="100" value={ticket} onChange={e => setTicket(+e.target.value)} />
+          <span className="roi-calc__val">{ticket.toLocaleString('es-ES')}€</span>
+        </div>
+      </div>
+      <div className="roi-calc__results">
+        <div className="roi-calc__col">
+          <span className="roi-calc__label">Sin Wasapy</span>
+          <span className="roi-calc__num roi-calc__num--dim">{sinWasapy.toLocaleString('es-ES')}€/mes</span>
+          <small>~{Math.round(conversionSin * 100)}% conversión (respuesta lenta)</small>
+        </div>
+        <div className="roi-calc__arrow"><ArrowRight size={20} /></div>
+        <div className="roi-calc__col roi-calc__col--hl">
+          <span className="roi-calc__label">Con Wasapy</span>
+          <span className="roi-calc__num">{conWasapy.toLocaleString('es-ES')}€/mes</span>
+          <small>~{Math.round(conversionCon * 100)}% conversión (respuesta inmediata)</small>
+        </div>
+      </div>
+      <div className="roi-calc__diff">
+        +{diff.toLocaleString('es-ES')}€/mes de facturación potencial extra
+      </div>
+      <p className="roi-calc__disclaimer">
+        Estimación basada en datos del sector freelance. Sin IA: respuesta media 4h, {Math.round(conversionSin * 100)}% cierre. Con IA: respuesta &lt;10s, cualificación automática, {Math.round(conversionCon * 100)}% cierre.
+      </p>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════
+   FLOATING CHAT (simulación local)
+═══════════════════════════════════════════ */
+function FloatingChat() {
+  const [open, setOpen] = useState(false);
+  const [msgs, setMsgs] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('wasapy_chat') || '[]'); } catch { return []; }
+  });
+  const [input, setInput] = useState('');
+  const chatRef = useRef(null);
+
+  useEffect(() => {
+    localStorage.setItem('wasapy_chat', JSON.stringify(msgs));
+    if (chatRef.current) chatRef.current.scrollTop = chatRef.current.scrollHeight;
+  }, [msgs]);
+
+  useEffect(() => {
+    if (!open) return;
+    const onKey = e => { if (e.key === 'Escape') setOpen(false); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [open]);
+
+  const respond = useCallback((text) => {
+    const lower = text.toLowerCase();
+    if (lower.includes('precio') || lower.includes('cuánto') || lower.includes('coste') || lower.includes('plan'))
+      return 'Tenemos 3 planes: Starter (29€/mes), Pro (79€/mes) y Agency (149€/mes). Todos incluyen IA en WhatsApp, presupuestos PDF y CRM de clientes. ¿Cuál encaja con tu volumen?';
+    if (lower.includes('wordpress') || lower.includes('diseño') || lower.includes('diseñador') || lower.includes('freelance'))
+      return 'Wasapy está hecho específicamente para diseñadores web freelance. Mientras estás maquetando en WordPress o Elementor, la IA gestiona tus leads, agenda discovery calls y envía presupuestos. Tú diseñas, ella vende.';
+    if (lower.includes('agenda') || lower.includes('llamada') || lower.includes('cita') || lower.includes('calendar') || lower.includes('discovery'))
+      return 'La IA agenda discovery calls directamente en tu calendario. Se sincroniza con Calendly para que no tengas dobles reservas. La reunión aparece ya confirmada sin que hagas nada.';
+    if (lower.includes('presupuesto') || lower.includes('factura') || lower.includes('pdf'))
+      return 'Puedes configurar tus tarifas reales (web corporativa, landing, ecommerce…). La IA genera presupuestos PDF con tu branding, IVA/IRPF y los envía por WhatsApp automáticamente.';
+    if (lower.includes('whatsapp') || lower.includes('conectar') || lower.includes('qr'))
+      return 'Solo escaneas un QR desde la app. Sin WhatsApp Business API, sin configuración técnica. En menos de 5 minutos tu IA ya está atendiendo leads.';
+    return 'Wasapy es el CRM con IA para diseñadores web freelance. Gestiona tus leads de WhatsApp, agenda discovery calls y envía presupuestos mientras tú diseñas. ¿Qué más quieres saber?';
+  }, []);
+
+  function handleSend(text) {
+    if (!text.trim()) return;
+    const userMsg = { from: 'user', text: text.trim(), ts: Date.now() };
+    setMsgs(prev => [...prev, userMsg]);
+    setInput('');
+    setTimeout(() => {
+      setMsgs(prev => [...prev, { from: 'bot', text: respond(text), ts: Date.now() }]);
+    }, 600 + Math.random() * 400);
+  }
+
+  const quickReplies = ['Soy diseñador web freelance', 'Quiero ver los precios', 'Cómo funciona'];
+
+  return (
+    <>
+      <button className={`fc-fab ${open ? 'fc-fab--hide' : ''}`} onClick={() => setOpen(true)} aria-label="Abrir chat">
+        <MessageCircle size={22} />
+      </button>
+      <AnimatePresence>
+        {open && (
+          <motion.div className="fc-panel" role="dialog" aria-label="Chat Wasapy"
+            initial={{ opacity: 0, y: 16, scale: 0.95 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 16, scale: 0.95 }} transition={{ duration: 0.2 }}>
+            <div className="fc-panel__head">
+              <div className="fc-panel__info">
+                <div className="fc-panel__av"><Bot size={16} /></div>
+                <div><b>Wasapy</b><small>IA · Siempre disponible</small></div>
+              </div>
+              <button className="fc-panel__close" onClick={() => setOpen(false)} aria-label="Cerrar chat"><X size={16} /></button>
+            </div>
+            <div className="fc-panel__msgs" ref={chatRef}>
+              {msgs.length === 0 && (
+                <div className="fc-panel__welcome">
+                  <Bot size={28} />
+                  <b>Hola, soy la IA de Wasapy</b>
+                  <span>Hecho para diseñadores web freelance. Pregunta lo que quieras.</span>
+                </div>
+              )}
+              {msgs.map((m, i) => (
+                <div key={i} className={`fc-msg fc-msg--${m.from}`}>{m.text}</div>
+              ))}
+            </div>
+            {msgs.length === 0 && (
+              <div className="fc-panel__quick">
+                {quickReplies.map(q => (
+                  <button key={q} onClick={() => handleSend(q)}>{q}</button>
+                ))}
+              </div>
+            )}
+            <form className="fc-panel__input" onSubmit={e => { e.preventDefault(); handleSend(input); }}>
+              <input value={input} onChange={e => setInput(e.target.value)} placeholder="Escribe tu pregunta..." autoFocus />
+              <button type="submit" disabled={!input.trim()} aria-label="Enviar"><Send size={15} /></button>
+            </form>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </>
+  );
+}
+
+/* ═══════════════════════════════════════════
+   DATA — Web designer focused
+═══════════════════════════════════════════ */
+const STEPS = [
+  {
+    icon: <MessageCircle size={24} />,
+    title: 'Conecta tu WhatsApp',
+    desc: 'Escanea un QR desde el panel. Sin API oficial, sin configuración técnica. En 5 minutos tu IA ya atiende leads mientras tú diseñas.',
+  },
+  {
+    icon: <Layers size={24} />,
+    title: 'Configura tus servicios',
+    desc: 'Dile a la IA qué webs haces, a qué precio y cómo trabajas. Landing pages, ecommerce, branding — ella lo aprende y vende como tú.',
+  },
+  {
+    icon: <TrendingUp size={24} />,
+    title: 'La IA vende mientras diseñas',
+    desc: 'Cualifica leads, propone horarios de tu calendario, genera presupuestos PDF y hace seguimiento. Tú te enteras cuando el proyecto está listo para cerrar.',
+  },
 ];
 
 const FEATURES = [
-  { icon: <Bot size={20} />, t: 'IA entrenada con tus servicios', d: 'Responde con tus tarifas, tecnologías y proceso de trabajo exactos.' },
-  { icon: <CalendarCheck size={20} />, t: 'Agenda llamadas de discovery', d: 'Cualifica leads y agenda llamadas automáticamente.' },
-  { icon: <FileText size={20} />, t: 'Presupuestos profesionales', d: 'Crea, envía y gestiona presupuestos con exportación a PDF.' },
-  { icon: <Receipt size={20} />, t: 'Facturación integrada', d: 'De presupuesto a factura con un clic. Controla cobros pendientes.' },
-  { icon: <Users size={20} />, t: 'CRM de clientes', d: 'Historial completo de cada cliente: proyectos, presupuestos y facturas.' },
-  { icon: <BarChart3 size={20} />, t: 'Dashboard de negocio', d: 'Métricas en tiempo real: leads, facturación pendiente y citas.' },
-  { icon: <Shield size={20} />, t: 'Sin permanencia', d: 'Cancela cuando quieras. Sin contratos. Sin letra pequeña.' },
-  { icon: <Brain size={20} />, t: 'Personalizable al 100%', d: 'La IA habla con tu voz, tus precios y tus condiciones.' },
+  {
+    icon: <UserCheck size={22} />,
+    title: 'Cualificación de leads web',
+    desc: 'La IA detecta si el potencial cliente tiene presupuesto para tu diseño, qué tipo de web necesita y cuándo quiere empezar.',
+  },
+  {
+    icon: <CalendarCheck size={22} />,
+    title: 'Discovery calls automáticas',
+    desc: 'Sincroniza con Calendly y la IA propone tus slots reales. La reunión aparece en tu Google Calendar ya confirmada.',
+  },
+  {
+    icon: <FileText size={22} />,
+    title: 'Presupuestos PDF con tu branding',
+    desc: 'Genera propuestas profesionales con tus tarifas reales — web, landing, ecommerce — con IVA/IRPF y tu logo. Enviadas por WhatsApp.',
+  },
+  {
+    icon: <Target size={22} />,
+    title: 'Seguimiento automático',
+    desc: 'Si el lead no responde al presupuesto, la IA hace follow-up en tu nombre. Nunca pierdas un proyecto por no hacer seguimiento.',
+  },
+  {
+    icon: <PhoneCall size={22} />,
+    title: 'Derivación inteligente',
+    desc: 'Proyectos grandes o clientes con dudas complejas: la IA te avisa con todo el contexto para que cierres tú la venta.',
+  },
+  {
+    icon: <BarChart3 size={22} />,
+    title: 'CRM para tu estudio',
+    desc: 'Todos tus leads, presupuestos y proyectos en un único panel. Sin Excel, sin caos. Enfócate en diseñar, no en administrar.',
+  },
 ];
 
-const COMPARE = [
-  { bad: 'Respondes "¿cuánto cuesta?" 10 veces al día', good: 'La IA responde con tus tarifas reales' },
-  { bad: 'Leads que se enfrían mientras maquetar', good: 'Respuesta inmediata aunque estés en modo foco' },
-  { bad: 'Presupuestos en Word o Excel', good: 'Presupuestos profesionales con un clic' },
-  { bad: 'Facturas sin cobrar que se acumulan', good: 'Control de cobros pendientes en tiempo real' },
-  { bad: 'Coordinar llamadas por WhatsApp', good: 'Discovery calls agendadas automáticamente' },
+const PLANS = [
+  {
+    id: 'starter', name: 'Starter', price: '29', annual: '24',
+    msgs: '1.000', agents: '1',
+    features: ['1 agente IA (1 WhatsApp)', '1.000 mensajes/mes', 'Presupuestos en PDF', 'CRM de clientes', 'Dashboard básico', 'Soporte por email'],
+  },
+  {
+    id: 'pro', name: 'Pro', price: '79', annual: '66', popular: true,
+    msgs: '3.000', agents: '3',
+    features: ['3 agentes IA (3 WhatsApp)', '3.000 mensajes/mes', 'Presupuestos + facturas', 'CRM completo + etiquetas', 'Dashboard avanzado', 'Soporte prioritario', 'Prompt personalizado por agente'],
+  },
+  {
+    id: 'agency', name: 'Agency', price: '149', annual: '124',
+    msgs: '8.000', agents: 'Ilimitados',
+    features: ['Agentes ilimitados', '8.000 mensajes/mes', 'Todo lo de Pro', 'Marca blanca', 'API personalizada', 'Soporte 24/7 dedicado', 'Onboarding personalizado'],
+  },
 ];
 
 const REVIEWS = [
-  { q: 'Antes perdía 3 horas al día respondiendo WhatsApps. Ahora la IA cualifica los leads y yo solo hablo con los que tienen presupuesto real.', n: 'Carlos M.', r: 'Diseñador web freelance · 5 años' },
-  { q: 'Lo de los presupuestos me cambió la vida. En 5 minutos tengo un PDF profesional listo para enviar. Mis clientes piensan que tengo un equipo.', n: 'Laura V.', r: 'Freelance UX/Web · Girona' },
-  { q: 'Un cliente me escribió a las 11 de la noche preguntando por una tienda online. La IA le respondió, le cualificó y agendó la llamada. Por la mañana tenía el proyecto.', n: 'Sergio P.', r: 'Diseñador + dev freelance' },
+  {
+    name: 'Marcos F.',
+    role: 'Diseñador web freelance · Madrid',
+    av: 'MF',
+    stars: 5,
+    text: 'Antes perdía 2 o 3 leads por semana por no responder a tiempo. Con Wasapy la IA responde sola y ya tengo 3 discovery calls nuevas esta semana sin haber hecho nada.',
+    metric: '+3 discovery calls la primera semana',
+  },
+  {
+    name: 'Laura G.',
+    role: 'Agencia WordPress · Barcelona',
+    av: 'LG',
+    stars: 5,
+    text: 'Los presupuestos automáticos me han cambiado la vida. Antes tardaba 2 horas en cada propuesta. Ahora la IA lo hace sola, con mi logo y mis condiciones, y el cliente lo recibe al momento.',
+    metric: '6h/semana ahorradas en presupuestos',
+  },
+  {
+    name: 'Iván P.',
+    role: 'WordPress & WooCommerce · Valencia',
+    av: 'IP',
+    stars: 5,
+    text: 'Nunca pensé que una IA pudiera hablar tan bien de mis servicios. La configuré con mis tarifas y mi tono, y los clientes no notan la diferencia. Es exactamente como yo respondería.',
+    metric: '4 proyectos cerrados el primer mes',
+  },
 ];
 
-const FAQ = [
-  { q: '¿Necesito conocimientos técnicos para configurarlo?', a: 'No. En 5 minutos tienes el agente funcionando. Introduces tus servicios, tarifas y forma de trabajo, y la IA empieza a cualificar leads por ti.' },
-  { q: '¿La IA puede dar presupuestos exactos?', a: 'Sí. La entrenas con tus tarifas reales por tipo de proyecto. Puede dar rangos orientativos y dejar la negociación para la llamada de discovery.' },
-  { q: '¿Funciona con mi WhatsApp personal?', a: 'Sí. No necesitas la API oficial de WhatsApp. Solo escaneas un QR con tu teléfono y listo.' },
-  { q: '¿Los presupuestos y facturas tienen validez legal?', a: 'Son documentos profesionales en PDF con todos los campos necesarios. Para uso como facturas legales, añade tus datos fiscales en la configuración.' },
-  { q: '¿Puedo seguir respondiendo yo también?', a: 'Sí. Si tú respondes manualmente, la IA se aparta. Solo actúa cuando no estás disponible.' },
-  { q: '¿Cuánto cuesta?', a: '29€/mes con todo incluido. 2 días gratis sin tarjeta para que lo pruebes sin riesgo.' },
+const FAQ_DATA = [
+  { q: '¿Funciona con mi WhatsApp normal o necesito WhatsApp Business?', a: 'Funciona con tu WhatsApp normal. Solo escaneas un QR desde el panel y la IA empieza a atender. Sin WhatsApp Business API, sin configuración técnica complicada.' },
+  { q: '¿La IA sabe responder sobre mis servicios de diseño web?', a: 'Sí. Configuras tus servicios reales: web corporativa, landing pages, ecommerce, branding, SEO... con tus precios y condiciones. La IA habla con tus tarifas y tu tono.' },
+  { q: '¿Puedo usarlo si tengo varios clientes y proyectos activos?', a: 'Es perfecto para eso. El CRM te muestra todos tus leads, presupuestos activos y el estado de cada proyecto en un único panel. Desde Starter tienes lo esencial.' },
+  { q: '¿La IA puede enviar presupuestos de diseño web en PDF?', a: 'Sí. Cuando un lead pide precio, la IA genera un PDF profesional con tus tarifas, IVA/IRPF y tu logo, y lo envía directamente por WhatsApp.' },
+  { q: '¿Puedo seguir respondiendo yo cuando quiera?', a: 'Sí. Si respondes manualmente, la IA se aparta automáticamente. Solo actúa cuando tú estás en modo foco o no disponible. Tú controlas cuándo.' },
+  { q: '¿Qué pasa si me quedo sin mensajes?', a: 'La IA se pausa automáticamente. Puedes comprar packs extra de mensajes desde el panel sin cambiar de plan. Desde 9€ por pack adicional.' },
+  { q: '¿Es difícil de configurar si no soy técnico?', a: 'Para nada. Si sabes diseñar webs, puedes configurar Wasapy. El onboarding guiado te lleva paso a paso en menos de 15 minutos. Sin código, sin API, sin dolor de cabeza.' },
 ];
 
-const CALENDAR_APPS = [
-  { name: 'Google Calendar', Logo: GoogleCalendarLogo, desc: 'Sync bidireccional en tiempo real' },
-  { name: 'Calendly', Logo: CalendlyLogo, desc: 'Importa disponibilidad automática' },
-  { name: 'Microsoft Teams', Logo: TeamsLogo, desc: 'Reuniones y agenda integradas' },
-  { name: 'Zoom', Logo: ZoomLogo, desc: 'Videoconferencias con un clic' },
-];
-
+/* ═══════════════════════════════════════════
+   MAIN LANDING
+═══════════════════════════════════════════ */
 export default function SaasLanding() {
   const [faqOpen, setFaqOpen] = useState(null);
-  const [painRef, painInView] = useInView({ threshold: 0.1, triggerOnce: true });
+  const [annual, setAnnual] = useState(false);
+  const [mobileNav, setMobileNav] = useState(false);
+
   const [featRef, featInView] = useInView({ threshold: 0.1, triggerOnce: true });
+  const [roiRef, roiInView] = useInView({ threshold: 0.1, triggerOnce: true });
+  const [pricingRef, pricingInView] = useInView({ threshold: 0.05, triggerOnce: true });
   const [storyRef, storyInView] = useInView({ threshold: 0.15, triggerOnce: true });
-  const [compRef, compInView] = useInView({ threshold: 0.1, triggerOnce: true });
-  const [revRef, revInView] = useInView({ threshold: 0.1, triggerOnce: true });
+  const [reviewsRef, reviewsInView] = useInView({ threshold: 0.1, triggerOnce: true });
   const [faqRef, faqInView] = useInView({ threshold: 0.05, triggerOnce: true });
-  const [appRef, appInView] = useInView({ threshold: 0.1, triggerOnce: true });
-  const [calRef, calInView] = useInView({ threshold: 0.1, triggerOnce: true });
 
   return (
     <div className="lp">
-      {/* NAV */}
+      <div className="lp__grid-bg" />
+
+      {/* ═══ ANNOUNCEMENT BAR ═══ */}
+      <AnnouncementBar />
+
+      {/* ═══ NAVBAR ═══ */}
       <nav className="ln">
         <div className="lc ln__in">
-          <Link to="/" className="ln__logo"><span className="lt">wasap<span className="lg">y</span></span><span className="lb">.io</span></Link>
-          <div className="ln__mid"><a href="#producto">Producto</a><a href="#precios">Precios</a><a href="#faq">FAQ</a></div>
-          <div className="ln__r">
-            <Link to="/auth" className="ln__log">Entrar</Link>
-            <Link to="/auth?mode=register" className="ln__cta"><Zap size={13} /> Prueba gratis</Link>
+          <div className="ln__logo-wrap">
+            <Link to="/" className="ln__logo">
+              <span className="lt">wasap<span className="lg">y</span></span>
+              <span className="lb">.io</span>
+            </Link>
+            <span className="ln__new">IA</span>
           </div>
+          <div className="ln__mid">
+            <a href="#como-funciona">Producto</a>
+            <a href="#precios">Precios</a>
+            <a href="#faq">FAQ</a>
+          </div>
+          <div className="ln__r">
+            <Link to="/auth" className="ln__log">Entrar <ArrowRight size={12} /></Link>
+            <Link to="/auth?mode=register" className="ln__cta"><Zap size={13} /> 2 días gratis</Link>
+          </div>
+          <button className="ln__burger" onClick={() => setMobileNav(v => !v)} aria-label="Menú">
+            <Menu size={20} />
+          </button>
         </div>
+        <AnimatePresence>
+          {mobileNav && (
+            <motion.div className="ln__mobile" initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.2 }}>
+              <a href="#como-funciona" onClick={() => setMobileNav(false)}>Producto</a>
+              <a href="#precios" onClick={() => setMobileNav(false)}>Precios</a>
+              <a href="#faq" onClick={() => setMobileNav(false)}>FAQ</a>
+              <Link to="/auth" onClick={() => setMobileNav(false)}>Entrar</Link>
+              <Link to="/auth?mode=register" className="ln__cta" onClick={() => setMobileNav(false)}><Zap size={13} /> 2 días gratis</Link>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </nav>
 
       {/* ═══ HERO ═══ */}
       <section className="hero">
-        <div className="hero__glow" />
-        <div className="hero__glow2" />
+        <div className="hero__orb" />
+        <div className="hero__orb hero__orb--2" />
         <div className="lc hero__grid">
           <motion.div className="hero__left" initial={{ opacity: 0, y: 28 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.55 }}>
-            <span className="hero__pill"><Sparkles size={11} /> Potenciado con Inteligencia Artificial</span>
-            <h1>Tu WhatsApp IA que<br /><strong className="grad">multiplica tus reservas</strong></h1>
-            <p>Un asistente de IA que atiende a tus clientes por WhatsApp, Instagram y teléfono 24/7. Gestiona reservas, pagos, documentos y facturación desde una única plataforma.</p>
-            <div className="hero__metrics">
-              <div className="hero__metric"><Clock size={14} /> <span>Configuración en 5 min</span></div>
-              <div className="hero__metric"><Shield size={14} /> <span>GDPR compliance</span></div>
-              <div className="hero__metric"><BarChart3 size={14} /> <span>+40% reservas</span></div>
-              <div className="hero__metric"><Zap size={14} /> <span>IA 24/7</span></div>
+
+            <div className="hero__live">
+              <span className="hero__live-dot" />
+              IA activa · Atendiendo leads ahora mismo
             </div>
-            <div className="hero__social">
-              <div className="hero__avs"><span>C</span><span>L</span><span>S</span><span>A</span></div>
-              <div className="hero__stars">{[1,2,3,4,5].map(i=><Star key={i} size={13}/>)}</div>
-              <span>Usado por +50 negocios en España</span>
+
+            <h1>
+              El agente IA que <strong className="grad">vende webs por ti.</strong>
+            </h1>
+
+            <p>Tu agente responde en WhatsApp con tus tarifas reales, cualifica el lead, agenda la discovery call y manda el presupuesto PDF — <em>mientras tú diseñas o simplemente vives</em>.</p>
+
+            <div className="hero__ctas">
+              <Link to="/auth?mode=register" className="btn btn--p btn--xl"><Zap size={15} /> Probar 2 días gratis</Link>
+              <a href="#como-funciona" className="btn btn--ghost btn--xl">Ver cómo funciona <ArrowRight size={14} /></a>
             </div>
+
+
           </motion.div>
+
           <motion.div className="hero__right" initial={{ opacity: 0, y: 16, scale: 0.97 }} animate={{ opacity: 1, y: 0, scale: 1 }} transition={{ duration: 0.65, delay: 0.18 }}>
-            <div className="hcard">
-              <span className="hcard__badge"><Zap size={11} /> 15 DÍAS GRATIS</span>
-              <h3>Prueba todo el potencial de Wasapy sin coste</h3>
-              <p>Crea tu cuenta en 2 minutos y accede a todas las funcionalidades. Sin tarjeta de crédito, sin permanencia.</p>
-              <ul>
-                <li><Bot size={15}/> IA en WhatsApp e Instagram</li>
-                <li><CalendarCheck size={15}/> Reservas inteligentes</li>
-                <li><Users size={15}/> CRM y gestión de clientes</li>
-                <li><Receipt size={15}/> Facturación y punto de venta</li>
-                <li><FileText size={15}/> Documentos y consentimientos</li>
-              </ul>
-              <Link to="/auth?mode=register" className="btn btn--p btn--full"><Zap size={16}/> Empezar prueba gratuita <ArrowRight size={15}/></Link>
-              <div className="hcard__note"><Shield size={12}/> Sin tarjeta <CheckCircle size={12}/> GDPR <Zap size={12}/> Activo en 2 min</div>
+            <div className="hero__mock-wrap">
+              <DashMockup />
+              <HeroNotif />
             </div>
           </motion.div>
         </div>
       </section>
 
-      {/* ═══ VISTA REAL - DASHBOARD ═══ */}
-      <section className="dash-sec" id="producto">
+      {/* ═══ USER COUNTER STRIP ═══ */}
+      <UserCounter />
+
+      {/* ═══ CÓMO FUNCIONA (3 pasos) ═══ */}
+      <section className="steps" id="como-funciona">
         <div className="lc">
           <div className="sec-h">
-            <span className="tag-pill"><BarChart3 size={12}/> Vista real del producto</span>
-            <h2>Tu negocio de diseño, <span className="grad">todo en un panel</span></h2>
-            <p>Presupuestos, facturas, clientes, conversaciones de WhatsApp y métricas de negocio. Sin saltar entre herramientas.</p>
+            <span className="tag-pill"><Sparkles size={12} /> En 5 minutos</span>
+            <h2>De leads perdidos a proyectos cerrados</h2>
+            <p>Tres pasos y tu IA está vendiendo mientras tú diseñas.</p>
           </div>
-          <DashMockup />
-        </div>
-      </section>
-
-      {/* ═══ MÓDULOS DEL CRM ═══ */}
-      <section className="show-sec" id="modulos">
-        <div className="lc">
-          <div className="sec-h">
-            <span className="tag-pill"><Sparkles size={12}/> Módulos del CRM</span>
-            <h2>Cada herramienta que necesitas, <span className="grad">en un solo lugar</span></h2>
-            <p>Mira cómo funciona cada módulo del CRM. Sin capturas estáticas — esto es lo que verás al usarlo.</p>
-          </div>
-
-          <div className="show-row">
-            <div className="show-row__text">
-              <div className="show-row__ico"><CalendarCheck size={20}/></div>
-              <h3>Reservas inteligentes sin ir y venir</h3>
-              <p>Tus clientes reservan solos. Tú controlas disponibilidad, servicios y recordatorios automáticos.</p>
-              <ul className="show-row__list">
-                <li><CheckCircle size={13}/> Reserva online desde WhatsApp</li>
-                <li><CheckCircle size={13}/> Control de disponibilidad en tiempo real</li>
-                <li><CheckCircle size={13}/> Recordatorios automáticos por WhatsApp</li>
-                <li><CheckCircle size={13}/> Vista semanal y diaria del equipo</li>
-              </ul>
-            </div>
-            <div className="show-row__mock"><ReservasMock /></div>
-          </div>
-
-          <div className="show-row show-row--rev">
-            <div className="show-row__text">
-              <div className="show-row__ico"><FileText size={20}/></div>
-              <h3>Presupuestos profesionales en 2 clics</h3>
-              <p>Crea presupuestos con líneas de servicio, descuentos, IVA y exporta a PDF al instante.</p>
-              <ul className="show-row__list">
-                <li><CheckCircle size={13}/> Plantillas personalizables</li>
-                <li><CheckCircle size={13}/> Líneas de servicio con IVA automático</li>
-                <li><CheckCircle size={13}/> Exportación directa a PDF</li>
-                <li><CheckCircle size={13}/> Envío al cliente desde el CRM</li>
-              </ul>
-            </div>
-            <div className="show-row__mock"><PresupMock /></div>
-          </div>
-
-          <div className="show-row">
-            <div className="show-row__text">
-              <div className="show-row__ico"><Receipt size={20}/></div>
-              <h3>De presupuesto a factura con un clic</h3>
-              <p>Convierte cualquier presupuesto aceptado en factura. Controla cobros pendientes y genera informes.</p>
-              <ul className="show-row__list">
-                <li><CheckCircle size={13}/> Conversión automática desde presupuesto</li>
-                <li><CheckCircle size={13}/> Numeración secuencial inteligente</li>
-                <li><CheckCircle size={13}/> Control de cobros pendientes</li>
-                <li><CheckCircle size={13}/> Exportación y envío por email</li>
-              </ul>
-            </div>
-            <div className="show-row__mock"><FacturasMock /></div>
-          </div>
-
-          <div className="show-row show-row--rev">
-            <div className="show-row__text">
-              <div className="show-row__ico"><Users size={20}/></div>
-              <h3>Todos tus clientes en un solo lugar</h3>
-              <p>Historial completo de cada cliente: proyectos, presupuestos, facturas y conversaciones.</p>
-              <ul className="show-row__list">
-                <li><CheckCircle size={13}/> Ficha detallada por cliente</li>
-                <li><CheckCircle size={13}/> Historial de interacciones completo</li>
-                <li><CheckCircle size={13}/> Etiquetas y segmentación</li>
-                <li><CheckCircle size={13}/> Búsqueda instantánea</li>
-              </ul>
-            </div>
-            <div className="show-row__mock"><ClientesMock /></div>
-          </div>
-        </div>
-      </section>
-
-      {/* ═══ APP NATIVA ═══ */}
-      <section className="app-sec" ref={appRef}>
-        <div className="lc app-sec__grid">
-          <motion.div className="app-sec__left" initial={{ opacity: 0, x: -30 }} animate={appInView ? { opacity: 1, x: 0 } : {}} transition={{ duration: 0.5 }}>
-            <span className="tag-pill"><Smartphone size={12}/> App nativa para tu negocio</span>
-            <h2>Gestiona tu agenda desde <span className="grad">cualquier lugar.</span></h2>
-            <p>Una app pensada para tu negocio: consulta disponibilidad, organiza citas y gestiona tu agenda de forma simple y rápida, estés donde estés.</p>
-            <div className="app-sec__note"><Clock size={13}/> Próximamente en iOS y Android</div>
-            <div className="app-sec__features">
-              <div className="app-sec__feat">
-                <div className="app-sec__feat-ico"><Calendar size={16}/></div>
-                <div><b>Hecha para tu día a día</b><span>Una experiencia clara, ágil y profesional para gestionar citas sin complicaciones.</span></div>
-              </div>
-              <div className="app-sec__feat">
-                <div className="app-sec__feat-ico"><CalendarCheck size={16}/></div>
-                <div><b>Agenda siempre al día</b><span>Consulta huecos, ocupación y cambios al momento para organizar mejor cada jornada.</span></div>
-              </div>
-              <div className="app-sec__feat">
-                <div className="app-sec__feat-ico"><Zap size={16}/></div>
-                <div><b>Reserva en 3 toques</b><span>Crea, mueve o cancela citas en segundos con una navegación rápida e intuitiva.</span></div>
-              </div>
-              <div className="app-sec__feat">
-                <div className="app-sec__feat-ico"><Smartphone size={16}/></div>
-                <div><b>Todo en un solo lugar</b><span>Tu agenda, tus clientes y tus avisos reunidos en una única app para trabajar con más control.</span></div>
-              </div>
-            </div>
-            <div className="store-badges">
-              <div className="store-badge">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>
-                <div><small>Disponible en</small><strong>App Store</strong></div>
-              </div>
-              <div className="store-badge">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M3.18 23.54c.46.29 1.07.32 1.6.02l14-8.04-3.44-3.44L3.18 23.54zm17.42-10.76c.56-.32.9-.9.9-1.53s-.34-1.21-.9-1.53L17.52 8l-3.76 3.76 3.76 3.76 3.08-1.76zM2.39 1.32C2.15 1.6 2 2.01 2 2.5v19c0 .49.15.9.39 1.18L13.1 12 2.39 1.32zm12.9 8.48L18.68 6.4l-3.1-1.77c-.53-.3-1.14-.27-1.6.02L2.18.46l13.11 9.34z"/></svg>
-                <div><small>Disponible en</small><strong>Google Play</strong></div>
-              </div>
-            </div>
-          </motion.div>
-          <motion.div className="app-sec__right" initial={{ opacity: 0, x: 30 }} animate={appInView ? { opacity: 1, x: 0 } : {}} transition={{ duration: 0.6, delay: 0.15 }}>
-            <PhoneMockup />
-          </motion.div>
-        </div>
-      </section>
-
-      {/* ═══ CALENDARIO & INTEGRACIONES ═══ */}
-      <section className="cal-sec" ref={calRef}>
-        <div className="lc">
-          <div className="sec-h">
-            <span className="tag-pill"><Link2 size={12}/> Conexiones reales</span>
-            <h2>Tus reservas, <span className="grad">sincronizadas con todo</span></h2>
-            <p>Conecta tu calendario favorito y sincroniza reservas automáticamente. Evita dobles reservas y conflictos de agenda.</p>
-          </div>
-          <div className="cal-sec__grid">
-            <motion.div className="cal-sec__integrations" initial={{ opacity: 0, y: 20 }} animate={calInView ? { opacity: 1, y: 0 } : {}} transition={{ duration: 0.5 }}>
-              {CALENDAR_APPS.map((app, i) => (
-                <motion.div key={i} className="cal-card" initial={{ opacity: 0, y: 16 }} animate={calInView ? { opacity: 1, y: 0 } : {}} transition={{ delay: i * 0.1 }}>
-                  <div className="cal-card__logo"><app.Logo /></div>
-                  <div className="cal-card__info">
-                    <b>{app.name}</b>
-                    <span>{app.desc}</span>
-                  </div>
-                  <div className="cal-card__status"><CheckCircle size={14}/> Conectado</div>
-                </motion.div>
-              ))}
-            </motion.div>
-            <motion.div className="cal-sec__features" initial={{ opacity: 0, y: 20 }} animate={calInView ? { opacity: 1, y: 0 } : {}} transition={{ duration: 0.5, delay: 0.2 }}>
-              <h3>Sincronización en tiempo real</h3>
-              <p>Conecta tu cuenta con OAuth y sincroniza automáticamente. Sin configuración manual.</p>
-              <ul className="cal-sec__list">
-                <li><CheckCircle size={14}/> Sync al crear, modificar o cancelar reservas</li>
-                <li><CheckCircle size={14}/> Evita dobles reservas y conflictos de agenda</li>
-                <li><CheckCircle size={14}/> Tu equipo ve todo en su calendario habitual</li>
-                <li><CheckCircle size={14}/> Videollamadas automáticas con Zoom y Teams</li>
-                <li><CheckCircle size={14}/> Recordatorios y notificaciones integradas</li>
-                <li><CheckCircle size={14}/> Compatible con cualquier flujo de trabajo</li>
-              </ul>
-            </motion.div>
-          </div>
-        </div>
-      </section>
-
-      {/* ═══ CHAT DEMO ═══ */}
-      <section className="demo-sec">
-        <div className="lc demo-sec__grid">
-          <div>
-            <span className="tag-pill"><Bot size={12}/> En acción</span>
-            <h2>Así responde tu IA cuando tú no puedes</h2>
-            <p>Un cliente escribe a las 11 de la noche preguntando por una web para su restaurante. La IA responde con tus tarifas reales, cualifica el lead y agenda la llamada de discovery. Tú te enteras por la mañana con la reunión ya en tu calendario.</p>
-          </div>
-          <ChatDemo />
-        </div>
-      </section>
-
-      {/* ═══ HISTORIA PERSONAL ═══ */}
-      <section className="story" ref={storyRef}>
-        <div className="lc story__grid">
-          <motion.div className="story__img" initial={{ opacity: 0, x: -30 }} animate={storyInView ? { opacity: 1, x: 0 } : {}} transition={{ duration: 0.5 }}>
-            <div className="story__photo">
-              <img src="/images/ImagenGuti.png" alt="Guti — Fundador de Wasapy" />
-            </div>
-            <div className="story__badge"><Sparkles size={14}/> Fundador de Wasapy</div>
-          </motion.div>
-          <motion.div className="story__text" initial={{ opacity: 0, x: 30 }} animate={storyInView ? { opacity: 1, x: 0 } : {}} transition={{ duration: 0.5, delay: 0.1 }}>
-            <span className="tag-pill">Por qué construí esto</span>
-            <h2>De diseñador freelance a <span className="grad">perder un proyecto de 3.000€</span></h2>
-            <p>Durante más de 7 años fui diseñador web autónomo. Trabajaba para restaurantes, clínicas, tiendas, consultorías... me encantaba mi trabajo. Pero siempre había algo que me frenaba: el WhatsApp.</p>
-            <p>Mientras estaba en modo foco maquetando, el móvil no paraba. Siempre la misma pregunta: <em>"¿cuánto cuesta una web?"</em>. Y cuando salía de ese estado de concentración para responder, los leads ya se habían ido con la competencia.</p>
-            <p>Un día perdí un proyecto de 3.000€ porque tardé 4 horas en responder. El cliente ya había firmado con otro. Ese día decidí que tenía que haber una forma mejor.</p>
-            <blockquote>"Construí Wasapy para que ningún diseñador vuelva a perder un cliente por estar haciendo su trabajo."</blockquote>
-            <cite>— Guti, fundador de Wasapy · 7+ años diseñador web freelance</cite>
-          </motion.div>
-        </div>
-      </section>
-
-      {/* ═══ PAIN POINTS ═══ */}
-      <section className="pain" ref={painRef}>
-        <div className="lc">
-          <div className="sec-h">
-            <h2>Diseñado para los problemas reales del freelance</h2>
-            <p>Cada función de Wasapy nace de un problema real que viví como diseñador autónomo.</p>
-          </div>
-          <div className="pain__grid">
-            {PAIN_POINTS.map((p, i) => (
-              <motion.div key={i} className="pain__card" initial={{ opacity: 0, y: 22 }} animate={painInView ? { opacity: 1, y: 0 } : {}} transition={{ delay: i * 0.1 }}>
-                <span className="pain__q">"{p.q}"</span>
-                <div className="pain__div" />
-                <h3>{p.t}</h3>
-                <p>{p.d}</p>
+          <div className="steps__grid">
+            {STEPS.map((s, i) => (
+              <motion.div key={i} className="step"
+                initial={{ opacity: 0, y: 22 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, amount: 0.3 }}
+                transition={{ delay: i * 0.12 }}>
+                <div className="step__num">{i + 1}</div>
+                <div className="step__ico">{s.icon}</div>
+                <h3>{s.title}</h3>
+                <p>{s.desc}</p>
               </motion.div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* ═══ FEATURES GRID ═══ */}
+      {/* ═══ HISTORIA / FUNDADOR ═══ */}
+      <section className="story" ref={storyRef}>
+        <div className="lc story__grid">
+          <motion.div className="story__img"
+            initial={{ opacity: 0, x: -30 }}
+            animate={storyInView ? { opacity: 1, x: 0 } : {}}
+            transition={{ duration: 0.5 }}>
+            <div className="story__photo">
+              <img src="/images/ImagenGuti.png" alt="Guti — CEO de Wasapy" />
+            </div>
+            <div className="story__badge"><Sparkles size={13} /> Fundador & CEO · Wasapy</div>
+          </motion.div>
+
+          <motion.div className="story__text"
+            initial={{ opacity: 0, x: 30 }}
+            animate={storyInView ? { opacity: 1, x: 0 } : {}}
+            transition={{ duration: 0.5, delay: 0.1 }}>
+            <span className="tag-pill">Por qué construí esto</span>
+            <h2>7 años diseñando webs.<br /><span className="grad">Siempre me faltaba lo mismo.</span></h2>
+            <p>Soy Guti. Llevo más de 7 años como diseñador web freelance, trabajando con restaurantes, clínicas, tiendas y consultorías. Me encantaba mi trabajo. Pero siempre había un mismo cuello de botella: el WhatsApp.</p>
+            <p>Mientras estaba maquetando en WordPress, el móvil no paraba. Siempre la misma pregunta: <em>"¿cuánto cuesta una web?"</em>. Y cuando salía del estado de concentración para responder, el lead ya se había ido con otro diseñador.</p>
+            <p>Un día perdí un proyecto de 3.000€ porque tardé 4 horas en responder. Ese día decidí construir lo que siempre me faltó: una IA que atiende, cualifica y agenda mientras yo diseño. Eso es Wasapy.</p>
+            <blockquote>"Construí Wasapy para que ningún diseñador vuelva a perder un cliente por estar haciendo su trabajo."</blockquote>
+            <cite>— Guti · CEO de Wasapy · 7+ años diseñador web freelance</cite>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* ═══ SHOWCASE 1 — Leads en WhatsApp ═══ */}
+      <section className="showcase" id="producto">
+        <div className="lc showcase__grid">
+          <motion.div className="showcase__text"
+            initial={{ opacity: 0, x: -24 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true, amount: 0.3 }}
+            transition={{ duration: 0.5 }}>
+            <span className="tag-pill"><MessageCircle size={12} /> Leads en WhatsApp</span>
+            <h2>Nunca más pierdas<br />un cliente por estar<br /><span className="grad">diseñando.</span></h2>
+            <p>Estás maquetando en WordPress y el móvil no para. Cuando salís del modo foco para responder, el lead ya se fue con otro diseñador que contestó antes.</p>
+            <p>Tu agente IA responde en segundos, con tus precios reales, cualifica el lead y te lo pasa listo para cerrar.</p>
+            <div className="showcase__pts">
+              <div><CheckCircle size={14} /> Respuesta inmediata 24/7, incluso a las 3AM</div>
+              <div><CheckCircle size={14} /> Habla con tu tono y tus tarifas reales</div>
+              <div><CheckCircle size={14} /> Cualifica el lead antes de pasártelo</div>
+            </div>
+          </motion.div>
+          <motion.div className="showcase__demo"
+            initial={{ opacity: 0, x: 24 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true, amount: 0.3 }}
+            transition={{ duration: 0.5, delay: 0.1 }}>
+            <ShowcaseInbox />
+          </motion.div>
+        </div>
+      </section>
+
+      {/* ═══ SHOWCASE 2 — Discovery calls ═══ */}
+      <section className="showcase showcase--alt">
+        <div className="lc showcase__grid showcase__grid--rev">
+          <motion.div className="showcase__demo"
+            initial={{ opacity: 0, x: -24 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true, amount: 0.3 }}
+            transition={{ duration: 0.5, delay: 0.1 }}>
+            <ShowcaseCalendar />
+          </motion.div>
+          <motion.div className="showcase__text"
+            initial={{ opacity: 0, x: 24 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true, amount: 0.3 }}
+            transition={{ duration: 0.5 }}>
+            <span className="tag-pill"><CalendarCheck size={12} /> Discovery calls</span>
+            <h2>Reuniones de descubrimiento<br />en tu agenda,<br /><span className="grad">sin esfuerzo.</span></h2>
+            <p>Sin ir y venir de mensajes para cuadrar horarios. La IA consulta tu disponibilidad real y el cliente elige su slot directamente.</p>
+            <p>La reunión aparece en tu Google Calendar ya confirmada. Tú te enteras cuando ya está cerrado.</p>
+            <div className="showcase__pts">
+              <div><CheckCircle size={14} /> Sincronizado con Calendly</div>
+              <div><CheckCircle size={14} /> Sin solapamientos ni dobles reservas</div>
+              <div><CheckCircle size={14} /> Recordatorio automático al cliente</div>
+            </div>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* ═══ SHOWCASE 3 — Presupuestos ═══ */}
+      <section className="showcase">
+        <div className="lc showcase__grid">
+          <motion.div className="showcase__text"
+            initial={{ opacity: 0, x: -24 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true, amount: 0.3 }}
+            transition={{ duration: 0.5 }}>
+            <span className="tag-pill"><FileText size={12} /> Presupuestos</span>
+            <h2>Propuestas PDF con<br />tu branding, enviadas<br /><span className="grad">mientras duermes.</span></h2>
+            <p>Cuando el lead está listo para un precio, la IA genera tu presupuesto personalizado en PDF — tu logo, tus servicios, tus condiciones, IVA/IRPF incluidos.</p>
+            <p>Lo envía por WhatsApp y si el cliente no responde en 48h, hace follow-up automático en tu nombre.</p>
+            <div className="showcase__pts">
+              <div><CheckCircle size={14} /> PDF con tu identidad visual</div>
+              <div><CheckCircle size={14} /> IVA, IRPF y condiciones incluidos</div>
+              <div><CheckCircle size={14} /> Follow-up automático si no responde</div>
+            </div>
+          </motion.div>
+          <motion.div className="showcase__demo"
+            initial={{ opacity: 0, x: 24 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true, amount: 0.3 }}
+            transition={{ duration: 0.5, delay: 0.1 }}>
+            <ShowcaseBudget />
+          </motion.div>
+        </div>
+      </section>
+
+      {/* ═══ FEATURES (6 cards) ═══ */}
       <section className="feat" ref={featRef}>
         <div className="lc">
-          <div className="sec-h"><h2>Todo lo que necesita tu negocio de diseño</h2></div>
+          <div className="sec-h">
+            <span className="tag-pill"><Zap size={12} /> Funcionalidades</span>
+            <h2>Todo lo que necesita<br />tu estudio de diseño web</h2>
+            <p>Cada función nace de un problema real del freelance de diseño web.</p>
+          </div>
           <div className="feat__grid">
             {FEATURES.map((f, i) => (
               <motion.div key={i} className="feat__card" initial={{ opacity: 0, y: 18 }} animate={featInView ? { opacity: 1, y: 0 } : {}} transition={{ delay: i * 0.06 }}>
                 <div className="feat__ico">{f.icon}</div>
-                <h3>{f.t}</h3>
-                <p>{f.d}</p>
+                <h3>{f.title}</h3>
+                <p>{f.desc}</p>
               </motion.div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* ═══ GREEN CTA ═══ */}
-      <section className="gcta">
-        <div className="lc gcta__in">
-          <div>
-            <h2>Deja de responder WhatsApps. Empieza a diseñar.</h2>
-            <p>2 días gratis. Sin tarjeta. Tu agente IA activo en 5 minutos.</p>
+      {/* ═══ POR QUÉ WASAPY — ROI ═══ */}
+      <section className="roi" ref={roiRef}>
+        <div className="lc">
+          <div className="sec-h">
+            <span className="tag-pill"><TrendingUp size={12} /> Impacto real</span>
+            <h2>Lo que cambia cuando<br />dejas de responder tú</h2>
+            <p>Un agente IA no descansa, no se olvida y nunca responde tarde.</p>
           </div>
-          <Link to="/auth?mode=register" className="btn btn--w btn--xl"><Zap size={17}/> Probar gratis ahora <ArrowRight size={15}/></Link>
+
+          <motion.div className="roi__claims" initial={{ opacity: 0, y: 20 }} animate={roiInView ? { opacity: 1, y: 0 } : {}} transition={{ duration: 0.45 }}>
+            {[
+              { icon: <Target size={22} />, title: 'Cero leads perdidos por respuesta lenta', desc: 'El lead que escribe a las 2AM mientras tú duermes recibe respuesta en segundos. No se va con la competencia.' },
+              { icon: <CalendarCheck size={22} />, title: 'Más discovery calls, menos gestión', desc: 'La IA agenda sola, sin ir y venir de mensajes. Tus horas de diseño quedan intactas.' },
+              { icon: <TrendingUp size={22} />, title: 'Más proyectos cerrados', desc: 'Leads cualificados + presupuestos rápidos + seguimiento automático = más proyectos firmados al mes.' },
+            ].map((c, i) => (
+              <div key={i} className="roi__claim">
+                <div className="roi__claim-ico">{c.icon}</div>
+                <h3>{c.title}</h3>
+                <p>{c.desc}</p>
+              </div>
+            ))}
+          </motion.div>
+
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={roiInView ? { opacity: 1, y: 0 } : {}} transition={{ duration: 0.45, delay: 0.15 }}>
+            <div className="roi__calc-head">
+              <Calculator size={18} />
+              <div>
+                <h3>Calculadora de ROI para diseñadores web</h3>
+                <p>Estima cuánto más podrías facturar con respuesta inmediata a tus leads.</p>
+              </div>
+            </div>
+            <RoiCalculator />
+          </motion.div>
         </div>
       </section>
 
-      {/* ═══ COMPARATIVA ═══ */}
-      <section className="cmp" ref={compRef}>
+      {/* ═══ PRICING (3 planes) ═══ */}
+      <section className="pricing" id="precios" ref={pricingRef}>
         <div className="lc">
-          <div className="sec-h"><h2>El antes y el después</h2><p>Lo que cambia cuando tienes una IA trabajando contigo.</p></div>
-          <div className="cmp__table">
-            <div className="cmp__head"><span className="ch ch--bad">Sin Wasapy</span><span className="ch ch--good">Con Wasapy</span></div>
-            {COMPARE.map((c, i) => (
-              <motion.div key={i} className="cmp__row" initial={{ opacity: 0, x: -8 }} animate={compInView ? { opacity: 1, x: 0 } : {}} transition={{ delay: i * 0.07 }}>
-                <span className="cc cc--bad"><X size={13}/>{c.bad}</span>
-                <span className="cc cc--good"><Check size={13}/>{c.good}</span>
+          <div className="sec-h">
+            <h2>Precio claro. Sin sorpresas.</h2>
+            <p>Elige el plan que encaja con tu volumen de leads y proyectos.</p>
+          </div>
+
+          <div className="pricing__toggle">
+            <span className={!annual ? 'pricing__t--on' : ''}>Mensual</span>
+            <button className={`pricing__switch ${annual ? 'pricing__switch--on' : ''}`} onClick={() => setAnnual(v => !v)} aria-label="Toggle anual">
+              <span className="pricing__knob" />
+            </button>
+            <span className={annual ? 'pricing__t--on' : ''}>Anual <em>2 meses gratis</em></span>
+          </div>
+
+          <div className="pricing__grid">
+            {PLANS.map((plan, i) => (
+              <motion.div key={plan.id} className={`pcard ${plan.popular ? 'pcard--pop' : ''}`}
+                initial={{ opacity: 0, y: 22 }} animate={pricingInView ? { opacity: 1, y: 0 } : {}} transition={{ delay: i * 0.08 }}>
+                {plan.popular && <div className="pcard__badge">Más popular</div>}
+                <h3>{plan.name}</h3>
+                <div className="pcard__price">
+                  <span>{annual ? plan.annual : plan.price}€</span>
+                  <em>/mes</em>
+                </div>
+                <div className="pcard__meta">{plan.msgs} mensajes/mes · {plan.agents} agente{plan.agents !== '1' ? 's' : ''}</div>
+                <ul>
+                  {plan.features.map((f, fi) => <li key={fi}><Check size={13} />{f}</li>)}
+                </ul>
+                <Link to={`/auth?mode=register&plan=${plan.id}`} className={`btn ${plan.popular ? 'btn--p' : 'btn--outline'} btn--full`}>
+                  {plan.popular ? <><Zap size={14} /> Empezar con {plan.name}</> : <>Elegir {plan.name}</>}
+                </Link>
               </motion.div>
             ))}
           </div>
+
+          <div className="pricing__addon">
+            <Sparkles size={14} />
+            <span>¿Necesitas más mensajes? Compra <strong>packs extra</strong> desde 9€ sin cambiar de plan.</span>
+          </div>
         </div>
       </section>
 
-      {/* ═══ REVIEWS ═══ */}
-      <section className="revs" ref={revRef}>
+      {/* ═══ RESEÑAS ═══ */}
+      <section className="reviews" ref={reviewsRef}>
         <div className="lc">
-          <div className="sec-h"><h2>Lo que dicen otros diseñadores freelance</h2></div>
-          <div className="revs__grid">
+          <div className="reviews__head">
+            <div className="reviews__rating">
+              <div className="reviews__stars">
+                {[...Array(5)].map((_, i) => <Star key={i} size={20} fill="#f59e0b" color="#f59e0b" />)}
+              </div>
+              <span className="reviews__avg">4.9</span>
+              <span className="reviews__total">/ 5 · +120 diseñadores web</span>
+            </div>
+            <div className="sec-h" style={{ marginBottom: 0 }}>
+              <span className="tag-pill"><Star size={11} fill="#f59e0b" color="#f59e0b" /> Reseñas reales</span>
+              <h2>Lo que dicen los diseñadores<br />que ya usan Wasapy</h2>
+            </div>
+          </div>
+          <div className="reviews__grid">
             {REVIEWS.map((r, i) => (
-              <motion.div key={i} className="rev" initial={{ opacity: 0, y: 18 }} animate={revInView ? { opacity: 1, y: 0 } : {}} transition={{ delay: i * 0.1 }}>
-                <div className="rev__stars">{[1,2,3,4,5].map(j=><Star key={j} size={14}/>)}</div>
-                <p>"{r.q}"</p>
-                <div className="rev__who"><div className="rev__av">{r.n[0]}</div><div><b>{r.n}</b><span>{r.r}</span></div></div>
+              <motion.div key={i} className="rcard"
+                initial={{ opacity: 0, y: 20 }}
+                animate={reviewsInView ? { opacity: 1, y: 0 } : {}}
+                transition={{ delay: i * 0.1 }}>
+                <div className="rcard__stars">
+                  {[...Array(r.stars)].map((_, si) => <Star key={si} size={13} fill="#f59e0b" color="#f59e0b" />)}
+                </div>
+                <p className="rcard__text">"{r.text}"</p>
+                <div className="rcard__metric"><CheckCircle size={11} /> {r.metric}</div>
+                <div className="rcard__footer">
+                  <div className="rcard__av">{r.av}</div>
+                  <div>
+                    <div className="rcard__name">{r.name}</div>
+                    <div className="rcard__role">{r.role}</div>
+                  </div>
+                </div>
               </motion.div>
             ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ═══ PRICING ═══ */}
-      <section className="pricing" id="precios">
-        <div className="lc">
-          <div className="sec-h"><h2>Precio claro. Sin sorpresas.</h2><p>Un plan con todo lo que necesita un diseñador freelance.</p></div>
-          <div className="pcard">
-            <div className="pcard__top"><Sparkles size={20}/><div><h3>2 días gratis</h3><p>Todo incluido. Sin tarjeta.</p></div></div>
-            <div className="pcard__sep"/>
-            <div className="pcard__price"><span>29€</span><em>/mes</em></div>
-            <ul>
-              {['Agente IA para WhatsApp 24/7','Cualificación automática de leads','Agendamiento de llamadas de discovery','Presupuestos profesionales en PDF','Facturación integrada','CRM de clientes','Dashboard de negocio','Soporte incluido','Sin permanencia'].map((f, i) => (
-                <li key={i}><CheckCircle size={13}/>{f}</li>
-              ))}
-            </ul>
-            <Link to="/auth?mode=register" className="btn btn--p btn--xl btn--full"><Zap size={17}/> Empezar prueba gratis</Link>
           </div>
         </div>
       </section>
@@ -710,14 +1061,20 @@ export default function SaasLanding() {
       {/* ═══ FAQ ═══ */}
       <section className="faq" id="faq" ref={faqRef}>
         <div className="lc">
-          <div className="sec-h"><h2>Preguntas frecuentes</h2></div>
+          <div className="sec-h">
+            <h2>Preguntas frecuentes<br />de diseñadores web</h2>
+          </div>
           <div className="faqs">
-            {FAQ.map((item, i) => (
+            {FAQ_DATA.map((item, i) => (
               <motion.div key={i} className={`fi ${faqOpen === i ? 'fi--open' : ''}`} initial={{ opacity: 0 }} animate={faqInView ? { opacity: 1 } : {}} transition={{ delay: i * 0.04 }}>
-                <button className="fi__q" onClick={() => setFaqOpen(faqOpen === i ? null : i)}><span>{item.q}</span><ChevronDown size={17}/></button>
-                <AnimatePresence>{faqOpen === i && (
-                  <motion.div className="fi__a" initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.22 }}><p>{item.a}</p></motion.div>
-                )}</AnimatePresence>
+                <button className="fi__q" onClick={() => setFaqOpen(faqOpen === i ? null : i)}><span>{item.q}</span><ChevronDown size={17} /></button>
+                <AnimatePresence>
+                  {faqOpen === i && (
+                    <motion.div className="fi__a" initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.22 }}>
+                      <p>{item.a}</p>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </motion.div>
             ))}
           </div>
@@ -727,23 +1084,82 @@ export default function SaasLanding() {
       {/* ═══ FINAL CTA ═══ */}
       <section className="fcta">
         <div className="lc">
-          <h2>Deja de perder leads.<br/>Empieza a diseñar.</h2>
+          <h2>Deja de perder proyectos<br />por estar diseñando.</h2>
           <p>La IA atiende. Tú diseñas. Los presupuestos se crean solos.</p>
-          <Link to="/auth?mode=register" className="btn btn--p btn--xl"><Zap size={19}/> Probar gratis 2 días <ArrowRight size={17}/></Link>
+          <Link to="/auth?mode=register" className="btn btn--p btn--xl"><Zap size={19} /> Probar 2 días gratis <ArrowRight size={17} /></Link>
           <span className="fcta__n">Sin tarjeta · Sin permanencia · Cancela cuando quieras</span>
         </div>
       </section>
 
-      {/* FOOTER */}
-      <footer className="ft"><div className="lc ft__in">
-        <div className="ft__brand"><span className="lt lt--s">wasap<span className="lg">y</span></span><span className="lb">.io</span></div>
-        <p>© 2026 Wasapy — Hecho por un diseñador, para diseñadores.</p>
-        <div className="ft__links">
-          <a href="https://agutidesigns.io/privacidad.html" target="_blank" rel="noopener">Privacidad</a><span>·</span>
-          <a href="https://agutidesigns.io/terminos.html" target="_blank" rel="noopener">Términos</a><span>·</span>
-          <a href="mailto:soporte@agutidesigns.io">Contacto</a>
+      {/* ═══ FOOTER ═══ */}
+      <footer className="ft">
+        <div className="ft__glow" />
+        <div className="lc">
+
+          {/* Top strip — stats */}
+          <div className="ft__strip">
+            <div className="ft__strip-stat"><span>+1.200</span> diseñadores activos</div>
+            <div className="ft__strip-div" />
+            <div className="ft__strip-stat"><span>4.9/5</span> valoración media</div>
+            <div className="ft__strip-div" />
+            <div className="ft__strip-stat"><span>97%</span> leads respondidos sin intervención</div>
+            <div className="ft__strip-div" />
+            <div className="ft__strip-stat"><span>&lt;10s</span> tiempo de respuesta IA</div>
+          </div>
+
+          {/* Main grid */}
+          <div className="ft__main">
+            <div className="ft__brand-col">
+              <div className="ft__logo-wrap">
+                <span className="lt">wasap<span className="lg">y</span></span>
+                <span className="lb">.io</span>
+              </div>
+              <p className="ft__tagline">El CRM con IA para diseñadores web freelance.<br />Hecho por un diseñador, para diseñadores.</p>
+              <div className="ft__cta-sm">
+                <Link to="/auth?mode=register" className="btn btn--p" style={{ padding: '0.55rem 1.2rem', fontSize: '0.78rem' }}>
+                  <Zap size={13} /> Probar 2 días gratis
+                </Link>
+              </div>
+            </div>
+
+            <div className="ft__col">
+              <h4>Producto</h4>
+              <a href="#como-funciona">Cómo funciona</a>
+              <a href="#producto">Funcionalidades</a>
+              <a href="#precios">Precios</a>
+              <a href="#faq">FAQ</a>
+            </div>
+
+            <div className="ft__col">
+              <h4>Para diseñadores</h4>
+              <a href="#producto">Gestión de leads</a>
+              <a href="#producto">Discovery calls</a>
+              <a href="#producto">Presupuestos PDF</a>
+              <a href="#producto">CRM WordPress</a>
+            </div>
+
+            <div className="ft__col">
+              <h4>Empresa</h4>
+              <a href="https://wasapy.io" target="_blank" rel="noopener">wasapy.io <ExternalLink size={10} /></a>
+              <a href="mailto:info@wasapy.io"><Mail size={11} /> info@wasapy.io</a>
+              <Link to="/privacidad">Privacidad</Link>
+              <Link to="/terminos">Términos de uso</Link>
+              <Link to="/cookies">Cookies</Link>
+            </div>
+          </div>
+
+          {/* Bottom bar */}
+          <div className="ft__bottom">
+            <span className="ft__copy">© {new Date().getFullYear()} Wasapy · wasapy.io · Todos los derechos reservados</span>
+            <span className="ft__made">🇪🇸 Hecho con todo en España</span>
+          </div>
+
         </div>
-      </div></footer>
+      </footer>
+
+      <FloatingChat />
+      <SocialProofToast />
+      <CookieBanner />
     </div>
   );
 }

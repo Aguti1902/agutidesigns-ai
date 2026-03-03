@@ -3,16 +3,17 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import {
   Rocket, Building, FileText, Bot, MessageCircle, Check, ArrowRight,
-  ArrowLeft, CheckCircle, Circle, Zap, Target, Euro, Clock, Globe, Users
+  ArrowLeft, CheckCircle, Circle, Zap, Target, Euro, Clock, Globe, Users,
+  Smile, Briefcase, TrendingUp
 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { supabase } from '../../lib/supabase';
 import './OnboardingFlow.css';
 
 const PERSONALITIES = [
-  { id: 'cercano', label: 'Cercano', emoji: '😊' },
-  { id: 'profesional', label: 'Profesional', emoji: '💼' },
-  { id: 'vendedor', label: 'Comercial', emoji: '🚀' },
+  { id: 'cercano', label: 'Cercano', icon: Smile },
+  { id: 'profesional', label: 'Profesional', icon: Briefcase },
+  { id: 'vendedor', label: 'Comercial', icon: TrendingUp },
 ];
 
 const CLIENTES_TIPO = [
@@ -181,7 +182,7 @@ export default function OnboardingFlow({ onComplete }) {
       await fetch(`${API_URL}/send-email`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ to: user.email, subject: '¡Bienvenido a Wasapy! 🚀', template: 'welcome', data: { name: profile?.full_name || 'ahí', trialDays: 7 } })
+        body: JSON.stringify({ to: user.email, subject: '¡Bienvenido a Wasapy!', template: 'welcome', data: { name: profile?.full_name || 'ahí', trialDays: 7 } })
       }).catch(() => {});
     } catch {}
     onComplete();
@@ -417,7 +418,7 @@ SEO: 300€ - 800€`}
                   <div className="ob-personality-grid">
                     {PERSONALITIES.map(p => (
                       <button key={p.id} type="button" className={`ob-pers-card ${personality === p.id ? 'ob-pers-card--active' : ''}`} onClick={() => setPersonality(p.id)}>
-                        <span className="ob-pers-card__emoji">{p.emoji}</span>
+                        <span className="ob-pers-card__emoji"><p.icon size={22} /></span>
                         <strong>{p.label}</strong>
                       </button>
                     ))}
@@ -456,11 +457,6 @@ SEO: 300€ - 800€`}
           )}
         </div>
 
-        {step < TOTAL_STEPS - 1 && (
-          <button className="onboard__skip" onClick={handleFinish}>
-            Saltar y configurar más tarde →
-          </button>
-        )}
       </div>
     </div>
   );

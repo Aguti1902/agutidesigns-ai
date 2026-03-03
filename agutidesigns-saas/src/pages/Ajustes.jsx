@@ -24,6 +24,8 @@ const SERVICIOS_OPS = [
 
 const NICHOS = ['Restaurantes', 'Clínicas / Salud', 'Inmobiliarias', 'Moda / Retail', 'Consultoras', 'Educación', 'Hostelería', 'Otros'];
 const ANTICIPOS = ['30%', '50%', '70%', '100%'];
+const IVA_OPTS = ['0', '4', '10', '21'];
+const IRPF_OPTS = ['0', '7', '15', '19'];
 const DURACIONES = ['15 min', '20 min', '30 min', '45 min', '1 hora'];
 const BUFFERS = ['0 min', '10 min', '15 min', '30 min'];
 const SEGUIMIENTOS = ['1', '2', '3'];
@@ -34,7 +36,6 @@ const STEPS = [
   { id: 'servicios',  label: 'Servicios',   icon: <Zap size={15} />,      desc: 'Qué ofreces' },
   { id: 'precios',    label: 'Precios',     icon: <Euro size={15} />,     desc: 'Tarifas y condiciones' },
   { id: 'agenda',     label: 'Agenda',      icon: <Calendar size={15} />, desc: 'Disponibilidad' },
-  { id: 'politica',   label: 'Política',    icon: <Shield size={15} />,   desc: 'Reglas comerciales' },
   { id: 'canales',    label: 'Canales',     icon: <MessageCircle size={15} />, desc: 'WhatsApp y contacto' },
 ];
 
@@ -83,11 +84,16 @@ function WizardNegocio({ initialData, onSave }) {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
 
-  // Step 1 — Perfil
+  // Step 1 — Perfil + Fiscal
   const [nombre, setNombre] = useState(initialData.name || '');
   const [web, setWeb] = useState(initialData.website || '');
   const [logo, setLogo] = useState(initialData.logo || '');
   const [timezone, setTimezone] = useState(initialData.timezone || 'Europe/Madrid');
+  const [nif, setNif] = useState(initialData.fiscal_nif || '');
+  const [direccionFiscal, setDireccionFiscal] = useState(initialData.fiscal_address || '');
+  const [cp, setCp] = useState(initialData.fiscal_cp || '');
+  const [ciudad, setCiudad] = useState(initialData.fiscal_city || '');
+  const [iban, setIban] = useState(initialData.fiscal_iban || '');
 
   // Step 2 — Servicios
   const [servicios, setServicios] = useState(() => {
@@ -96,13 +102,21 @@ function WizardNegocio({ initialData, onSave }) {
   const [nicho, setNicho] = useState(initialData.nicho || '');
   const [descripcionServicios, setDescripcionServicios] = useState(initialData.web_services_detail || '');
 
-  // Step 3 — Precios
-  const [precioMin, setPrecioMin] = useState(initialData.precio_minimo || '');
+  // Step 3 — Precios + IVA/IRPF
   const [rangoWeb, setRangoWeb] = useState(initialData.rango_web || '');
   const [rangoLanding, setRangoLanding] = useState(initialData.rango_landing || '');
   const [rangoEcommerce, setRangoEcommerce] = useState(initialData.rango_ecommerce || '');
   const [anticipo, setAnticipo] = useState(initialData.anticipo || '50%');
-  const [plazoEntrega, setPlazoEntrega] = useState(initialData.delivery_time || '');
+  const [ivaDefault, setIvaDefault] = useState(initialData.iva_default || '21');
+  const [irpfDefault, setIrpfDefault] = useState(initialData.irpf_default || '0');
+  const [precioMensual, setPrecioMensual] = useState(initialData.precio_mensual || '');
+  const [cuandoMensual, setCuandoMensual] = useState(initialData.cuando_mensual || 'si_pregunta');
+  const [plazosServicios, setPlazosServicios] = useState(() => {
+    try {
+      const v = initialData.plazos_servicios;
+      return (v && typeof v === 'object') ? v : JSON.parse(v || '{}');
+    } catch { return {}; }
+  });
 
   // Step 4 — Agenda
   const [duracionCall, setDuracionCall] = useState(initialData.duracion_call || '30 min');
@@ -128,8 +142,12 @@ function WizardNegocio({ initialData, onSave }) {
     const extra = {
       logo, timezone, servicios_toggles: JSON.stringify(servicios), nicho,
       web_services_detail: descripcionServicios,
-      precio_minimo: precioMin, rango_web: rangoWeb, rango_landing: rangoLanding, rango_ecommerce: rangoEcommerce,
-      anticipo, delivery_time: plazoEntrega,
+      rango_web: rangoWeb, rango_landing: rangoLanding, rango_ecommerce: rangoEcommerce,
+      anticipo,
+      precio_mensual: precioMensual, cuando_mensual: cuandoMensual,
+      plazos_servicios: JSON.stringify(plazosServicios),
+      iva_default: ivaDefault, irpf_default: irpfDefault,
+      fiscal_nif: nif, fiscal_address: direccionFiscal, fiscal_cp: cp, fiscal_city: ciudad, fiscal_iban: iban,
       duracion_call: duracionCall, schedule_weekdays: horariosDisp, buffer_reuniones: buffer,
       cerrar_sin_llamada: cerrarSinLlamada ? 'si' : 'no',
       puede_descuento: puedeDescuento ? 'si' : 'no', max_descuento: maxDescuento,
@@ -146,9 +164,8 @@ function WizardNegocio({ initialData, onSave }) {
   const completedSteps = [
     !!nombre,
     servicios.length > 0,
-    !!precioMin,
+    !!(rangoWeb || rangoLanding || rangoEcommerce || precioMensual),
     !!horariosDisp,
-    true,
     !!(emailContacto || telefono),
   ];
   const totalDone = completedSteps.filter(Boolean).length;
@@ -180,10 +197,10 @@ function WizardNegocio({ initialData, onSave }) {
       {/* Content */}
       <div className="wizard__body">
 
-        {/* ── Paso 1: Perfil ── */}
+        {/* ── Paso 1: Perfil + Fiscal ── */}
         {step === 0 && (
           <div className="wz-form">
-            <div className="wz-form__head"><h3>Perfil y marca</h3><p>Cómo apareces tú y tu estudio.</p></div>
+            <div className="wz-form__head"><h3>Perfil y datos fiscales</h3><p>Aparecerán en tus presupuestos y facturas PDF.</p></div>
             <div className="form-grid">
               <div className="form-field form-field--full">
                 <label>Nombre de tu estudio / freelance *</label>
@@ -206,6 +223,31 @@ function WizardNegocio({ initialData, onSave }) {
               <div className="form-field form-field--full">
                 <label>Logo del negocio (opcional)</label>
                 <LogoUpload value={logo} onChange={setLogo} />
+              </div>
+            </div>
+
+            <div className="wz-section-divider"><span>Datos fiscales (para PDFs)</span></div>
+            <div className="form-grid">
+              <div className="form-field">
+                <label>NIF / CIF *</label>
+                <input value={nif} onChange={e => setNif(e.target.value)} placeholder="12345678A o B12345678" />
+                <span className="form-field__hint">Aparece en todos los presupuestos y facturas</span>
+              </div>
+              <div className="form-field">
+                <label>IBAN (datos de pago)</label>
+                <input value={iban} onChange={e => setIban(e.target.value)} placeholder="ES00 0000 0000 0000 0000 0000" />
+              </div>
+              <div className="form-field form-field--full">
+                <label>Dirección fiscal</label>
+                <input value={direccionFiscal} onChange={e => setDireccionFiscal(e.target.value)} placeholder="Calle Mayor 12, 2ºA" />
+              </div>
+              <div className="form-field">
+                <label>Código postal</label>
+                <input value={cp} onChange={e => setCp(e.target.value)} placeholder="28001" />
+              </div>
+              <div className="form-field">
+                <label>Ciudad y provincia</label>
+                <input value={ciudad} onChange={e => setCiudad(e.target.value)} placeholder="Madrid, Madrid" />
               </div>
             </div>
           </div>
@@ -244,11 +286,6 @@ function WizardNegocio({ initialData, onSave }) {
             <div className="wz-form__head"><h3>Precios y condiciones</h3><p>La IA usará estos datos para responder "¿cuánto cuesta?" con tus tarifas reales.</p></div>
             <div className="form-grid">
               <div className="form-field">
-                <label>Precio mínimo de proyecto (€) *</label>
-                <input type="number" value={precioMin} onChange={e => setPrecioMin(e.target.value)} placeholder="400" />
-                <span className="form-field__hint">Si alguien menciona menos, la IA lo gestiona con tacto</span>
-              </div>
-              <div className="form-field">
                 <label>Anticipo al inicio del proyecto</label>
                 <div className="chips">
                   {ANTICIPOS.map(a => <button key={a} type="button" className={`chip ${anticipo === a ? 'chip--active' : ''}`} onClick={() => setAnticipo(a)}>{a}</button>)}
@@ -266,9 +303,73 @@ function WizardNegocio({ initialData, onSave }) {
                 <label>Rango ecommerce</label>
                 <input value={rangoEcommerce} onChange={e => setRangoEcommerce(e.target.value)} placeholder="Ej: 1.500€ – 5.000€" />
               </div>
+            </div>
+
+            <div className="wz-section-divider"><span>Mensualidad / Mantenimiento</span></div>
+            <div className="form-grid">
               <div className="form-field">
-                <label>Plazo de entrega típico</label>
-                <input value={plazoEntrega} onChange={e => setPlazoEntrega(e.target.value)} placeholder="Ej: Web: 3-4 semanas · Landing: 1-2 semanas" />
+                <label><Euro size={13} /> Precio mensual de mantenimiento (€/mes)</label>
+                <input type="number" value={precioMensual} onChange={e => setPrecioMensual(e.target.value)} placeholder="Ej: 79" />
+                <span className="form-field__hint">Cuota mensual que cobras por mantener la web activa</span>
+              </div>
+              <div className="form-field">
+                <label>¿Cuándo lo menciona la IA?</label>
+                <div className="chips" style={{ flexWrap: 'wrap' }}>
+                  {[
+                    { v: 'siempre', l: 'Siempre que sea relevante' },
+                    { v: 'si_pregunta', l: 'Solo si el cliente pregunta' },
+                    { v: 'proactivo', l: 'Proactivamente al hablar de precios' },
+                    { v: 'nunca', l: 'No mencionar' },
+                  ].map(({ v, l }) => (
+                    <button key={v} type="button" className={`chip ${cuandoMensual === v ? 'chip--active' : ''}`} onClick={() => setCuandoMensual(v)}>{l}</button>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div className="wz-section-divider"><span>Plazos de entrega por servicio</span></div>
+            {servicios.length === 0 ? (
+              <div style={{ padding: '1rem', background: 'rgba(255,200,0,0.06)', border: '1px solid rgba(255,200,0,0.2)', borderRadius: 'var(--radius-lg)', fontSize: '0.83rem', color: 'var(--text-secondary)' }}>
+                Selecciona primero los servicios que ofreces en el paso <strong>Servicios</strong>.
+              </div>
+            ) : (
+              <div className="form-grid">
+                {SERVICIOS_OPS.filter(s => servicios.includes(s.id)).map(s => (
+                  <div key={s.id} className="form-field">
+                    <label><Clock size={13} /> {s.label}</label>
+                    <input
+                      value={plazosServicios[s.id] || ''}
+                      onChange={e => setPlazosServicios(p => ({ ...p, [s.id]: e.target.value }))}
+                      placeholder="Ej: 2–3 semanas"
+                    />
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <div className="wz-section-divider"><span>Impuestos por defecto en presupuestos</span></div>
+            <div className="form-grid">
+              <div className="form-field">
+                <label>IVA por defecto (%)</label>
+                <div className="chips">
+                  {IVA_OPTS.map(v => (
+                    <button key={v} type="button" className={`chip ${ivaDefault === v ? 'chip--active' : ''}`} onClick={() => setIvaDefault(v)}>
+                      {v}%{v === '21' ? ' (general)' : v === '10' ? ' (reducido)' : v === '4' ? ' (superreducido)' : ' (exento)'}
+                    </button>
+                  ))}
+                </div>
+                <span className="form-field__hint">Se aplicará automáticamente al crear nuevos presupuestos</span>
+              </div>
+              <div className="form-field">
+                <label>IRPF por defecto (retención %)</label>
+                <div className="chips">
+                  {IRPF_OPTS.map(v => (
+                    <button key={v} type="button" className={`chip ${irpfDefault === v ? 'chip--active' : ''}`} onClick={() => setIrpfDefault(v)}>
+                      {v}%{v === '15' ? ' (general)' : v === '7' ? ' (nuevo autónomo)' : v === '0' ? ' (no aplica)' : ''}
+                    </button>
+                  ))}
+                </div>
+                <span className="form-field__hint">El cliente retiene este % y lo ingresa a Hacienda. Reduce lo que cobras.</span>
               </div>
             </div>
           </div>
@@ -302,57 +403,8 @@ function WizardNegocio({ initialData, onSave }) {
           </div>
         )}
 
-        {/* ── Paso 5: Política ── */}
+        {/* ── Paso 5: Canales ── */}
         {step === 4 && (
-          <div className="wz-form">
-            <div className="wz-form__head"><h3>Política comercial</h3><p>Define cuándo y cómo actúa la IA en el proceso de venta.</p></div>
-            <div className="wz-toggles">
-              <div className={`wz-toggle-row ${cerrarSinLlamada ? 'wz-toggle-row--on' : ''}`} onClick={() => setCerrarSinLlamada(v => !v)}>
-                <div>
-                  <b>¿Puede cerrar proyectos sin llamada?</b>
-                  <span>La IA intentará cerrar directamente por WhatsApp sin necesidad de discovery call</span>
-                </div>
-                <div className={`ai-toggle ${cerrarSinLlamada ? 'ai-toggle--on' : ''}`} onClick={e => { e.stopPropagation(); setCerrarSinLlamada(v => !v); }}>
-                  <span className="ai-toggle__knob" />
-                </div>
-              </div>
-              <div className={`wz-toggle-row ${puedeDescuento ? 'wz-toggle-row--on' : ''}`} onClick={() => setPuedeDescuento(v => !v)}>
-                <div>
-                  <b>¿Puede ofrecer descuento?</b>
-                  <span>Autoriza a la IA a negociar hasta un porcentaje máximo</span>
-                </div>
-                <div className={`ai-toggle ${puedeDescuento ? 'ai-toggle--on' : ''}`} onClick={e => { e.stopPropagation(); setPuedeDescuento(v => !v); }}>
-                  <span className="ai-toggle__knob" />
-                </div>
-              </div>
-            </div>
-            <div className="form-grid" style={{ marginTop: '1.25rem' }}>
-              {puedeDescuento && (
-                <div className="form-field">
-                  <label>Descuento máximo (%)</label>
-                  <input type="number" min="1" max="50" value={maxDescuento} onChange={e => setMaxDescuento(e.target.value)} placeholder="10" />
-                </div>
-              )}
-              <div className="form-field">
-                <label>Número de seguimientos si no responde</label>
-                <div className="chips">
-                  {SEGUIMIENTOS.map(n => <button key={n} type="button" className={`chip ${numSeguimientos === n ? 'chip--active' : ''}`} onClick={() => setNumSeguimientos(n)}>{n} seguimiento{n !== '1' ? 's' : ''}</button>)}
-                </div>
-              </div>
-              <div className="form-field">
-                <label>Pasar a humano si el cliente no decide después de</label>
-                <div className="chips">
-                  {['5 mensajes', '8 mensajes', '10 mensajes', '15 mensajes'].map(u => (
-                    <button key={u} type="button" className={`chip ${umbralHumano === u.split(' ')[0] ? 'chip--active' : ''}`} onClick={() => setUmbralHumano(u.split(' ')[0])}>{u}</button>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* ── Paso 6: Canales ── */}
-        {step === 5 && (
           <div className="wz-form">
             <div className="wz-form__head"><h3>Conectar canales</h3><p>Cómo te contactan los clientes y cómo los atiende la IA.</p></div>
             <div className="form-grid">
@@ -413,8 +465,9 @@ export default function Ajustes() {
 
   const [bizData, setBizData] = useState({});
   const [loading, setLoading] = useState(true);
+  const [bizLoaded, setBizLoaded] = useState(false);
 
-  useEffect(() => { if (user) loadBiz(); }, [user]);
+  useEffect(() => { if (user?.id) loadBiz(); }, [user?.id]);
 
   async function loadBiz() {
     setLoading(true);
@@ -423,6 +476,7 @@ export default function Ajustes() {
       const extra = (() => { try { return data.extra_context ? JSON.parse(data.extra_context) : {}; } catch { return {}; } })();
       setBizData({ ...data, ...extra });
     }
+    setBizLoaded(true);
     setLoading(false);
   }
 
@@ -436,7 +490,8 @@ export default function Ajustes() {
     } else {
       await supabase.from('businesses').insert({ user_id: user.id, ...payload });
     }
-    loadBiz();
+    // Actualizar estado local sin re-fetch para evitar que WizardNegocio se desmonte y resetee el paso actual
+    setBizData(prev => ({ ...prev, name, website, email, phone, ...extra }));
   }
 
   return (
@@ -461,7 +516,7 @@ export default function Ajustes() {
 
       {/* Tab: Mi Negocio */}
       {tab === 'negocio' && (
-        loading ? (
+        !bizLoaded ? (
           <div style={{ display: 'flex', justifyContent: 'center', padding: '3rem' }}><Loader2 size={24} className="spin" style={{ color: '#555' }} /></div>
         ) : (
           <WizardNegocio initialData={bizData} onSave={handleSaveBiz} />

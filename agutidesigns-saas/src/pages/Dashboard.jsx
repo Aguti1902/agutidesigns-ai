@@ -30,7 +30,7 @@ export default function Dashboard() {
   return (
     <div className="dashboard-page">
       <header className="dashboard-header">
-        <h1 className="dashboard-title">Hola, {displayName} 👋</h1>
+        <h1 className="dashboard-title">Hola, {displayName}</h1>
         <p className="dashboard-subtitle">
           Aquí tienes el resumen de tu agente IA
         </p>

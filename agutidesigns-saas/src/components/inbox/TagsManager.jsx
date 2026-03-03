@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { X, Plus } from 'lucide-react';
+import { X, Plus, Check } from 'lucide-react';
 import '../../pages/DashboardPages.css';
 
 // Etiquetas predefinidas sugeridas
@@ -143,7 +143,7 @@ export default function TagsManager({ tags = [], onSave, onClose }) {
                   }}
                   disabled={localTags.includes(tag)}
                 >
-                  {localTags.includes(tag) ? '✓ ' : '+ '}{tag}
+                  {localTags.includes(tag) ? <Check size={11} /> : <Plus size={11} />} {tag}
                 </button>
               ))}
             </div>

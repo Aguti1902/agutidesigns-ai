@@ -6,7 +6,9 @@ import {
   Zap, Check, AlertTriangle, ArrowRight, MessageCircle,
   Smartphone, Loader2, CreditCard, Shield,
   Star, Sparkles, FileText, Download, Calendar, XCircle,
-  BarChart3, Lock, Clock, FileText as FileTextIcon
+  BarChart3, Lock, Clock, ChevronDown, ChevronUp,
+  Package, Crown, Infinity, RefreshCw, Trash2,
+  Flame, Lightbulb, Rocket
 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { supabase } from '../lib/supabase';
@@ -20,18 +22,24 @@ const PLANS = [
   {
     id: 'starter', name: 'Starter', price: '29',
     priceId: 'price_1T1qSzFjBSJ299OpJBLCMTrn',
+    icon: <Package size={20} />,
+    color: '#60a5fa',
     agents: '1 número de WhatsApp', messages: '500 mensajes/mes',
     features: ['1 agente IA (1 número WhatsApp)', '500 mensajes/mes incluidos', '1 prompt personalizado', 'Datos de negocio', 'Soporte por email', 'Dashboard básico'],
   },
   {
     id: 'pro', name: 'Pro', price: '79',
     priceId: 'price_1T1qTcFjBSJ299OpSxVO6ZFM', popular: true,
+    icon: <Crown size={20} />,
+    color: '#25D366',
     agents: '3 números de WhatsApp', messages: '5.000 mensajes/mes',
     features: ['3 agentes IA (3 números WhatsApp)', '5.000 mensajes/mes incluidos', 'Prompt independiente por agente', 'Datos de negocio por agente', 'Soporte prioritario', 'Dashboard avanzado', 'Estadísticas por agente'],
   },
   {
     id: 'business', name: 'Business', price: '199',
     priceId: 'price_1T1qU1FjBSJ299OpTOdjIRya',
+    icon: <Infinity size={20} />,
+    color: '#a78bfa',
     agents: 'Números ilimitados', messages: '20.000 mensajes/mes',
     features: ['Agentes ilimitados (WhatsApp ilimitados)', '20.000 mensajes/mes incluidos', 'Prompt independiente por agente', 'Datos de negocio por agente', 'Soporte 24/7', 'Dashboard completo', 'API personalizada', 'Marca blanca'],
   },
@@ -118,9 +126,8 @@ export default function Billing() {
   const [cardSuccess, setCardSuccess] = useState(false);
   const [justCancelled, setJustCancelled] = useState(false);
   const [reactivating, setReactivating] = useState(false);
-  // loadingPortal removed - no longer needed
+  const [showInvoices, setShowInvoices] = useState(true);
 
-  // Persist status banner dismiss in localStorage
   const [statusDismissed, setStatusDismissed] = useState(() => {
     try { return localStorage.getItem('billing_status_dismissed') === 'true'; } catch { return false; }
   });
@@ -200,22 +207,18 @@ export default function Billing() {
     loadCustomerInfo();
   }
 
-  // Handle ?success=true from checkout return
   const urlParams = new URLSearchParams(window.location.search);
   const [showSuccess, setShowSuccess] = useState(urlParams.get('success') === 'true');
   const activatedRef = useRef(false);
   const conversionFiredRef = useRef(false);
 
-  // Fire Google Ads conversion on successful purchase
   useEffect(() => {
     if (showSuccess && isSubscribed && !conversionFiredRef.current) {
       conversionFiredRef.current = true;
       if (typeof window.gtag === 'function') {
         window.gtag('event', 'conversion', {
           send_to: 'AW-17960619497/JBIpCN6ayPobEOmbpfRC',
-          value: 1.0,
-          currency: 'EUR',
-          transaction_id: user?.id || '',
+          value: 1.0, currency: 'EUR', transaction_id: user?.id || '',
         });
       }
     }
@@ -232,7 +235,6 @@ export default function Billing() {
         const { data } = await supabase.from('profiles').select('subscription_status').eq('id', user.id).single();
         if (data?.subscription_status === 'active') {
           clearInterval(poll);
-          // Clear the dismissed flag so the success banner shows
           try { localStorage.removeItem('billing_status_dismissed'); } catch {}
           window.location.href = '/app/billing?success=true';
         }
@@ -244,21 +246,23 @@ export default function Billing() {
   const isCancelling = customerInfo?.subscription?.cancelAtPeriodEnd;
   const cancelDaysLeft = isCancelling ? daysUntil(customerInfo.subscription.currentPeriodEnd) : 0;
 
+  // Determine current plan
+  const currentPlan = PLANS.find(p =>
+    customerInfo?.subscription?.items?.some(item => item.priceId === p.priceId)
+  ) || (isSubscribed ? PLANS[1] : null); // fallback to Pro if subscribed but no items yet
+
+  const pm = customerInfo?.paymentMethods?.[0];
+
   return (
     <div className="page">
-      <div className="page__header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+      <div className="page__header">
         <div>
           <h1><CreditCard size={24} /> Suscripción</h1>
           <p>Gestiona tu plan, métodos de pago y facturación.</p>
         </div>
-        {isSubscribed && profile?.stripe_customer_id && (
-          <button className="btn btn--outline btn--sm" onClick={() => navigate('/app/facturacion')} style={{ marginTop: '0.25rem' }}>
-            <FileTextIcon size={14} /> Datos de facturación
-          </button>
-        )}
       </div>
 
-      {/* ── PERMANENT banner: subscription cancelling (NOT dismissable) ── */}
+      {/* ── Banners ── */}
       {isCancelling && (
         <div className="billing-status billing-status--warning">
           <div className="billing-status__icon"><Clock size={20} /></div>
@@ -266,14 +270,14 @@ export default function Billing() {
             <h3>Tu plan se cancela en {cancelDaysLeft} día{cancelDaysLeft !== 1 ? 's' : ''}</h3>
             <p>Tienes acceso hasta el {formatDate(customerInfo.subscription.currentPeriodEnd)}. Después tu agente se desactivará.</p>
           </div>
-          <button className="btn btn--sm" onClick={handleReactivate} disabled={reactivating} style={{ background: '#f59e0b', color: '#000', fontWeight: 700, flexShrink: 0 }}>
-            {reactivating ? <Loader2 size={12} className="spin" /> : <Zap size={12} />}
+          <button className="btn btn--sm" onClick={handleReactivate} disabled={reactivating}
+            style={{ background: '#f59e0b', color: '#000', fontWeight: 700, flexShrink: 0 }}>
+            {reactivating ? <Loader2 size={12} className="spin" /> : <RefreshCw size={12} />}
             Reactivar plan
           </button>
         </div>
       )}
 
-      {/* ── One-time banner: just cancelled successfully (dismissable, once) ── */}
       {justCancelled && (
         <div className="billing-status billing-status--active" style={{ position: 'relative' }}>
           <div className="billing-status__icon"><Check size={20} /></div>
@@ -282,15 +286,13 @@ export default function Billing() {
         </div>
       )}
 
-      {/* ── Activation processing banner ── */}
       {showSuccess && !isSubscribed && (
-        <div className="billing-status billing-status--trial" style={{ position: 'relative' }}>
+        <div className="billing-status billing-status--trial">
           <div className="billing-status__icon"><Loader2 size={20} className="spin" /></div>
           <div><h3>Activando tu suscripción...</h3><p>Estamos procesando tu pago. Esto puede tardar unos segundos.</p></div>
         </div>
       )}
 
-      {/* ── Activation success banner (dismissable once, then gone forever) ── */}
       {showSuccess && isSubscribed && !statusDismissed && (
         <div className="billing-status billing-status--active" style={{ position: 'relative' }}>
           <div className="billing-status__icon"><Check size={20} /></div>
@@ -299,8 +301,7 @@ export default function Billing() {
         </div>
       )}
 
-      {/* ── Trial / expired banner (dismissable forever) ── */}
-      {!showSuccess && !statusDismissed && !isCancelling && (isTrialActive || !isSubscribed) && (
+      {!showSuccess && !statusDismissed && !isCancelling && !isSubscribed && (
         <div className={`billing-status ${isTrialActive ? 'billing-status--trial' : 'billing-status--expired'}`} style={{ position: 'relative' }}>
           <div className="billing-status__icon">
             {isTrialActive ? <Zap size={20} /> : <AlertTriangle size={20} />}
@@ -313,7 +314,6 @@ export default function Billing() {
         </div>
       )}
 
-      {/* Card success banner */}
       {cardSuccess && (
         <div className="billing-status billing-status--active" style={{ position: 'relative' }}>
           <div className="billing-status__icon"><Check size={20} /></div>
@@ -322,119 +322,190 @@ export default function Billing() {
         </div>
       )}
 
-      {/* Subscription & Payment Management */}
-      {isSubscribed && profile?.stripe_customer_id && (
-        <div className="billing-cards-grid">
-          <div className="billing-card">
-            <h4><Calendar size={15} /> Tu plan actual</h4>
-            {customerInfo?.subscription ? (
+      {/* ══ TU SUSCRIPCIÓN ACTUAL ══ */}
+      {isSubscribed && (
+        <>
+          <h3 className="page__section-title" style={{ marginBottom: '0.75rem' }}>
+            <Crown size={16} /> Tu suscripción activa
+          </h3>
+
+          {/* Plan hero */}
+          <div className="sub-hero" style={{ '--plan-color': currentPlan?.color || '#25D366' }}>
+            {loadingInfo && !currentPlan ? (
+              <div style={{ display: 'flex', justifyContent: 'center', padding: '2rem' }}>
+                <Loader2 size={22} className="spin" style={{ color: 'var(--text-tertiary)' }} />
+              </div>
+            ) : (
               <>
-                <div className="billing-card__detail">
-                  <span>Estado</span>
-                  <strong className={`billing-card__badge ${isCancelling ? 'billing-card__badge--yellow' : 'billing-card__badge--green'}`}>
-                    {isCancelling ? 'Cancela pronto' : 'Activo'}
-                  </strong>
+                <div className="sub-hero__left">
+                  <div className="sub-hero__icon" style={{ background: `${currentPlan?.color || '#25D366'}20`, color: currentPlan?.color || '#25D366' }}>
+                    {currentPlan?.icon || <Crown size={22} />}
+                  </div>
+                  <div>
+                    <div className="sub-hero__label">Plan actual</div>
+                    <div className="sub-hero__name">{currentPlan?.name || 'Pro'}</div>
+                    <div className="sub-hero__price">{currentPlan?.price || '79'}€<span>/mes</span></div>
+                  </div>
+                  <div className={`sub-hero__status ${isCancelling ? 'sub-hero__status--cancelling' : 'sub-hero__status--active'}`}>
+                    {isCancelling ? <><Clock size={11} /> Cancela pronto</> : <><Check size={11} /> Activo</>}
+                  </div>
                 </div>
-                <div className="billing-card__detail">
-                  <span>{isCancelling ? 'Activo hasta' : 'Próxima factura'}</span>
-                  <strong>{formatDate(customerInfo.subscription.currentPeriodEnd)}</strong>
+
+                <div className="sub-hero__divider" />
+
+                <div className="sub-hero__features">
+                  {currentPlan?.features?.slice(0, 4).map((f, i) => (
+                    <div key={i} className="sub-hero__feature">
+                      <Check size={13} style={{ color: currentPlan?.color || '#25D366', flexShrink: 0 }} />
+                      <span>{f}</span>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="sub-hero__divider" />
+
+                <div className="sub-hero__meta">
+                  <div className="sub-hero__meta-row">
+                    <Calendar size={13} />
+                    <span>{isCancelling ? 'Acceso hasta' : 'Próxima factura'}</span>
+                    <strong>{formatDate(customerInfo?.subscription?.currentPeriodEnd)}</strong>
+                  </div>
+                  {pm && (
+                    <div className="sub-hero__meta-row">
+                      <CreditCard size={13} />
+                      <span>Método de pago</span>
+                      <strong>{pm.brand?.charAt(0).toUpperCase() + pm.brand?.slice(1)} •••• {pm.last4}</strong>
+                    </div>
+                  )}
                 </div>
               </>
-            ) : loadingInfo ? (
-              <div className="billing-card__loading"><Loader2 size={16} className="spin" /></div>
-            ) : (
-              <p className="billing-card__empty">Plan activo</p>
             )}
           </div>
 
-          <div className="billing-card">
-            <h4><CreditCard size={15} /> Método de pago</h4>
-            {customerInfo?.paymentMethods?.length > 0 ? (
-              customerInfo.paymentMethods.map(pm => (
-                <div key={pm.id} className="billing-card__pm">
-                  <span className="billing-card__pm-brand">{pm.brand.charAt(0).toUpperCase() + pm.brand.slice(1)}</span>
-                  <span className="billing-card__pm-num">•••• {pm.last4}</span>
-                  <span className="billing-card__pm-exp">{pm.expMonth}/{pm.expYear}</span>
-                </div>
-              ))
-            ) : loadingInfo ? (
-              <div className="billing-card__loading"><Loader2 size={16} className="spin" /></div>
-            ) : (
-              <p className="billing-card__empty">No hay tarjeta</p>
-            )}
-            {!showCardForm ? (
-              <button className="btn btn--outline btn--sm" onClick={() => setShowCardForm(true)} style={{ marginTop: '0.75rem' }}>
-                <CreditCard size={12} /> {customerInfo?.paymentMethods?.length > 0 ? 'Cambiar tarjeta' : 'Añadir tarjeta'}
-              </button>
-            ) : (
-              <div style={{ marginTop: '0.75rem' }}>
+          {/* Gestión: cambiar tarjeta + cancelar */}
+          <div className="sub-actions">
+            <div className="sub-actions__group">
+              <span className="sub-actions__label">Gestionar suscripción</span>
+              <div className="sub-actions__btns">
+                <button className="btn btn--outline btn--sm" onClick={() => setShowCardForm(v => !v)}>
+                  <CreditCard size={13} /> {showCardForm ? 'Cancelar' : pm ? 'Cambiar tarjeta' : 'Añadir tarjeta'}
+                </button>
+                {!isCancelling && (
+                  <button className="btn btn--outline btn--sm sub-actions__cancel-btn"
+                    onClick={() => setShowCancelConfirm(v => !v)}>
+                    <Trash2 size={13} /> Cancelar plan
+                  </button>
+                )}
+                {isCancelling && (
+                  <button className="btn btn--sm" onClick={handleReactivate} disabled={reactivating}
+                    style={{ background: '#f59e0b', color: '#000', fontWeight: 700 }}>
+                    {reactivating ? <Loader2 size={12} className="spin" /> : <RefreshCw size={12} />}
+                    Reactivar plan
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {showCardForm && (
+              <div className="sub-actions__form">
                 <Elements stripe={stripePromise}>
-                  <CardUpdateForm customerId={profile.stripe_customer_id} subscriptionId={profile.stripe_subscription_id} onSuccess={handleCardUpdated} onCancel={() => setShowCardForm(false)} />
+                  <CardUpdateForm
+                    customerId={profile.stripe_customer_id}
+                    subscriptionId={profile.stripe_subscription_id}
+                    onSuccess={handleCardUpdated}
+                    onCancel={() => setShowCardForm(false)}
+                  />
                 </Elements>
               </div>
             )}
-          </div>
 
-          <div className="billing-card">
-            <h4><BarChart3 size={15} /> Mensajes</h4>
-            <p className="billing-card__desc">Consulta tu uso de mensajes y añade packs extra.</p>
-            <Link to="/app/mensajes" className="btn btn--primary btn--sm" style={{ marginTop: '0.75rem' }}>
-              <MessageCircle size={12} /> Ver uso de mensajes
-            </Link>
-          </div>
-        </div>
-      )}
-
-      {/* Cancel Subscription button (only if NOT already cancelling) */}
-      {isSubscribed && profile?.stripe_customer_id && !isCancelling && (
-        <div style={{ marginBottom: '1.5rem' }}>
-          {!showCancelConfirm ? (
-            <button className="btn btn--outline btn--sm" onClick={() => setShowCancelConfirm(true)} style={{ color: '#888', borderColor: '#333' }}>
-              <XCircle size={12} /> Cancelar suscripción
-            </button>
-          ) : (
-            <div className="billing-status billing-status--expired" style={{ position: 'relative' }}>
-              <div className="billing-status__icon"><AlertTriangle size={20} /></div>
-              <div style={{ flex: 1 }}>
-                <h3>¿Seguro que quieres cancelar?</h3>
-                <p>Tu agente de WhatsApp IA dejará de funcionar al final del periodo de facturación actual.</p>
-                <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.75rem' }}>
-                  <button className="btn btn--outline btn--sm" onClick={() => setShowCancelConfirm(false)}>No, mantener plan</button>
-                  <button className="btn btn--sm" onClick={handleCancelSubscription} disabled={cancellingSubscription} style={{ background: 'var(--color-error)', color: '#fff' }}>
-                    {cancellingSubscription ? <Loader2 size={12} className="spin" /> : <XCircle size={12} />}
-                    Sí, cancelar
-                  </button>
+            {showCancelConfirm && (
+              <div className="sub-actions__confirm">
+                <div className="sub-actions__confirm-icon"><AlertTriangle size={18} /></div>
+                <div style={{ flex: 1 }}>
+                  <p className="sub-actions__confirm-title">¿Seguro que quieres cancelar?</p>
+                  <p className="sub-actions__confirm-desc">Tu agente dejará de funcionar al final del periodo actual ({formatDate(customerInfo?.subscription?.currentPeriodEnd)}).</p>
+                  <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.75rem' }}>
+                    <button className="btn btn--outline btn--sm" onClick={() => setShowCancelConfirm(false)}>No, mantener plan</button>
+                    <button className="btn btn--sm" onClick={handleCancelSubscription} disabled={cancellingSubscription}
+                      style={{ background: 'var(--color-error)', color: '#fff' }}>
+                      {cancellingSubscription ? <Loader2 size={12} className="spin" /> : <Trash2 size={12} />}
+                      Sí, cancelar
+                    </button>
+                  </div>
                 </div>
               </div>
+            )}
+          </div>
+        </>
+      )}
+
+      {/* ══ FACTURAS ══ */}
+      {isSubscribed && (
+        <div className="invoices-section">
+          <button className="invoices-section__header" onClick={() => setShowInvoices(v => !v)}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <FileText size={16} />
+              <span>Facturas y recibos</span>
+              {customerInfo?.invoices?.length > 0 && (
+                <span className="invoices-section__count">{customerInfo.invoices.length}</span>
+              )}
+            </div>
+            {showInvoices ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+          </button>
+
+          {showInvoices && (
+            <div className="invoices-section__body">
+              {loadingInfo ? (
+                <div style={{ display: 'flex', justifyContent: 'center', padding: '2rem' }}>
+                  <Loader2 size={18} className="spin" style={{ color: 'var(--text-tertiary)' }} />
+                </div>
+              ) : customerInfo?.invoices?.length > 0 ? (
+                <table className="invoices-table">
+                  <thead>
+                    <tr>
+                      <th>Número</th>
+                      <th>Fecha</th>
+                      <th>Descripción</th>
+                      <th>Estado</th>
+                      <th>Importe</th>
+                      <th></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {customerInfo.invoices.map(inv => (
+                      <tr key={inv.id}>
+                        <td><span className="invoices-table__num">{inv.number || inv.id.slice(-8)}</span></td>
+                        <td><span className="invoices-table__date">{formatDate(inv.date)}</span></td>
+                        <td><span className="invoices-table__desc">{inv.description || '—'}</span></td>
+                        <td>
+                          <span className={`invoice-row__status invoice-row__status--${inv.status}`}>
+                            {STATUS_MAP[inv.status] || inv.status}
+                          </span>
+                        </td>
+                        <td><strong className="invoices-table__amount">{formatAmount(inv.amount, inv.currency)}</strong></td>
+                        <td>
+                          {inv.pdfUrl ? (
+                            <a href={inv.pdfUrl} target="_blank" rel="noopener" className="btn btn--outline btn--xs invoices-table__dl">
+                              <Download size={12} /> PDF
+                            </a>
+                          ) : <span style={{ color: 'var(--text-tertiary)', fontSize: '0.75rem' }}>—</span>}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              ) : (
+                <p className="invoices-section__empty">
+                  Aún no hay facturas. Las recibirás tras cada renovación de suscripción.
+                </p>
+              )}
             </div>
           )}
         </div>
       )}
 
-      {/* Invoices */}
-      {customerInfo?.invoices?.length > 0 && (
-        <>
-          <h3 className="page__section-title"><FileText size={16} /> Facturas</h3>
-          <div className="invoices-list">
-            {customerInfo.invoices.map(inv => (
-              <div key={inv.id} className="invoice-row">
-                <div className="invoice-row__info">
-                  <span className="invoice-row__number">{inv.number || inv.id.slice(-8)}</span>
-                  <span className="invoice-row__date">{formatDate(inv.date)}</span>
-                  {inv.description && <span className="invoice-row__desc">{inv.description}</span>}
-                </div>
-                <div className="invoice-row__right">
-                  <span className={`invoice-row__status invoice-row__status--${inv.status}`}>{STATUS_MAP[inv.status] || inv.status}</span>
-                  <span className="invoice-row__amount">{formatAmount(inv.amount, inv.currency)}</span>
-                  {inv.pdfUrl && <a href={inv.pdfUrl} target="_blank" rel="noopener" className="btn btn--outline btn--xs"><Download size={12} /> PDF</a>}
-                </div>
-              </div>
-            ))}
-          </div>
-        </>
-      )}
-
-      {/* ══ COMPRAR MENSAJES ══ */}
+      {/* ══ COMPRAR MENSAJES EXTRA ══ */}
       <div className="billing-section-header" style={{ marginTop: '2rem' }}>
         <h3 className="page__section-title"><MessageCircle size={18} /> Comprar mensajes extra</h3>
         <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>
@@ -443,27 +514,25 @@ export default function Billing() {
       </div>
       <div className="msg-packs">
         {[
-          { id: 'pack_500', label: '500 mensajes', price: '9€', tag: null, credits: 500, perMsg: '1,8 ct/msg' },
-          { id: 'pack_1000', label: '1.000 mensajes', price: '15€', tag: '🔥 Popular', credits: 1000, perMsg: '1,5 ct/msg' },
-          { id: 'pack_3000', label: '3.000 mensajes', price: '35€', tag: '💡 Mejor precio', credits: 3000, perMsg: '1,2 ct/msg' },
-          { id: 'pack_10000', label: '10.000 mensajes', price: '90€', tag: '🚀 Agencias', credits: 10000, perMsg: '0,9 ct/msg' },
+          { id: 'pack-500',   label: '500 mensajes',    price: '9€',  tag: null,                                credits: 500,   perMsg: '1,8 ct/msg' },
+          { id: 'pack-1000',  label: '1.000 mensajes',  price: '15€', tag: { Icon: Flame,     text: 'Popular' },    credits: 1000,  perMsg: '1,5 ct/msg' },
+          { id: 'pack-5000',  label: '5.000 mensajes',  price: '49€', tag: { Icon: Lightbulb, text: 'Mejor precio'}, credits: 5000,  perMsg: '0,98 ct/msg' },
+          { id: 'pack-10000', label: '10.000 mensajes', price: '79€', tag: { Icon: Rocket,    text: 'Agencias' },   credits: 10000, perMsg: '0,79 ct/msg' },
         ].map(pack => (
           <div key={pack.id} className={`msg-pack-card ${pack.tag ? 'msg-pack-card--featured' : ''}`}>
-            {pack.tag && <span className="msg-pack-card__tag">{pack.tag}</span>}
+            {pack.tag && <span className="msg-pack-card__tag"><pack.tag.Icon size={11} /> {pack.tag.text}</span>}
             <div className="msg-pack-card__label">{pack.label}</div>
             <div className="msg-pack-card__price">{pack.price}</div>
             <div className="msg-pack-card__per">{pack.perMsg}</div>
-            <button
-              className="btn btn--primary btn--full"
-              onClick={() => navigate(`/app/checkout?pack=${pack.id}&credits=${pack.credits}`)}
-            >
+            <button className="btn btn--primary btn--full"
+              onClick={() => navigate(`/app/checkout?plan=${pack.id}&mode=payment`)}>
               <Zap size={13} /> Comprar
             </button>
           </div>
         ))}
       </div>
 
-      {/* Plans */}
+      {/* ══ PLANES ══ */}
       <div className="billing-section-header" style={{ marginTop: '2rem' }}>
         <h3 className="page__section-title"><Sparkles size={18} /> {isSubscribed ? 'Cambiar plan' : 'Elige tu plan'}</h3>
         <div className="billing-section-badges">
@@ -474,10 +543,10 @@ export default function Billing() {
 
       <div className="plans-grid">
         {PLANS.map(plan => {
-          const isCurrent = customerInfo?.subscription?.items?.some(item => item.priceId === plan.priceId);
+          const isCurrent = isSubscribed && plan.id === currentPlan?.id;
           return (
-            <div key={plan.id} className={`plan-card ${plan.popular ? 'plan-card--popular' : ''} ${isCurrent ? 'plan-card--current' : ''}`}>
-              {isCurrent && <span className="plan-card__badge plan-card__badge--current"><Check size={11} /> Tu plan actual</span>}
+            <div key={plan.id} className={`plan-card ${plan.popular && !isCurrent ? 'plan-card--popular' : ''} ${isCurrent ? 'plan-card--current' : ''}`}>
+              {isCurrent && <span className="plan-card__badge plan-card__badge--current"><Check size={11} /> Plan seleccionado</span>}
               {!isCurrent && plan.popular && <span className="plan-card__badge"><Star size={11} /> Más popular</span>}
               <h3>{plan.name}</h3>
               <div className="plan-card__price"><span>{plan.price}€</span>/mes</div>
@@ -487,10 +556,13 @@ export default function Billing() {
               </div>
               <ul>{plan.features.map((f, i) => (<li key={i}><Check size={14} /> {f}</li>))}</ul>
               {isCurrent ? (
-                <button className="btn btn--primary btn--full" disabled style={{ opacity: 0.6 }}><Check size={14} /> Plan activo</button>
+                <button className="btn btn--primary btn--full" disabled style={{ opacity: 0.55, cursor: 'default' }}>
+                  <Check size={14} /> Tu plan actual
+                </button>
               ) : (
-                <button className="btn btn--outline btn--full" onClick={() => navigate(`/app/checkout?plan=${plan.id}&mode=subscription`)}>
-                  Elegir {plan.name} <ArrowRight size={14} />
+                <button className="btn btn--outline btn--full"
+                  onClick={() => navigate(`/app/checkout?plan=${plan.id}&mode=subscription`)}>
+                  {isSubscribed ? `Cambiar a ${plan.name}` : `Elegir ${plan.name}`} <ArrowRight size={14} />
                 </button>
               )}
             </div>

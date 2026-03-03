@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useSearchParams } from 'react-router-dom';
-import { MessageCircle, Mail, Lock, User, ArrowRight, Eye, EyeOff, Zap, CheckCircle, Phone } from 'lucide-react';
+import { MessageCircle, Mail, Lock, User, ArrowRight, Eye, EyeOff, Zap, CheckCircle, Phone, Wrench } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { supabase } from '../../lib/supabase';
 import './AuthPage.css';
@@ -253,7 +253,7 @@ export default function AuthPage() {
           {/* ── Dev shortcut (solo en localhost) ── */}
           {window.location.hostname === 'localhost' && (
             <div className="auth__dev-box">
-              <div className="auth__dev-label">🛠 Acceso de desarrollo</div>
+              <div className="auth__dev-label"><Wrench size={13} /> Acceso de desarrollo</div>
               <button
                 type="button"
                 className="auth__dev-btn"

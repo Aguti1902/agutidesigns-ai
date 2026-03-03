@@ -576,6 +576,55 @@ REGLAS:
           }
         }
 
+        // ── PRESUPUESTO PDF TRIGGER ──
+        // Detect [[PRESUPUESTO:cliente=NAME|servicios=SVC1:PRICE1,SVC2:PRICE2]] tag
+        const presupuestoMatch = aiResponse.match(/\[\[PRESUPUESTO:([^\]]+)\]\]/)
+        if (presupuestoMatch) {
+          const tagContent = presupuestoMatch[1]
+          // Remove tag from user-visible message
+          aiResponse = aiResponse.replace(presupuestoMatch[0], '').trim()
+
+          // Parse key=value pairs separated by |
+          const params: Record<string, string> = {}
+          tagContent.split('|').forEach((part: string) => {
+            const eqIdx = part.indexOf('=')
+            if (eqIdx !== -1) {
+              params[part.substring(0, eqIdx).trim()] = part.substring(eqIdx + 1).trim()
+            }
+          })
+
+          const budgetClientName = params.cliente || contactName
+          const serviciosStr = params.servicios || ''
+          const budgetServices = serviciosStr.split(',').map((s: string) => {
+            const lastColon = s.lastIndexOf(':')
+            if (lastColon === -1) return { name: s.trim(), qty: 1, price: 0 }
+            return {
+              name: s.substring(0, lastColon).trim(),
+              qty: 1,
+              price: parseFloat(s.substring(lastColon + 1)) || 0,
+            }
+          }).filter((s: any) => s.name && s.price > 0)
+
+          if (budgetServices.length > 0) {
+            console.log('📄 PDF budget trigger:', budgetClientName, budgetServices)
+            try {
+              fetch(`${SUPABASE_URL}/functions/v1/send-budget-pdf`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${SUPABASE_KEY}` },
+                body: JSON.stringify({
+                  userId: agent.user_id,
+                  instance: instanceName,
+                  clientName: budgetClientName,
+                  clientPhone: contactPhone,
+                  services: budgetServices,
+                }),
+              }).then(r => console.log('Budget PDF result:', r.status)).catch(e => console.warn('Budget PDF error:', e))
+            } catch (e) {
+              console.warn('Budget PDF trigger failed:', e)
+            }
+          }
+        }
+
         console.log('AI:', aiResponse.substring(0, 80))
 
         // Save AI response

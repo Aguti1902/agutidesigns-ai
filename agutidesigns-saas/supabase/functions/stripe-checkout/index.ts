@@ -19,19 +19,29 @@ serve(async (req) => {
     }
 
     const body = await req.json().catch(() => ({}))
-    const { priceId, userId, userEmail, returnUrl, mode, embedded } = body
+    const { priceId, userId, userEmail, returnUrl, mode, embedded, amount, productName } = body
 
-    if (!priceId || !userId) {
+    if ((!priceId && !amount) || !userId) {
       return new Response(
-        JSON.stringify({ error: 'Faltan priceId o userId' }),
+        JSON.stringify({ error: 'Faltan datos de pago o userId' }),
         { status: 400, headers: { 'Content-Type': 'application/json', ...corsHeaders } }
       )
     }
 
+    const isPayment = mode === 'payment'
     const params = new URLSearchParams()
-    params.append('mode', mode === 'payment' ? 'payment' : 'subscription')
-    params.append('line_items[0][price]', priceId)
-    params.append('line_items[0][quantity]', '1')
+    params.append('mode', isPayment ? 'payment' : 'subscription')
+
+    // Pago único: usar price_data inline para evitar conflicto con precios recurrentes
+    if (isPayment && amount) {
+      params.append('line_items[0][price_data][currency]', 'eur')
+      params.append('line_items[0][price_data][unit_amount]', String(Math.round(parseFloat(amount) * 100)))
+      params.append('line_items[0][price_data][product_data][name]', productName || 'Pack de mensajes')
+      params.append('line_items[0][quantity]', '1')
+    } else {
+      params.append('line_items[0][price]', priceId)
+      params.append('line_items[0][quantity]', '1')
+    }
     params.append('client_reference_id', userId)
     if (userEmail) params.append('customer_email', userEmail)
     params.append('metadata[user_id]', userId)

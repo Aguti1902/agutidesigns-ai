@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { NavLink, Outlet, useNavigate, Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, MessageCircle, Building, Bot, BookOpen, CreditCard, LogOut, Zap, HelpCircle, Clock, AlertTriangle, ArrowRight, Lock, BarChart3, Shield, Calendar, FileText, Receipt, Users } from 'lucide-react';
+import { LayoutDashboard, MessageCircle, Building, Bot, BookOpen, CreditCard, LogOut, Zap, HelpCircle, Clock, AlertTriangle, ArrowRight, Lock, BarChart3, Shield, Calendar, FileText, Receipt, Users, Settings } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { supabase } from '../../lib/supabase';
 import AgentSelector from '../dashboard/AgentSelector';
@@ -12,7 +12,7 @@ const navItems = [
   { to: '/app/whatsapp',    icon: <MessageCircle size={18} />,   label: 'WhatsApp' },
   { to: '/app/calendario',  icon: <Calendar size={18} />,        label: 'Citas' },
   { to: '/app/presupuestos', icon: <FileText size={18} />,       label: 'Presupuestos' },
-  { to: '/app/ajustes',     icon: <Building size={18} />,        label: 'Ajustes' },
+  { to: '/app/ajustes',     icon: <Settings size={18} />,        label: 'Ajustes' },
 ];
 
 // v2.0 — ocultos

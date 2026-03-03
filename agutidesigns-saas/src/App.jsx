@@ -26,6 +26,9 @@ import CalendarIntegration from './pages/CalendarIntegration';
 import Presupuestos from './pages/Presupuestos';
 import Facturas from './pages/Facturas';
 import Clientes from './pages/Clientes';
+import PrivacidadPage from './pages/legal/PrivacidadPage';
+import TerminosPage from './pages/legal/TerminosPage';
+import CookiesPage from './pages/legal/CookiesPage';
 
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth();
@@ -55,13 +58,13 @@ export default function App() {
     );
   }
 
-  // Logged in but onboarding not completed → show onboarding
-  if (user && profile && !profile.onboarding_completed && !onboardingDone) {
-    return <OnboardingFlow onComplete={() => setOnboardingDone(true)} />;
-  }
-
   // localhost always allows everything
   const isLocalhost = window.location.hostname === 'localhost';
+
+  // Logged in but onboarding not completed → show onboarding (obligatorio, excepto en dev)
+  if (user && profile && !profile.onboarding_completed && !onboardingDone && !isLocalhost) {
+    return <OnboardingFlow onComplete={() => setOnboardingDone(true)} />;
+  }
 
   return (
     <Routes>
@@ -73,6 +76,9 @@ export default function App() {
       } />
       <Route path="/auth" element={user ? <Navigate to="/app" replace /> : <AuthPage />} />
       <Route path="/email-confirmado" element={<EmailConfirmed />} />
+      <Route path="/privacidad" element={<PrivacidadPage />} />
+      <Route path="/terminos" element={<TerminosPage />} />
+      <Route path="/cookies" element={<CookiesPage />} />
       
       {/* Protected dashboard routes */}
       <Route path="/app" element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
