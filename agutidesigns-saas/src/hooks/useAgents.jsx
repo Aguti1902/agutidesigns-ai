@@ -48,6 +48,7 @@ export function AgentsProvider({ children }) {
     const { data, error } = await supabase.from('agents').insert({
       user_id: user.id,
       name: name || `Agente ${agents.length + 1}`,
+      booking_enabled: true,
     }).select().single();
 
     if (error) { console.error(error); return null; }

@@ -442,7 +442,7 @@ export default function PromptBuilder() {
     const agentData = { name: agentName || 'Asistente', language, system_prompt: prompt, config: JSON.stringify(config), updated_at: new Date().toISOString() };
     const { data: existing } = await supabase.from('agents').select('id').eq('user_id', user.id).single();
     if (existing) await supabase.from('agents').update(agentData).eq('id', existing.id);
-    else await supabase.from('agents').insert({ user_id: user.id, ...agentData });
+    else await supabase.from('agents').insert({ user_id: user.id, booking_enabled: true, ...agentData });
 
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);

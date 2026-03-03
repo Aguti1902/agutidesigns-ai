@@ -70,7 +70,7 @@ export default function CalendarIntegration() {
   const [showForm, setShowForm] = useState(false);
   const [editingAppt, setEditingAppt] = useState(null);
   const [saving, setSaving] = useState(false);
-  const [bookingEnabled, setBookingEnabled] = useState(false);
+  const [bookingEnabled, setBookingEnabled] = useState(true);
   const [togglingBooking, setTogglingBooking] = useState(false);
   const [calendlyUrl, setCalendlyUrl] = useState('');
   const [calendlyToken, setCalendlyToken] = useState('');
@@ -91,7 +91,16 @@ export default function CalendarIntegration() {
 
   useEffect(() => { if (user) { loadAppointments(); loadBusinessSchedule(); loadBookingLinks(); } }, [user]);
   useEffect(() => { if (user) loadAppointments(); }, [currentDate]);
-  useEffect(() => { if (activeAgent) setBookingEnabled(!!activeAgent.booking_enabled); }, [activeAgent]);
+  useEffect(() => {
+    if (!activeAgent) return;
+    // Si booking_enabled es null/undefined (agente antiguo), actívalo por defecto y guárdalo
+    if (activeAgent.booking_enabled === null || activeAgent.booking_enabled === undefined) {
+      setBookingEnabled(true);
+      supabase.from('agents').update({ booking_enabled: true, updated_at: new Date().toISOString() }).eq('id', activeAgent.id).then(() => {});
+    } else {
+      setBookingEnabled(!!activeAgent.booking_enabled);
+    }
+  }, [activeAgent]);
 
   async function loadBookingLinks() {
     if (!user) return;

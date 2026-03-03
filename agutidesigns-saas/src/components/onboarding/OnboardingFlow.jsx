@@ -61,7 +61,7 @@ function OBWhatsAppConnector({ userId, onConnected }) {
   async function getOrCreateAgentId() {
     const { data } = await supabase.from('agents').select('id').eq('user_id', userId).maybeSingle();
     if (data?.id) return data.id;
-    const { data: created, error } = await supabase.from('agents').insert({ user_id: userId, name: 'Asistente' }).select('id').single();
+    const { data: created, error } = await supabase.from('agents').insert({ user_id: userId, name: 'Asistente', booking_enabled: true }).select('id').single();
     if (error) throw new Error('No se pudo preparar el agente. Inténtalo de nuevo.');
     return created?.id;
   }
@@ -307,7 +307,7 @@ export default function OnboardingFlow({ onComplete }) {
       const prevCfg = (() => { try { return existing?.config ? JSON.parse(existing.config) : {}; } catch { return {}; } })();
       const mergedCfg = { ...prevCfg, ...cfg };
       if (existing) { await supabase.from('agents').update({ config: JSON.stringify(mergedCfg), updated_at: new Date().toISOString() }).eq('id', existing.id); }
-      else { await supabase.from('agents').insert({ user_id: user.id, name: 'Asistente', config: JSON.stringify(mergedCfg) }); }
+      else { await supabase.from('agents').insert({ user_id: user.id, name: 'Asistente', booking_enabled: true, config: JSON.stringify(mergedCfg) }); }
     } catch {}
     setSaving(false);
   }
@@ -323,7 +323,7 @@ export default function OnboardingFlow({ onComplete }) {
       const prevCfg = (() => { try { return existing?.config ? JSON.parse(existing.config) : {}; } catch { return {}; } })();
       const agentData = { name: agentName || 'Asistente', personality, language: 'es', system_prompt: prompt, config: JSON.stringify({ ...prevCfg, presupuestoMinimo: presupuestoMin, clienteIdeal, objetivoIA: objetivo }), updated_at: new Date().toISOString() };
       if (existing) { await supabase.from('agents').update(agentData).eq('id', existing.id); }
-      else { await supabase.from('agents').insert({ user_id: user.id, ...agentData }); }
+      else { await supabase.from('agents').insert({ user_id: user.id, booking_enabled: true, ...agentData }); }
     } catch {}
     setSaving(false);
   }
