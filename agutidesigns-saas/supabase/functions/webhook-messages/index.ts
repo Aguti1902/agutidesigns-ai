@@ -144,7 +144,9 @@ serve(async (req) => {
         // Skip groups and status
         if (remoteJid.includes('@g.us') || remoteJid === 'status@broadcast') continue
 
-        const contactPhone = remoteJid.replace('@s.whatsapp.net', '').replace('@lid', '')
+        // WhatsApp now uses @lid (Linked Identity) format — prefer remoteJidAlt for real phone number
+        const remoteJidForPhone = message.key?.remoteJidAlt || remoteJid
+        const contactPhone = remoteJidForPhone.replace('@s.whatsapp.net', '').replace('@lid', '').replace(/[^0-9+]/g, '') || remoteJid.replace('@s.whatsapp.net', '').replace('@lid', '')
         const contactName = message.pushName || contactPhone
         const messageText = message.message?.conversation || 
                            message.message?.extendedTextMessage?.text ||
