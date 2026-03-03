@@ -233,16 +233,37 @@ serve(async (req) => {
                 other_policies: 'OTRAS POLÍTICAS', team: 'EQUIPO Y PERSONAL', specialties: 'ESPECIALIDADES Y DIFERENCIADORES',
                 social_media: 'REDES SOCIALES',
               }
+              // Read structured weekly schedule (new format) — overrides legacy text fields
+              if (extra.horario_semana) {
+                try {
+                  const hs = JSON.parse(extra.horario_semana)
+                  const fmtDay = (d: any) => d?.active && d?.ranges?.length
+                    ? d.ranges.map((r: any) => `${r.from}–${r.to}`).join(', ')
+                    : 'Cerrado'
+                  scheduleWeekdays = [hs.lunes, hs.martes, hs.miercoles, hs.jueves, hs.viernes]
+                    .map(fmtDay).every((v, _, a) => v === a[0])
+                    ? fmtDay(hs.lunes)
+                    : `L:${fmtDay(hs.lunes)} M:${fmtDay(hs.martes)} X:${fmtDay(hs.miercoles)} J:${fmtDay(hs.jueves)} V:${fmtDay(hs.viernes)}`
+                  scheduleSaturday = fmtDay(hs.sabado)
+                  scheduleSunday   = fmtDay(hs.domingo)
+                  // Per-day schedule map for the calendar builder (dow: 0=dom,1=lun,...,6=sab)
+                  const dowKeys = ['domingo','lunes','martes','miercoles','jueves','viernes','sabado']
+                  ;(extra as any).__scheduleByDow = Object.fromEntries(dowKeys.map((k, i) => [i, fmtDay(hs[k])]))
+                } catch {}
+              }
               for (const [k, v] of Object.entries(extra)) {
                 if (v && typeof v === 'string' && (v as string).trim()) {
                   const label = labels[k] || k.toUpperCase().replace(/_/g, ' ')
+                  if (['horario_semana','rango_servicios','extras_config','plazos_servicios','servicios_toggles','servicios_precios'].includes(k)) continue
                   ctx.push(`${label}: ${v}`)
-                  if (k === 'schedule_weekdays') scheduleWeekdays = v as string
-                  if (k === 'schedule_saturday') scheduleSaturday = v as string
-                  if (k === 'schedule_sunday') scheduleSunday = v as string
+                  if (k === 'schedule_weekdays' && !scheduleWeekdays) scheduleWeekdays = v as string
+                  if (k === 'schedule_saturday' && !scheduleSaturday) scheduleSaturday = v as string
+                  if (k === 'schedule_sunday'   && !scheduleSunday)   scheduleSunday   = v as string
                   if (k === 'schedule_notes') scheduleNotes = v as string
                 }
               }
+              // Store per-day map for use in calendar builder
+              if ((extra as any).__scheduleByDow) (business as any).__scheduleByDow = (extra as any).__scheduleByDow
             } catch { ctx.push(`INFORMACIÓN ADICIONAL:\n${business.extra_context}`) }
           }
           if (!scheduleWeekdays && business.schedule) scheduleWeekdays = business.schedule
@@ -298,7 +319,10 @@ serve(async (req) => {
             const s = str.trim().toLowerCase()
             return s === 'cerrado' || s === 'closed' || s === '-' || s === ''
           }
-          if (dow >= 1 && dow <= 5) {
+          const perDayMap = (business as any).__scheduleByDow
+          if (perDayMap && perDayMap[dow] !== undefined) {
+            schedule = perDayMap[dow] || 'No definido'
+          } else if (dow >= 1 && dow <= 5) {
             schedule = scheduleWeekdays || 'No definido'
           } else if (dow === 6) {
             schedule = scheduleSaturday || 'No definido'

@@ -3,7 +3,8 @@ import { useSearchParams, useNavigate } from 'react-router-dom';
 import {
   Building, Bot, CreditCard, Check, ChevronRight, ArrowLeft, ArrowRight,
   Upload, ImageIcon, X, Zap, Globe, Euro, Clock, Calendar, MessageCircle,
-  ToggleLeft, ToggleRight, Shield, Phone, Mail, Loader2, Save, CheckCircle
+  ToggleLeft, ToggleRight, Shield, Phone, Mail, Loader2, Save, CheckCircle,
+  Plus, Trash2
 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { supabase } from '../lib/supabase';
@@ -46,6 +47,32 @@ const EXTRAS_OPS = [
   { id: 'prod_500',        label: '201 – 500 productos',              hint: '',                                      grupo: 'ecommerce', requiresAnyOf: ['ecommerce'] },
   { id: 'prod_500plus',    label: '+500 productos',                   hint: '',                                      grupo: 'ecommerce', requiresAnyOf: ['ecommerce'] },
 ];
+
+/* ══ HORARIO SEMANAL ══ */
+const DIAS_SEMANA = [
+  { id: 'lunes',     label: 'Lunes',     short: 'L' },
+  { id: 'martes',    label: 'Martes',    short: 'M' },
+  { id: 'miercoles', label: 'Miércoles', short: 'X' },
+  { id: 'jueves',    label: 'Jueves',    short: 'J' },
+  { id: 'viernes',   label: 'Viernes',   short: 'V' },
+  { id: 'sabado',    label: 'Sábado',    short: 'S' },
+  { id: 'domingo',   label: 'Domingo',   short: 'D' },
+];
+const DEFAULT_HORARIO = {
+  lunes:     { active: true,  ranges: [{ from: '09:00', to: '18:00' }] },
+  martes:    { active: true,  ranges: [{ from: '09:00', to: '18:00' }] },
+  miercoles: { active: true,  ranges: [{ from: '09:00', to: '18:00' }] },
+  jueves:    { active: true,  ranges: [{ from: '09:00', to: '18:00' }] },
+  viernes:   { active: true,  ranges: [{ from: '09:00', to: '18:00' }] },
+  sabado:    { active: false, ranges: [{ from: '09:00', to: '14:00' }] },
+  domingo:   { active: false, ranges: [] },
+};
+function horarioToLegacyText(dayIds, horario) {
+  return dayIds
+    .filter(id => horario[id]?.active && horario[id]?.ranges?.length)
+    .map(id => horario[id].ranges.map(r => `${r.from}–${r.to}`).join(', '))
+    .join(' / ') || 'Cerrado';
+}
 
 const NICHOS = ['Restaurantes', 'Clínicas / Salud', 'Inmobiliarias', 'Moda / Retail', 'Consultoras', 'Educación', 'Hostelería', 'Otros'];
 const ANTICIPOS = ['30%', '50%', '70%', '100%'];
@@ -158,8 +185,22 @@ function WizardNegocio({ initialData, onSave }) {
 
   // Step 4 — Agenda
   const [duracionCall, setDuracionCall] = useState(initialData.duracion_call || '30 min');
-  const [horariosDisp, setHorariosDisp] = useState(initialData.schedule_weekdays || 'Lunes a Viernes, 9:00 – 18:00');
   const [buffer, setBuffer] = useState(initialData.buffer_reuniones || '15 min');
+  const [horarioSemana, setHorarioSemana] = useState(() => {
+    try {
+      if (initialData.horario_semana) return { ...DEFAULT_HORARIO, ...JSON.parse(initialData.horario_semana) };
+    } catch {}
+    return DEFAULT_HORARIO;
+  });
+
+  // Helpers para editar el horario semanal
+  const toggleDia = (id) => setHorarioSemana(h => ({ ...h, [id]: { ...h[id], active: !h[id].active } }));
+  const addRange = (id) => setHorarioSemana(h => ({ ...h, [id]: { ...h[id], ranges: [...(h[id].ranges || []), { from: '09:00', to: '18:00' }] } }));
+  const removeRange = (id, idx) => setHorarioSemana(h => ({ ...h, [id]: { ...h[id], ranges: h[id].ranges.filter((_, i) => i !== idx) } }));
+  const updateRange = (id, idx, field, val) => setHorarioSemana(h => ({
+    ...h,
+    [id]: { ...h[id], ranges: h[id].ranges.map((r, i) => i === idx ? { ...r, [field]: val } : r) }
+  }));
 
   // Step 5 — Política
   const [cerrarSinLlamada, setCerrarSinLlamada] = useState(initialData.cerrar_sin_llamada === 'si');
@@ -192,7 +233,12 @@ function WizardNegocio({ initialData, onSave }) {
       extras_config: JSON.stringify(extrasConfig),
       iva_default: ivaDefault, irpf_default: irpfDefault,
       fiscal_nif: nif, fiscal_address: direccionFiscal, fiscal_cp: cp, fiscal_city: ciudad, fiscal_iban: iban,
-      duracion_call: duracionCall, schedule_weekdays: horariosDisp, buffer_reuniones: buffer,
+      duracion_call: duracionCall, buffer_reuniones: buffer,
+      horario_semana: JSON.stringify(horarioSemana),
+      // Legacy fields — generados del nuevo formato para compatibilidad con la IA
+      schedule_weekdays: horarioToLegacyText(['lunes','martes','miercoles','jueves','viernes'], horarioSemana),
+      schedule_saturday: horarioToLegacyText(['sabado'], horarioSemana),
+      schedule_sunday:   horarioToLegacyText(['domingo'], horarioSemana),
       cerrar_sin_llamada: cerrarSinLlamada ? 'si' : 'no',
       puede_descuento: puedeDescuento ? 'si' : 'no', max_descuento: maxDescuento,
       num_seguimientos: numSeguimientos, umbral_humano: umbralHumano,
@@ -209,7 +255,7 @@ function WizardNegocio({ initialData, onSave }) {
     !!nombre,
     servicios.length > 0,
     !!(Object.values(preciosRangos).some(v => !!v) || precioMensual),
-    !!horariosDisp,
+    DIAS_SEMANA.some(d => horarioSemana[d.id]?.active),
     !!(emailContacto || telefono),
   ];
   const totalDone = completedSteps.filter(Boolean).length;
@@ -543,8 +589,55 @@ function WizardNegocio({ initialData, onSave }) {
                 </div>
               </div>
               <div className="form-field form-field--full">
-                <label>Horarios disponibles para reuniones</label>
-                <input value={horariosDisp} onChange={e => setHorariosDisp(e.target.value)} placeholder="Ej: Lunes a Viernes, 9:00 – 18:00" />
+                <label>Horarios disponibles por día</label>
+                <div className="wz-schedule">
+                  {DIAS_SEMANA.map(dia => {
+                    const dayData = horarioSemana[dia.id] || { active: false, ranges: [] };
+                    return (
+                      <div key={dia.id} className={`wz-sched-row ${dayData.active ? 'wz-sched-row--on' : ''}`}>
+                        {/* Día + toggle */}
+                        <div className="wz-sched-row__day" onClick={() => toggleDia(dia.id)}>
+                          <div className={`ai-toggle ${dayData.active ? 'ai-toggle--on' : ''}`}>
+                            <span className="ai-toggle__knob" />
+                          </div>
+                          <span className="wz-sched-row__label">{dia.label}</span>
+                        </div>
+                        {/* Rangos horarios */}
+                        <div className="wz-sched-row__ranges">
+                          {dayData.active ? (
+                            <>
+                              {(dayData.ranges || []).map((range, idx) => (
+                                <div key={idx} className="wz-sched-range">
+                                  <input
+                                    type="time"
+                                    value={range.from}
+                                    onChange={e => updateRange(dia.id, idx, 'from', e.target.value)}
+                                  />
+                                  <span className="wz-sched-range__sep">—</span>
+                                  <input
+                                    type="time"
+                                    value={range.to}
+                                    onChange={e => updateRange(dia.id, idx, 'to', e.target.value)}
+                                  />
+                                  {dayData.ranges.length > 1 && (
+                                    <button type="button" className="wz-sched-range__del" onClick={() => removeRange(dia.id, idx)} title="Eliminar rango">
+                                      <Trash2 size={12} />
+                                    </button>
+                                  )}
+                                </div>
+                              ))}
+                              <button type="button" className="wz-sched-row__add" onClick={() => addRange(dia.id)}>
+                                <Plus size={11} /> Añadir horario
+                              </button>
+                            </>
+                          ) : (
+                            <span className="wz-sched-row__closed">Cerrado</span>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
             </div>
             <div style={{ padding: '1rem', background: 'rgba(37,211,102,0.05)', border: '1px solid rgba(37,211,102,0.15)', borderRadius: 'var(--radius-lg)', marginTop: '1rem', fontSize: '0.82rem', color: 'var(--text-secondary)' }}>
