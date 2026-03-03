@@ -95,9 +95,9 @@ function SocialProofToast() {
           exit={{ opacity: 0, x: -16, scale: 0.95 }}
           transition={{ duration: 0.22 }}>
           <div className="sp-toast__av">{u.name.charAt(0)}</div>
-          <div>
-            <div className="sp-toast__text"><strong>{u.name}</strong> de {u.city}</div>
-            <div className="sp-toast__sub">acaba de registrarse en Wasapy · {u.ago}</div>
+          <div className="sp-toast__body">
+            <div className="sp-toast__text"><strong>{u.name}</strong>, {u.city}</div>
+            <div className="sp-toast__sub">Nuevo en Wasapy · {u.ago}</div>
           </div>
           <div className="sp-toast__dot" />
         </motion.div>
@@ -164,7 +164,8 @@ function AnnouncementBar() {
     <div className="ann">
       <div className="ann__inner">
         <span className="ann__dot" />
-        <span>Nuevo · Presupuestos IA con tu branding se generan y envían solos</span>
+        <span className="ann__txt--full">Nuevo · Presupuestos IA con tu branding se generan y envían solos</span>
+        <span className="ann__txt--short">Presupuestos IA automáticos</span>
         <a href="#precios" className="ann__cta">Ver planes <ArrowRight size={11} /></a>
       </div>
       <button className="ann__x" onClick={() => { setClosed(true); try { localStorage.setItem('wasapy_ann', '1'); } catch {} }} aria-label="Cerrar"><X size={12} /></button>
@@ -727,17 +728,22 @@ export default function SaasLanding() {
             <Link to="/auth?mode=register" className="ln__cta"><Zap size={13} /> 2 días gratis</Link>
           </div>
           <button className="ln__burger" onClick={() => setMobileNav(v => !v)} aria-label="Menú">
-            <Menu size={20} />
+            <Menu size={22} />
           </button>
         </div>
         <AnimatePresence>
           {mobileNav && (
-            <motion.div className="ln__mobile" initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.2 }}>
-              <a href="#como-funciona" onClick={() => setMobileNav(false)}>Producto</a>
-              <a href="#precios" onClick={() => setMobileNav(false)}>Precios</a>
-              <a href="#faq" onClick={() => setMobileNav(false)}>FAQ</a>
-              <Link to="/auth" onClick={() => setMobileNav(false)}>Entrar</Link>
-              <Link to="/auth?mode=register" className="ln__cta" onClick={() => setMobileNav(false)}><Zap size={13} /> 2 días gratis</Link>
+            <motion.div className="ln__fullmenu" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.18 }}>
+              <button className="ln__fullmenu-close" onClick={() => setMobileNav(false)} aria-label="Cerrar menú"><X size={24} /></button>
+              <nav className="ln__fullmenu-links">
+                <a href="#como-funciona" onClick={() => setMobileNav(false)}>Producto</a>
+                <a href="#precios" onClick={() => setMobileNav(false)}>Precios</a>
+                <a href="#faq" onClick={() => setMobileNav(false)}>FAQ</a>
+                <Link to="/auth" onClick={() => setMobileNav(false)}>Entrar</Link>
+              </nav>
+              <Link to="/auth?mode=register" className="ln__fullmenu-cta" onClick={() => setMobileNav(false)}>
+                <Zap size={16} /> 2 días gratis
+              </Link>
             </motion.div>
           )}
         </AnimatePresence>
