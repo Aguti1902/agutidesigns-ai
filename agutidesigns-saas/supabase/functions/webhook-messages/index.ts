@@ -503,6 +503,34 @@ REGLAS:
                   created_by: 'ai',
                 })
                 console.log('✅ Direct appointment created')
+
+                // Notify owner via email
+                try {
+                  const { data: { user: ownerUser } } = await supabase.auth.admin.getUserById(agent.user_id)
+                  if (ownerUser?.email) {
+                    const _months = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre']
+                    const [_y, _m, _d] = parsedDate.split('-').map(Number)
+                    const dateFormatted = `${_d} de ${_months[_m - 1]} de ${_y}`
+                    await fetch(`${SUPABASE_URL}/functions/v1/send-email`, {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${SUPABASE_KEY}` },
+                      body: JSON.stringify({
+                        to: ownerUser.email,
+                        subject: `📅 Nueva cita: ${contactName} – ${dateFormatted} a las ${startTime}`,
+                        template: 'appointment_booked',
+                        data: {
+                          ownerName: ownerProfile?.full_name || 'ahí',
+                          clientName: contactName,
+                          clientPhone: contactPhone,
+                          date: dateFormatted,
+                          startTime,
+                          endTime,
+                          source: 'IA Wasapy (detección directa)',
+                        },
+                      }),
+                    }).catch(e => console.warn('Appointment email failed:', e))
+                  }
+                } catch (emailErr) { console.warn('Appointment email error (non-fatal):', emailErr) }
               } catch (e) {
                 console.error('Direct appointment error:', e)
               }
@@ -592,6 +620,35 @@ REGLAS:
                 console.error('Appointment insert error:', apptError)
               } else {
                 console.log('✅ Appointment created successfully')
+
+                // Notify owner via email
+                try {
+                  const { data: { user: ownerUser } } = await supabase.auth.admin.getUserById(agent.user_id)
+                  if (ownerUser?.email) {
+                    const _months = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre']
+                    const [_y, _m, _d] = cDate.split('-').map(Number)
+                    const dateFormatted = `${_d} de ${_months[_m - 1]} de ${_y}`
+                    await fetch(`${SUPABASE_URL}/functions/v1/send-email`, {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${SUPABASE_KEY}` },
+                      body: JSON.stringify({
+                        to: ownerUser.email,
+                        subject: `📅 Nueva cita: ${cName.trim() || contactName} – ${dateFormatted} a las ${cStart}`,
+                        template: 'appointment_booked',
+                        data: {
+                          ownerName: ownerProfile?.full_name || 'ahí',
+                          clientName: cName.trim() || contactName,
+                          clientPhone: contactPhone,
+                          date: dateFormatted,
+                          startTime: cStart,
+                          endTime: cEnd,
+                          service: cService.trim() || null,
+                          source: 'IA Wasapy',
+                        },
+                      }),
+                    }).catch(e => console.warn('Appointment email failed:', e))
+                  }
+                } catch (emailErr) { console.warn('Appointment email error (non-fatal):', emailErr) }
               }
             } catch (e) {
               console.error('Appointment creation failed:', e)
