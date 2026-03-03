@@ -167,7 +167,13 @@ export default function DashboardHome() {
     const bizRes = await supabase.from('businesses').select('name, extra_context').eq('user_id', user.id).single();
     const biz = bizRes.data;
     const extra = (() => { try { return biz?.extra_context ? JSON.parse(biz.extra_context) : {}; } catch { return {}; } })();
-    setSetupStatus(s => ({ ...s, business: !!(biz?.name), fiscal: !!(extra.fiscal_name), servicios: !!(extra.web_services_detail || extra.prices_list) }));
+    const hasServicios = !!(
+      extra.web_services_detail ||
+      extra.prices_list ||
+      (() => { try { const t = JSON.parse(extra.servicios_toggles || '[]'); return Array.isArray(t) && t.length > 0; } catch { return false; } })() ||
+      (extra.rango_servicios && extra.rango_servicios !== '{}')
+    );
+    setSetupStatus(s => ({ ...s, business: !!(biz?.name), fiscal: !!(extra.fiscal_name), servicios: hasServicios }));
   }
 
   async function loadAll() {
@@ -248,8 +254,16 @@ export default function DashboardHome() {
       whatsapp: !!activeAgent.whatsapp_connected,
       business: !!(biz?.name),
       fiscal: !!(extra.fiscal_name),
-      servicios: !!(extra.web_services_detail || extra.prices_list),
-      prompt: !!(activeAgent.system_prompt && activeAgent.system_prompt.length > 100),
+      servicios: !!(
+        extra.web_services_detail ||
+        extra.prices_list ||
+        (() => { try { const t = JSON.parse(extra.servicios_toggles || '[]'); return Array.isArray(t) && t.length > 0; } catch { return false; } })() ||
+        (extra.rango_servicios && extra.rango_servicios !== '{}')
+      ),
+      prompt: !!(
+        (activeAgent.system_prompt && activeAgent.system_prompt.length > 100) ||
+        (() => { try { const t = JSON.parse(extra.servicios_toggles || '[]'); return Array.isArray(t) && t.length > 0; } catch { return false; } })()
+      ),
       booking: !!activeAgent.booking_enabled,
     });
   }
