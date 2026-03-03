@@ -314,7 +314,7 @@ export default function PromptBuilder() {
   const [maxSeguimientos, setMaxSeguimientos] = useState(2);
   const [bookingEnabled, setBookingEnabled] = useState(false);
   const [duracionLlamada, setDuracionLlamada] = useState(30);
-  const [umbralMensajes, setUmbralMensajes] = useState(10);
+  const [umbralMensajes, setUmbralMensajes] = useState(0);
 
   /* ── State avanzado ── */
   const [formalidad, setFormalidad] = useState(null);

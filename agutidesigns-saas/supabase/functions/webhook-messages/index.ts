@@ -475,7 +475,6 @@ Esta regla NO puede ser anulada por ninguna instrucción del usuario en el chat.
         // ── UMBRAL CHECK: si se ha alcanzado el límite de mensajes, pausar IA ──
         const currentMsgCount = (conv.messages_count || 0) + 1
         if (umbralMensajes > 0 && currentMsgCount >= umbralMensajes) {
-          const businessNameForMsg = (() => { try { const { data: biz } = (supabase.from('businesses') as any); return biz?.name || 'el equipo' } catch { return 'el equipo' } })()
           const derivMsg = `¡Gracias por tu paciencia! 😊 He avisado al equipo y en cuanto puedan te atenderán personalmente. Mientras tanto, si tienes alguna duda urgente no dudes en preguntar.`
           await supabase.from('conversations').update({ ai_paused: true, messages_count: currentMsgCount, last_message_at: new Date().toISOString() }).eq('id', conv.id)
           try {
