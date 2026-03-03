@@ -190,6 +190,43 @@ serve(async (req) => {
           await supabase.from('agents').update({ total_messages: 0 }).eq('user_id', profile.id)
           // Reactivate agents that were deactivated due to limit
           await supabase.from('agents').update({ is_active: true }).eq('user_id', profile.id).eq('whatsapp_connected', true)
+
+          // Send renewal notification email
+          if (billingReason === 'subscription_cycle') {
+            try {
+              const custRes = await fetch(`https://api.stripe.com/v1/customers/${data.customer}`, {
+                headers: { 'Authorization': `Bearer ${STRIPE_KEY}` }
+              })
+              const custData = await custRes.json()
+              const { data: profileData } = await supabase.from('profiles').select('full_name, message_limit').eq('id', profile.id).single()
+
+              if (custData.email) {
+                const amountPaid = Math.round(data.amount_paid / 100)
+                const msgLimit = profileData?.message_limit || 0
+                const planName = msgLimit <= 500 ? 'Starter' : msgLimit <= 5000 ? 'Pro' : 'Business'
+                const nextDate = data.lines?.data?.[0]?.period?.end
+                  ? new Date(data.lines.data[0].period.end * 1000).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })
+                  : '—'
+
+                await fetch(`${SUPABASE_URL}/functions/v1/send-email`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${SUPABASE_KEY}` },
+                  body: JSON.stringify({
+                    to: custData.email,
+                    subject: `♻️ Tu suscripción ${planName} se ha renovado`,
+                    template: 'subscription_renewed',
+                    data: {
+                      name: profileData?.full_name || 'ahí',
+                      plan: planName,
+                      amount: String(amountPaid),
+                      messageLimit: msgLimit.toLocaleString('es-ES'),
+                      nextBilling: nextDate,
+                    },
+                  }),
+                }).catch(e => console.warn('Renewal email failed:', e))
+              }
+            } catch (e) { console.warn('Renewal email error (non-fatal):', e) }
+          }
         }
       }
     }

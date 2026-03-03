@@ -97,6 +97,46 @@ serve(async (req) => {
       const { error } = await supabase.from('appointments').insert(appointment)
       if (error) throw new Error(`DB insert error: ${error.message}`)
 
+      // Send appointment notification email to the owner
+      try {
+        const { data: { user } } = await supabase.auth.admin.getUserById(userId)
+        const { data: profile } = await supabase.from('profiles').select('full_name').eq('id', userId).single()
+
+        const ownerEmail = user?.email
+        if (ownerEmail) {
+          const SUPABASE_URL = Deno.env.get('SUPABASE_URL') || ''
+          const SUPABASE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || ''
+
+          // Format date nicely: "2024-03-15" → "15 de marzo de 2024"
+          const months = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre']
+          const [y, m, d] = dateStr.split('-').map(Number)
+          const dateFormatted = `${d} de ${months[m - 1]} de ${y}`
+
+          await fetch(`${SUPABASE_URL}/functions/v1/send-email`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${SUPABASE_KEY}` },
+            body: JSON.stringify({
+              to: ownerEmail,
+              subject: `📅 Nueva cita: ${inviteeName} – ${dateFormatted} a las ${startTimeStr}`,
+              template: 'appointment_booked',
+              data: {
+                ownerName: profile?.full_name || 'ahí',
+                clientName: inviteeName,
+                clientEmail: inviteeEmail || null,
+                clientPhone: phone || null,
+                date: dateFormatted,
+                startTime: startTimeStr,
+                endTime: endTimeStr,
+                service: eventTypeName,
+                source: 'Calendly',
+              },
+            }),
+          }).catch(e => console.warn('Appointment email failed:', e))
+        }
+      } catch (emailErr) {
+        console.warn('Email notification error (non-fatal):', emailErr)
+      }
+
     } else if (event === 'invitee.canceled') {
       // Find and cancel the appointment by matching date + time
       const startIso: string = payload.scheduled_event?.start_time || payload.event?.start_time || ''

@@ -366,10 +366,35 @@ REGLAS:
 
         // Get or create conversation
         let { data: conv } = await supabase.from('conversations').select('id, messages_count').eq('agent_id', agentId).eq('contact_phone', contactPhone).single()
+        const isNewLead = !conv
         if (!conv) {
           const { data: newConv } = await supabase.from('conversations').insert({ agent_id: agentId, contact_name: contactName, contact_phone: contactPhone, is_lead: true }).select().single()
           conv = newConv
           await supabase.from('agents').update({ total_leads: (agent.total_leads || 0) + 1 }).eq('id', agentId)
+
+          // Notify owner of new lead via email
+          try {
+            const { data: { user: ownerUser } } = await supabase.auth.admin.getUserById(agent.user_id)
+            if (ownerUser?.email) {
+              await fetch(`${SUPABASE_URL}/functions/v1/send-email`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${SUPABASE_KEY}` },
+                body: JSON.stringify({
+                  to: ownerUser.email,
+                  subject: `🔔 Nuevo lead: ${contactName}`,
+                  template: 'new_lead',
+                  data: {
+                    ownerName: ownerProfile?.full_name || 'ahí',
+                    contactName,
+                    contactPhone,
+                    firstMessage: messageText.substring(0, 200),
+                  },
+                }),
+              }).catch(e => console.warn('New lead email failed:', e))
+            }
+          } catch (emailErr) {
+            console.warn('New lead email error (non-fatal):', emailErr)
+          }
         }
         if (!conv) continue
 

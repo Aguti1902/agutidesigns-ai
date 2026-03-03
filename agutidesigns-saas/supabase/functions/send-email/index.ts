@@ -13,7 +13,8 @@ interface EmailRequest {
   subject: string
   template: 'welcome' | 'payment_success' | 'messages_80' | 'messages_95' | 'plan_cancelled' | 
             'ticket_created' | 'ticket_reply' | 'trial_expiring' | 'agent_connected' | 
-            'invoice_generated' | 'payment_failed' | 'plan_expired'
+            'invoice_generated' | 'payment_failed' | 'plan_expired' |
+            'appointment_booked' | 'new_lead' | 'subscription_renewed'
   data?: Record<string, any>
 }
 
@@ -92,7 +93,7 @@ function getTemplate(template: string, data: Record<string, any> = {}): string {
           <a href="https://app.wasapy.io/app/mensajes" class="btn">Ampliar mensajes</a>
           <p style="font-size: 13px; color: #666;">Si llegas al límite, tu agente se desconectará automáticamente hasta el próximo ciclo o hasta que añadas más mensajes.</p>
         </div>
-        <div class="footer">© 2026 Agutidesigns</div>
+        <div class="footer">© 2026 Wasapy · <a href="https://wasapy.io" style="color: #666;">wasapy.io</a></div>
       </div>
     `,
 
@@ -108,7 +109,7 @@ function getTemplate(template: string, data: Record<string, any> = {}): string {
           <p><strong>Tu agente está a punto de desconectarse.</strong> Te quedan muy pocos mensajes. Amplía tu plan ahora para que siga atendiendo a tus clientes.</p>
           <a href="https://app.wasapy.io/app/mensajes" class="btn" style="background: #ef4444;">Ampliar ahora</a>
         </div>
-        <div class="footer">© 2026 Agutidesigns</div>
+        <div class="footer">© 2026 Wasapy · <a href="https://wasapy.io" style="color: #666;">wasapy.io</a></div>
       </div>
     `,
 
@@ -177,7 +178,7 @@ function getTemplate(template: string, data: Record<string, any> = {}): string {
           <p>Continúa automatizando tu atención al cliente desde <strong>solo 29€/mes</strong>.</p>
           <a href="https://app.wasapy.io/app/billing" class="btn">Ver planes</a>
         </div>
-        <div class="footer">© 2026 Agutidesigns</div>
+        <div class="footer">© 2026 Wasapy · <a href="https://wasapy.io" style="color: #666;">wasapy.io</a></div>
       </div>
     `,
 
@@ -192,7 +193,7 @@ function getTemplate(template: string, data: Record<string, any> = {}): string {
           <a href="https://app.wasapy.io/app/whatsapp" class="btn">Ver conversaciones</a>
           <p style="font-size: 13px; color: #666; margin-top: 24px;">Recibirás notificaciones cuando lleguen nuevos mensajes.</p>
         </div>
-        <div class="footer">© 2026 Agutidesigns</div>
+        <div class="footer">© 2026 Wasapy · <a href="https://wasapy.io" style="color: #666;">wasapy.io</a></div>
       </div>
     `,
 
@@ -206,7 +207,7 @@ function getTemplate(template: string, data: Record<string, any> = {}): string {
           <p style="font-size: 13px; color: #888;">Concepto: ${data.description || 'Suscripción mensual'}</p>
           <a href="${data.pdfUrl || 'https://app.wasapy.io/app/billing'}" class="btn">Descargar factura PDF</a>
         </div>
-        <div class="footer">© 2026 Agutidesigns</div>
+        <div class="footer">© 2026 Wasapy · <a href="https://wasapy.io" style="color: #666;">wasapy.io</a></div>
       </div>
     `,
 
@@ -227,7 +228,7 @@ function getTemplate(template: string, data: Record<string, any> = {}): string {
           <p><strong>Por favor, actualiza tu método de pago</strong> para evitar que tu agente se desactive.</p>
           <a href="https://app.wasapy.io/app/billing" class="btn" style="background: #ef4444;">Actualizar tarjeta</a>
         </div>
-        <div class="footer">© 2026 Agutidesigns</div>
+        <div class="footer">© 2026 Wasapy · <a href="https://wasapy.io" style="color: #666;">wasapy.io</a></div>
       </div>
     `,
 
@@ -246,7 +247,72 @@ function getTemplate(template: string, data: Record<string, any> = {}): string {
           </div>
           <a href="https://app.wasapy.io/app/billing" class="btn">Elegir plan</a>
         </div>
-        <div class="footer">© 2026 Agutidesigns</div>
+        <div class="footer">© 2026 Wasapy · <a href="https://wasapy.io" style="color: #666;">wasapy.io</a></div>
+      </div>
+    `,
+
+    appointment_booked: `
+      <div class="container">
+        <div class="logo"><img src="https://app.wasapy.io/images/Logoverde.png" alt="Wasapy" /></div>
+        <div class="card">
+          <h1>📅 Nueva cita agendada</h1>
+          <p>Hola <strong>${data.ownerName || 'ahí'}</strong>,</p>
+          <p>Tu agente IA ha agendado una nueva cita con un cliente. Aquí están los detalles:</p>
+          <div style="background: #0a0a0a; border: 1px solid #222; border-radius: 12px; padding: 20px; margin: 20px 0;">
+            <table style="width: 100%; border-collapse: collapse;">
+              <tr><td style="color: #666; font-size: 13px; padding: 6px 0; width: 120px;">Cliente</td><td style="color: #fff; font-weight: 600;">${data.clientName || '—'}</td></tr>
+              ${data.clientPhone ? `<tr><td style="color: #666; font-size: 13px; padding: 6px 0;">Teléfono</td><td style="color: #aaa;">${data.clientPhone}</td></tr>` : ''}
+              ${data.clientEmail ? `<tr><td style="color: #666; font-size: 13px; padding: 6px 0;">Email</td><td style="color: #aaa;">${data.clientEmail}</td></tr>` : ''}
+              <tr><td style="color: #666; font-size: 13px; padding: 6px 0;">Fecha</td><td style="color: #25D366; font-weight: 700;">${data.date || '—'}</td></tr>
+              <tr><td style="color: #666; font-size: 13px; padding: 6px 0;">Hora</td><td style="color: #25D366; font-weight: 700;">${data.startTime || '—'}${data.endTime ? ` – ${data.endTime}` : ''}</td></tr>
+              ${data.service ? `<tr><td style="color: #666; font-size: 13px; padding: 6px 0;">Servicio</td><td style="color: #aaa;">${data.service}</td></tr>` : ''}
+              ${data.source ? `<tr><td style="color: #666; font-size: 13px; padding: 6px 0;">Fuente</td><td style="color: #555; font-size: 13px;">${data.source}</td></tr>` : ''}
+            </table>
+          </div>
+          <a href="https://app.wasapy.io/app/calendario" class="btn">Ver en el calendario</a>
+        </div>
+        <div class="footer">© 2026 Wasapy · <a href="https://wasapy.io" style="color: #666;">wasapy.io</a></div>
+      </div>
+    `,
+
+    new_lead: `
+      <div class="container">
+        <div class="logo"><img src="https://app.wasapy.io/images/Logoverde.png" alt="Wasapy" /></div>
+        <div class="card">
+          <h1>🔔 Nuevo lead en WhatsApp</h1>
+          <p>Hola <strong>${data.ownerName || 'ahí'}</strong>,</p>
+          <p>Tu agente IA acaba de iniciar conversación con un nuevo cliente potencial:</p>
+          <div style="background: #0a0a0a; border: 1px solid #222; border-radius: 12px; padding: 20px; margin: 20px 0; display: flex; align-items: center; gap: 16px;">
+            <div style="width: 48px; height: 48px; border-radius: 50%; background: rgba(37,211,102,0.12); display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0;">👤</div>
+            <div>
+              <div style="color: #fff; font-weight: 700; font-size: 16px;">${data.contactName || 'Desconocido'}</div>
+              <div style="color: #555; font-size: 13px; margin-top: 4px;">${data.contactPhone || ''}</div>
+            </div>
+          </div>
+          ${data.firstMessage ? `<div style="background: rgba(37,211,102,0.05); border-left: 3px solid #25D366; padding: 12px 16px; border-radius: 0 8px 8px 0; margin: 16px 0;"><p style="font-size: 14px; color: #ccc; margin: 0; font-style: italic;">"${data.firstMessage}"</p></div>` : ''}
+          <p style="font-size: 13px; color: #666;">Tu agente ya está respondiendo automáticamente. Puedes revisar la conversación en el panel.</p>
+          <a href="https://app.wasapy.io/app/whatsapp" class="btn">Ver conversación</a>
+        </div>
+        <div class="footer">© 2026 Wasapy · <a href="https://wasapy.io" style="color: #666;">wasapy.io</a></div>
+      </div>
+    `,
+
+    subscription_renewed: `
+      <div class="container">
+        <div class="logo"><img src="https://app.wasapy.io/images/Logoverde.png" alt="Wasapy" /></div>
+        <div class="card">
+          <h1>♻️ Suscripción renovada</h1>
+          <p>Hola <strong>${data.name || 'ahí'}</strong>,</p>
+          <p>Tu suscripción <span class="highlight">${data.plan || 'Pro'}</span> se ha renovado correctamente por <strong>${data.amount || '—'}€</strong>.</p>
+          <div class="stats">
+            <div class="stat"><span class="stat-value">${data.messageLimit || '—'}</span><span class="stat-label">Mensajes/mes</span></div>
+            <div class="stat"><span class="stat-value">${data.amount || '—'}€</span><span class="stat-label">Cobrado</span></div>
+          </div>
+          <p>El contador de mensajes se ha reiniciado para este nuevo ciclo. ¡Listo para seguir atendiendo a tus clientes!</p>
+          <a href="https://app.wasapy.io/app" class="btn">Ir al dashboard</a>
+          <p style="font-size: 13px; color: #666; margin-top: 20px;">Próxima renovación: <span class="highlight">${data.nextBilling || '—'}</span></p>
+        </div>
+        <div class="footer">© 2026 Wasapy · <a href="https://wasapy.io" style="color: #666;">wasapy.io</a></div>
       </div>
     `,
   }
