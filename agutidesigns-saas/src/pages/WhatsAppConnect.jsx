@@ -38,6 +38,8 @@ export default function WhatsAppConnect() {
   // Human handoff
   const [handoffEnabled, setHandoffEnabled] = useState(false);
   const [handoffNumber, setHandoffNumber] = useState('');
+  const [handoffSaving, setHandoffSaving] = useState(false);
+  const [handoffSaved, setHandoffSaved] = useState(false);
 
   // Inbox state
   const [conversations, setConversations] = useState([]);
@@ -231,11 +233,18 @@ export default function WhatsAppConnect() {
 
   async function handleHandoffSave() {
     if (!activeAgent) return;
-    await supabase.from('agents').update({
+    setHandoffSaving(true);
+    const { error: saveErr } = await supabase.from('agents').update({
       human_handoff_enabled: handoffEnabled,
       human_handoff_number: handoffNumber.trim(),
+      updated_at: new Date().toISOString(),
     }).eq('id', activeAgent.id);
-    refreshAgents();
+    setHandoffSaving(false);
+    if (!saveErr) {
+      setHandoffSaved(true);
+      refreshAgents();
+      setTimeout(() => setHandoffSaved(false), 2500);
+    }
   }
 
   async function handleStatusChange(convoId, newStatus) {
@@ -339,7 +348,9 @@ export default function WhatsAppConnect() {
                     <span className="wa-card-hint">El cliente recibirá un enlace wa.me a este número.</span>
                   </div>
                 )}
-                <button className="btn btn--outline btn--xs" onClick={handleHandoffSave} style={{ marginTop: '0.5rem' }}>Guardar</button>
+                <button className="btn btn--outline btn--xs" onClick={handleHandoffSave} disabled={handoffSaving} style={{ marginTop: '0.5rem' }}>
+                  {handoffSaved ? <><Check size={12} /> Guardado</> : handoffSaving ? <><Loader2 size={12} className="spin" /> Guardando...</> : 'Guardar'}
+                </button>
               </div>
             </div>
           </div>

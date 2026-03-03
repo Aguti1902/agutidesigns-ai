@@ -270,6 +270,12 @@ serve(async (req) => {
           if (ctx.length) systemPrompt += '\n\n═══ INFORMACIÓN DEL NEGOCIO ═══\n' + ctx.join('\n\n')
         }
 
+        // Human handoff context
+        if (agent.human_handoff_enabled && agent.human_handoff_number) {
+          const handoffUrl = `https://wa.me/${agent.human_handoff_number.replace(/\D/g,'')}`
+          systemPrompt += `\n\n═══ DERIVACIÓN A HUMANO ═══\nSi el cliente pide hablar con una persona real, responde con amabilidad y envíale este enlace directo: ${handoffUrl}\nUsa un mensaje como: "Por supuesto, puedo conectarte con [nombre del negocio]. Puedes escribirles directamente aquí: ${handoffUrl} 😊"`
+        }
+
         // Only build calendar context if booking is enabled
         const bookingEnabled = !!agent.booking_enabled
         const todayStr = now.toISOString().split('T')[0]
