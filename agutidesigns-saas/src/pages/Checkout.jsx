@@ -15,25 +15,25 @@ const API_URL = import.meta.env.VITE_API_URL || (SUPABASE_URL ? `${SUPABASE_URL.
 
 const PLANS = [
   {
-    id: 'starter', name: 'Starter', price: '29',
+    id: 'starter', name: 'Starter', price: '29', priceAnnual: '24',
     priceId: 'price_1T1qSzFjBSJ299OpJBLCMTrn',
     icon: <Package size={22} />, color: '#60a5fa',
-    highlight: '1 agente IA · 500 msgs/mes',
-    features: ['1 agente IA (1 número WhatsApp)', '500 mensajes/mes incluidos', '1 prompt personalizado', 'Dashboard básico', 'Soporte por email'],
+    highlight: '1 agente IA · 1.000 msgs/mes',
+    features: ['1 agente IA (1 número WhatsApp)', '1.000 mensajes/mes incluidos', '1 prompt personalizado', 'Presupuestos en PDF', 'Soporte por email'],
   },
   {
-    id: 'pro', name: 'Pro', price: '79',
+    id: 'pro', name: 'Pro', price: '79', priceAnnual: '66',
     priceId: 'price_1T1qTcFjBSJ299OpSxVO6ZFM', popular: true,
     icon: <Crown size={22} />, color: '#25D366',
-    highlight: '3 agentes IA · 5.000 msgs/mes',
-    features: ['3 agentes IA (3 números WhatsApp)', '5.000 mensajes/mes incluidos', 'Prompt independiente por agente', 'Dashboard avanzado', 'Soporte prioritario', 'Estadísticas por agente'],
+    highlight: '3 agentes IA · 3.000 msgs/mes',
+    features: ['3 agentes IA (3 números WhatsApp)', '3.000 mensajes/mes incluidos', 'Prompt independiente por agente', 'Presupuestos + facturas PDF', 'Soporte prioritario'],
   },
   {
-    id: 'business', name: 'Business', price: '199',
+    id: 'agency', name: 'Agency', price: '149', priceAnnual: '124',
     priceId: 'price_1T1qU1FjBSJ299OpTOdjIRya',
     icon: <Infinity size={22} />, color: '#a78bfa',
-    highlight: 'Agentes ilimitados · 20.000 msgs/mes',
-    features: ['Agentes ilimitados', '20.000 mensajes/mes', 'API personalizada', 'Marca blanca', 'Soporte 24/7'],
+    highlight: 'Agentes ilimitados · 8.000 msgs/mes',
+    features: ['Agentes ilimitados', '8.000 mensajes/mes', 'API personalizada', 'Marca blanca', 'Soporte 24/7'],
   },
 ];
 
@@ -51,12 +51,17 @@ export default function Checkout() {
   const { user } = useAuth();
   const [error, setError] = useState(null);
 
-  const planParam = searchParams.get('plan') || '';
-  const modeParam = searchParams.get('mode') || 'subscription';
+  const planParam  = searchParams.get('plan') || '';
+  const modeParam  = searchParams.get('mode') || 'subscription';
+  const priceIdParam = searchParams.get('priceId') || ''; // priceId anual si viene en URL
+  const cycleParam = searchParams.get('cycle') || 'monthly';
 
   const item = modeParam === 'payment'
     ? MSG_PACKS.find(p => p.id === planParam)
     : PLANS.find(p => p.id === planParam);
+
+  // Si viene priceId explícito en la URL (plan anual) úsalo; si no, el del plan
+  const resolvedPriceId = priceIdParam || item?.priceId;
 
   const returnUrl = `${window.location.origin}/app/billing?success=true${modeParam === 'payment' ? '&pack=true' : ''}`;
 
@@ -69,7 +74,7 @@ export default function Checkout() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          priceId: isPayment ? undefined : item.priceId,
+          priceId: isPayment ? undefined : resolvedPriceId,
           amount: isPayment ? item.price : undefined,
           productName: isPayment ? item.name : undefined,
           userId: user.id,
@@ -129,8 +134,8 @@ export default function Checkout() {
           <h1 className="co-plan-name">{item.name}</h1>
 
           <div className="co-plan-price">
-            <span className="co-plan-price__amount">{item.price}€</span>
-            {isPlan && <span className="co-plan-price__period">/mes</span>}
+            <span className="co-plan-price__amount">{cycleParam === 'annual' && item.priceAnnual ? item.priceAnnual : item.price}€</span>
+            {isPlan && <span className="co-plan-price__period">/mes{cycleParam === 'annual' ? ' · facturado anualmente' : ''}</span>}
           </div>
 
           {planData?.highlight && (

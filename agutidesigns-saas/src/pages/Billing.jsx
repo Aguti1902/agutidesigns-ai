@@ -20,28 +20,31 @@ const API_URL = import.meta.env.VITE_API_URL || (SUPABASE_URL ? `${SUPABASE_URL.
 
 const PLANS = [
   {
-    id: 'starter', name: 'Starter', price: '29',
-    priceId: 'price_1T1qSzFjBSJ299OpJBLCMTrn',
+    id: 'starter', name: 'Starter',
+    price: '29',       priceId: 'price_1T1qSzFjBSJ299OpJBLCMTrn',
+    priceAnnual: '24', priceIdAnnual: 'REEMPLAZAR_price_annual_starter', // Crear en Stripe: 288€/año
     icon: <Package size={20} />,
     color: '#60a5fa',
-    agents: '1 número de WhatsApp', messages: '500 mensajes/mes',
-    features: ['1 agente IA (1 número WhatsApp)', '500 mensajes/mes incluidos', '1 prompt personalizado', 'Datos de negocio', 'Soporte por email', 'Dashboard básico'],
+    agents: '1 número de WhatsApp', messages: '1.000 mensajes/mes',
+    features: ['1 agente IA (1 número WhatsApp)', '1.000 mensajes/mes incluidos', '1 prompt personalizado', 'Presupuestos en PDF', 'Soporte por email', 'Dashboard básico'],
   },
   {
-    id: 'pro', name: 'Pro', price: '79',
-    priceId: 'price_1T1qTcFjBSJ299OpSxVO6ZFM', popular: true,
+    id: 'pro', name: 'Pro',
+    price: '79',       priceId: 'price_1T1qTcFjBSJ299OpSxVO6ZFM', popular: true,
+    priceAnnual: '66', priceIdAnnual: 'REEMPLAZAR_price_annual_pro', // Crear en Stripe: 792€/año
     icon: <Crown size={20} />,
     color: '#25D366',
-    agents: '3 números de WhatsApp', messages: '5.000 mensajes/mes',
-    features: ['3 agentes IA (3 números WhatsApp)', '5.000 mensajes/mes incluidos', 'Prompt independiente por agente', 'Datos de negocio por agente', 'Soporte prioritario', 'Dashboard avanzado', 'Estadísticas por agente'],
+    agents: '3 números de WhatsApp', messages: '3.000 mensajes/mes',
+    features: ['3 agentes IA (3 números WhatsApp)', '3.000 mensajes/mes incluidos', 'Prompt independiente por agente', 'Presupuestos + facturas PDF', 'Soporte prioritario', 'Dashboard avanzado', 'CRM completo + etiquetas'],
   },
   {
-    id: 'business', name: 'Business', price: '199',
-    priceId: 'price_1T1qU1FjBSJ299OpTOdjIRya',
+    id: 'agency', name: 'Agency',
+    price: '149',       priceId: 'price_1T1qU1FjBSJ299OpTOdjIRya',
+    priceAnnual: '124', priceIdAnnual: 'REEMPLAZAR_price_annual_agency', // Crear en Stripe: 1.488€/año
     icon: <Infinity size={20} />,
     color: '#a78bfa',
-    agents: 'Números ilimitados', messages: '20.000 mensajes/mes',
-    features: ['Agentes ilimitados (WhatsApp ilimitados)', '20.000 mensajes/mes incluidos', 'Prompt independiente por agente', 'Datos de negocio por agente', 'Soporte 24/7', 'Dashboard completo', 'API personalizada', 'Marca blanca'],
+    agents: 'Agentes ilimitados', messages: '8.000 mensajes/mes',
+    features: ['Agentes ilimitados (WhatsApp ilimitados)', '8.000 mensajes/mes incluidos', 'Todo lo de Pro', 'Marca blanca', 'API personalizada', 'Soporte 24/7 dedicado', 'Onboarding personalizado'],
   },
 ];
 
@@ -127,6 +130,8 @@ export default function Billing() {
   const [justCancelled, setJustCancelled] = useState(false);
   const [reactivating, setReactivating] = useState(false);
   const [showInvoices, setShowInvoices] = useState(true);
+
+  const [annual, setAnnual] = useState(false);
 
   const [statusDismissed, setStatusDismissed] = useState(() => {
     try { return localStorage.getItem('billing_status_dismissed') === 'true'; } catch { return false; }
@@ -248,8 +253,8 @@ export default function Billing() {
 
   // Determine current plan
   const currentPlan = PLANS.find(p =>
-    customerInfo?.subscription?.items?.some(item => item.priceId === p.priceId)
-  ) || (isSubscribed ? PLANS[1] : null); // fallback to Pro if subscribed but no items yet
+    customerInfo?.subscription?.items?.some(item => item.priceId === p.priceId || item.priceId === p.priceIdAnnual)
+  ) || (isSubscribed ? PLANS[1] : null);
 
   const pm = customerInfo?.paymentMethods?.[0];
 
@@ -541,15 +546,42 @@ export default function Billing() {
         </div>
       </div>
 
+      {/* Toggle mensual / anual */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.5rem' }}>
+        <span style={{ fontSize: '0.88rem', color: annual ? 'var(--text-secondary)' : 'var(--text-primary)', fontWeight: annual ? 400 : 600 }}>Mensual</span>
+        <button
+          onClick={() => setAnnual(v => !v)}
+          style={{
+            width: '44px', height: '24px', borderRadius: '12px', border: 'none', cursor: 'pointer', position: 'relative',
+            background: annual ? '#25D366' : 'var(--bg-input)', transition: 'background 0.2s',
+          }}
+          aria-label="Toggle anual"
+        >
+          <span style={{
+            position: 'absolute', top: '3px', left: annual ? '23px' : '3px',
+            width: '18px', height: '18px', borderRadius: '50%', background: '#fff',
+            transition: 'left 0.2s', display: 'block',
+          }} />
+        </button>
+        <span style={{ fontSize: '0.88rem', color: annual ? 'var(--text-primary)' : 'var(--text-secondary)', fontWeight: annual ? 600 : 400 }}>
+          Anual <span style={{ fontSize: '0.75rem', background: 'rgba(37,211,102,0.15)', color: '#25D366', padding: '1px 7px', borderRadius: '20px', fontWeight: 700 }}>2 meses gratis</span>
+        </span>
+      </div>
+
       <div className="plans-grid">
         {PLANS.map(plan => {
           const isCurrent = isSubscribed && plan.id === currentPlan?.id;
+          const displayPrice = annual ? plan.priceAnnual : plan.price;
+          const activePriceId = annual ? plan.priceIdAnnual : plan.priceId;
           return (
             <div key={plan.id} className={`plan-card ${plan.popular && !isCurrent ? 'plan-card--popular' : ''} ${isCurrent ? 'plan-card--current' : ''}`}>
               {isCurrent && <span className="plan-card__badge plan-card__badge--current"><Check size={11} /> Plan seleccionado</span>}
               {!isCurrent && plan.popular && <span className="plan-card__badge"><Star size={11} /> Más popular</span>}
               <h3>{plan.name}</h3>
-              <div className="plan-card__price"><span>{plan.price}€</span>/mes</div>
+              <div className="plan-card__price">
+                <span>{displayPrice}€</span>/mes
+                {annual && <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', marginTop: '2px' }}>({Math.round(displayPrice * 12)}€ facturado anualmente)</div>}
+              </div>
               <div className="plan-card__highlights">
                 <div className="plan-card__highlight"><Smartphone size={13} /><span>{plan.agents}</span></div>
                 <div className="plan-card__highlight"><MessageCircle size={13} /><span>{plan.messages}</span></div>
@@ -561,7 +593,7 @@ export default function Billing() {
                 </button>
               ) : (
                 <button className="btn btn--outline btn--full"
-                  onClick={() => navigate(`/app/checkout?plan=${plan.id}&mode=subscription`)}>
+                  onClick={() => navigate(`/app/checkout?plan=${plan.id}&priceId=${activePriceId}&mode=subscription&cycle=${annual ? 'annual' : 'monthly'}`)}>
                   {isSubscribed ? `Cambiar a ${plan.name}` : `Elegir ${plan.name}`} <ArrowRight size={14} />
                 </button>
               )}
