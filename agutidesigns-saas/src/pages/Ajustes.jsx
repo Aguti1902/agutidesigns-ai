@@ -105,9 +105,17 @@ function WizardNegocio({ initialData, onSave }) {
   const [descripcionServicios, setDescripcionServicios] = useState(initialData.web_services_detail || '');
 
   // Step 3 — Precios + IVA/IRPF
-  const [rangoWeb, setRangoWeb] = useState(initialData.rango_web || '');
-  const [rangoLanding, setRangoLanding] = useState(initialData.rango_landing || '');
-  const [rangoEcommerce, setRangoEcommerce] = useState(initialData.rango_ecommerce || '');
+  // Rangos de precio dinámicos por servicio (clave = service ID)
+  const [preciosRangos, setPreciosRangos] = useState(() => {
+    // Primero cargamos rango_servicios (nuevo formato)
+    let base = {};
+    try { base = initialData.rango_servicios ? JSON.parse(initialData.rango_servicios) : {}; } catch {}
+    // Migramos campos legacy si el nuevo objeto no los tiene aún
+    if (!base.web_corp  && initialData.rango_web)       base.web_corp     = initialData.rango_web;
+    if (!base.landing   && initialData.rango_landing)   base.landing      = initialData.rango_landing;
+    if (!base.ecommerce && initialData.rango_ecommerce) base.ecommerce    = initialData.rango_ecommerce;
+    return base;
+  });
   const [anticipo, setAnticipo] = useState(initialData.anticipo || '50%');
   const [ivaDefault, setIvaDefault] = useState(initialData.iva_default || '21');
   const [irpfDefault, setIrpfDefault] = useState(initialData.irpf_default || '0');
@@ -144,7 +152,12 @@ function WizardNegocio({ initialData, onSave }) {
     const extra = {
       logo, timezone, servicios_toggles: JSON.stringify(servicios), nicho,
       web_services_detail: descripcionServicios,
-      rango_web: rangoWeb, rango_landing: rangoLanding, rango_ecommerce: rangoEcommerce,
+      // Nuevo formato dinámico
+      rango_servicios: JSON.stringify(preciosRangos),
+      // Campos legacy para retrocompatibilidad con PromptBuilder y exports
+      rango_web:       preciosRangos.web_corp     || '',
+      rango_landing:   preciosRangos.landing      || '',
+      rango_ecommerce: preciosRangos.ecommerce    || '',
       anticipo,
       precio_mensual: precioMensual, cuando_mensual: cuandoMensual,
       plazos_servicios: JSON.stringify(plazosServicios),
@@ -166,7 +179,7 @@ function WizardNegocio({ initialData, onSave }) {
   const completedSteps = [
     !!nombre,
     servicios.length > 0,
-    !!(rangoWeb || rangoLanding || rangoEcommerce || precioMensual),
+    !!(Object.values(preciosRangos).some(v => !!v) || precioMensual),
     !!horariosDisp,
     !!(emailContacto || telefono),
   ];
@@ -286,26 +299,37 @@ function WizardNegocio({ initialData, onSave }) {
         {step === 2 && (
           <div className="wz-form">
             <div className="wz-form__head"><h3>Precios y condiciones</h3><p>La IA usará estos datos para responder "¿cuánto cuesta?" con tus tarifas reales.</p></div>
+
+            {/* Anticipo */}
             <div className="form-grid">
-              <div className="form-field">
+              <div className="form-field form-field--full">
                 <label>Anticipo al inicio del proyecto</label>
                 <div className="chips">
                   {ANTICIPOS.map(a => <button key={a} type="button" className={`chip ${anticipo === a ? 'chip--active' : ''}`} onClick={() => setAnticipo(a)}>{a}</button>)}
                 </div>
               </div>
-              <div className="form-field">
-                <label>Rango web informativa</label>
-                <input value={rangoWeb} onChange={e => setRangoWeb(e.target.value)} placeholder="Ej: 800€ – 2.500€" />
-              </div>
-              <div className="form-field">
-                <label>Rango landing page</label>
-                <input value={rangoLanding} onChange={e => setRangoLanding(e.target.value)} placeholder="Ej: 500€ – 1.200€" />
-              </div>
-              <div className="form-field">
-                <label>Rango ecommerce</label>
-                <input value={rangoEcommerce} onChange={e => setRangoEcommerce(e.target.value)} placeholder="Ej: 1.500€ – 5.000€" />
-              </div>
             </div>
+
+            {/* Rangos de precio dinámicos por servicio */}
+            <div className="wz-section-divider"><span>Rangos de precio por servicio</span></div>
+            {servicios.filter(id => id !== 'mantenimiento').length === 0 ? (
+              <div style={{ padding: '1rem', background: 'rgba(255,200,0,0.06)', border: '1px solid rgba(255,200,0,0.2)', borderRadius: 'var(--radius-lg)', fontSize: '0.83rem', color: 'var(--text-secondary)' }}>
+                Activa primero los servicios en el paso <strong>Servicios</strong> para configurar sus precios.
+              </div>
+            ) : (
+              <div className="form-grid">
+                {SERVICIOS_OPS.filter(s => servicios.includes(s.id) && s.id !== 'mantenimiento').map(s => (
+                  <div key={s.id} className="form-field">
+                    <label>{s.label}</label>
+                    <input
+                      value={preciosRangos[s.id] || ''}
+                      onChange={e => setPreciosRangos(p => ({ ...p, [s.id]: e.target.value }))}
+                      placeholder="Ej: 800€ – 2.500€"
+                    />
+                  </div>
+                ))}
+              </div>
+            )}
 
             <div className="wz-section-divider"><span>Mensualidad / Mantenimiento</span></div>
             <div className="form-grid">
