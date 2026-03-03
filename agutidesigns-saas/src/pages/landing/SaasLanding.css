@@ -67,7 +67,7 @@
 .ln__mobile { overflow: hidden; display: flex; flex-direction: column; border-top: 1px solid #1a1a1a; background: rgba(9,9,9,0.98); padding: 0.25rem 1.75rem 1.1rem; }
 .ln__mobile a { font-family: var(--font-mono); font-size: 0.9rem; color: #999; text-decoration: none; padding: 0.7rem 0; border-bottom: 1px solid #131313; display: block; }
 .ln__mobile a:last-of-type { border-bottom: none; }
-.ln__mobile-cta { display: flex; align-items: center; justify-content: center; gap: 0.4rem; margin-top: 0.85rem; padding: 0.75rem 1.5rem; background: #25D366; color: #000 !important; font-family: var(--font-mono); font-size: 0.88rem; font-weight: 800; border-radius: 999px; text-decoration: none !important; transition: box-shadow 0.2s; }
+.ln__mobile-cta { display: inline-flex; align-items: center; gap: 0.4rem; align-self: center; margin-top: 0.85rem; padding: 0.65rem 1.6rem; background: #25D366; color: #000 !important; font-family: var(--font-mono); font-size: 0.85rem; font-weight: 800; border-radius: 999px; text-decoration: none !important; transition: box-shadow 0.2s; width: fit-content; }
 .ln__mobile-cta:hover { box-shadow: 0 6px 24px rgba(37,211,102,0.35); }
 
 /* ═══ HERO ═══ */
