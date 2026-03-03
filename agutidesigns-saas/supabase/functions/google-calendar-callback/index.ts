@@ -22,7 +22,7 @@ serve(async (req) => {
     }
 
     if (!code || !userId) {
-      return Response.redirect('https://app.agutidesigns.io/app/calendario?error=missing_params')
+      return Response.redirect('https://app.wasapy.io/app/calendario?error=missing_params')
     }
 
     // Exchange code for tokens
@@ -40,7 +40,7 @@ serve(async (req) => {
 
     const tokens = await tokenRes.json()
     if (tokens.error) {
-      return Response.redirect(`https://app.agutidesigns.io/app/calendario?error=${tokens.error}`)
+      return Response.redirect(`https://app.wasapy.io/app/calendario?error=${tokens.error}`)
     }
 
     // Get primary calendar info
@@ -69,9 +69,9 @@ serve(async (req) => {
     // Auto-enable calendar on all user's agents
     await supabase.from('agents').update({ calendar_enabled: true }).eq('user_id', userId)
 
-    return Response.redirect('https://app.agutidesigns.io/app/calendario?success=true')
+    return Response.redirect('https://app.wasapy.io/app/calendario?success=true')
   } catch (error) {
     console.error('Callback error:', error)
-    return Response.redirect('https://app.agutidesigns.io/app/calendario?error=callback_failed')
+    return Response.redirect('https://app.wasapy.io/app/calendario?error=callback_failed')
   }
 })

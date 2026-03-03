@@ -41,9 +41,9 @@ function getTemplate(template: string, data: Record<string, any> = {}): string {
   const templates = {
     welcome: `
       <div class="container">
-        <div class="logo"><img src="https://app.agutidesigns.io/images/Logoverde.png" alt="Agutidesigns IA" /></div>
+        <div class="logo"><img src="https://app.wasapy.io/images/Logoverde.png" alt="Wasapy" /></div>
         <div class="card">
-          <h1>¡Bienvenido a Agutidesigns IA! 🚀</h1>
+          <h1>¡Bienvenido a Wasapy! 🚀</h1>
           <p>Hola <strong>${data.name || 'ahí'}</strong>,</p>
           <p>Estamos emocionados de tenerte con nosotros. Tu agente de WhatsApp IA está listo para empezar a atender a tus clientes 24/7.</p>
           <p><strong>Próximos pasos:</strong></p>
@@ -53,16 +53,16 @@ function getTemplate(template: string, data: Record<string, any> = {}): string {
             <li>Personaliza el prompt de tu agente según tu estilo</li>
             <li>¡Empieza a recibir y responder mensajes automáticamente!</li>
           </ol>
-          <a href="https://app.agutidesigns.io/app" class="btn">Ir al dashboard</a>
+          <a href="https://app.wasapy.io/app" class="btn">Ir al dashboard</a>
           <p style="font-size: 13px; color: #666; margin-top: 24px;">Tienes <span class="highlight">${data.trialDays || 7} días de prueba gratis</span> para probarlo todo sin límites.</p>
         </div>
-        <div class="footer">© 2026 Agutidesigns · <a href="https://agutidesigns.io" style="color: #666;">agutidesigns.io</a></div>
+        <div class="footer">© 2026 Wasapy · <a href="https://wasapy.io" style="color: #666;">wasapy.io</a></div>
       </div>
     `,
     
     payment_success: `
       <div class="container">
-        <div class="logo"><img src="https://app.agutidesigns.io/images/Logoverde.png" alt="Agutidesigns IA" /></div>
+        <div class="logo"><img src="https://app.wasapy.io/images/Logoverde.png" alt="Wasapy" /></div>
         <div class="card">
           <h1>¡Pago recibido! ✅</h1>
           <p>Hola <strong>${data.name || 'ahí'}</strong>,</p>
@@ -72,16 +72,16 @@ function getTemplate(template: string, data: Record<string, any> = {}): string {
             <div class="stat"><span class="stat-value">${data.amount}€</span><span class="stat-label">Pagado</span></div>
           </div>
           <p>Tu agente de WhatsApp IA ya está activo y listo para responder a tus clientes.</p>
-          <a href="https://app.agutidesigns.io/app" class="btn">Ir al dashboard</a>
+          <a href="https://app.wasapy.io/app" class="btn">Ir al dashboard</a>
           <p style="font-size: 13px; color: #666; margin-top: 24px;">Próxima factura: ${data.nextBilling || '—'}</p>
         </div>
-        <div class="footer">© 2026 Agutidesigns · <a href="https://app.agutidesigns.io/app/billing" style="color: #666;">Ver factura</a></div>
+        <div class="footer">© 2026 Wasapy · <a href="https://app.wasapy.io/app/billing" style="color: #666;">Ver factura</a></div>
       </div>
     `,
 
     messages_80: `
       <div class="container">
-        <div class="logo"><img src="https://app.agutidesigns.io/images/Logoverde.png" alt="Agutidesigns IA" /></div>
+        <div class="logo"><img src="https://app.wasapy.io/images/Logoverde.png" alt="Wasapy" /></div>
         <div class="card">
           <div class="alert">
             <h1 style="margin-bottom: 8px;">⚠️ Llegando al límite de mensajes</h1>
@@ -89,7 +89,7 @@ function getTemplate(template: string, data: Record<string, any> = {}): string {
           </div>
           <p>Hola <strong>${data.name}</strong>,</p>
           <p>Te quedan pocos mensajes disponibles. Para que tu agente IA siga respondiendo sin interrupciones, te recomendamos ampliar tu plan.</p>
-          <a href="https://app.agutidesigns.io/app/mensajes" class="btn">Ampliar mensajes</a>
+          <a href="https://app.wasapy.io/app/mensajes" class="btn">Ampliar mensajes</a>
           <p style="font-size: 13px; color: #666;">Si llegas al límite, tu agente se desconectará automáticamente hasta el próximo ciclo o hasta que añadas más mensajes.</p>
         </div>
         <div class="footer">© 2026 Agutidesigns</div>
@@ -98,7 +98,7 @@ function getTemplate(template: string, data: Record<string, any> = {}): string {
 
     messages_95: `
       <div class="container">
-        <div class="logo"><img src="https://app.agutidesigns.io/images/Logoverde.png" alt="Agutidesigns IA" /></div>
+        <div class="logo"><img src="https://app.wasapy.io/images/Logoverde.png" alt="Wasapy" /></div>
         <div class="card">
           <div class="alert alert-error">
             <h1 style="margin-bottom: 8px; color: #ef4444;">🚨 ¡Casi sin mensajes!</h1>
@@ -106,7 +106,7 @@ function getTemplate(template: string, data: Record<string, any> = {}): string {
           </div>
           <p>Hola <strong>${data.name}</strong>,</p>
           <p><strong>Tu agente está a punto de desconectarse.</strong> Te quedan muy pocos mensajes. Amplía tu plan ahora para que siga atendiendo a tus clientes.</p>
-          <a href="https://app.agutidesigns.io/app/mensajes" class="btn" style="background: #ef4444;">Ampliar ahora</a>
+          <a href="https://app.wasapy.io/app/mensajes" class="btn" style="background: #ef4444;">Ampliar ahora</a>
         </div>
         <div class="footer">© 2026 Agutidesigns</div>
       </div>
@@ -114,22 +114,22 @@ function getTemplate(template: string, data: Record<string, any> = {}): string {
 
     plan_cancelled: `
       <div class="container">
-        <div class="logo"><img src="https://app.agutidesigns.io/images/Logoverde.png" alt="Agutidesigns IA" /></div>
+        <div class="logo"><img src="https://app.wasapy.io/images/Logoverde.png" alt="Wasapy" /></div>
         <div class="card">
           <h1>Plan cancelado</h1>
           <p>Hola <strong>${data.name}</strong>,</p>
           <p>Tu suscripción se ha cancelado correctamente. Seguirás teniendo acceso hasta el <span class="highlight">${data.accessUntil}</span>.</p>
           <p>Después de esa fecha, tu agente de WhatsApp IA se desactivará automáticamente.</p>
           <p style="margin-top: 24px;">Si cambias de opinión, puedes reactivar tu plan en cualquier momento desde el dashboard.</p>
-          <a href="https://app.agutidesigns.io/app/billing" class="btn">Reactivar plan</a>
+          <a href="https://app.wasapy.io/app/billing" class="btn">Reactivar plan</a>
         </div>
-        <div class="footer">© 2026 Agutidesigns · Esperamos verte pronto 💚</div>
+        <div class="footer">© 2026 Wasapy · Esperamos verte pronto 💚</div>
       </div>
     `,
 
     ticket_created: `
       <div class="container">
-        <div class="logo"><img src="https://app.agutidesigns.io/images/Logoverde.png" alt="Agutidesigns IA" /></div>
+        <div class="logo"><img src="https://app.wasapy.io/images/Logoverde.png" alt="Wasapy" /></div>
         <div class="card">
           <h1>Ticket creado #${data.ticketId || '---'}</h1>
           <p>Hola <strong>${data.name}</strong>,</p>
@@ -139,15 +139,15 @@ function getTemplate(template: string, data: Record<string, any> = {}): string {
             <p style="color: #777; font-size: 14px; margin: 0;">${data.message}</p>
           </div>
           <p>Nuestro equipo revisará tu consulta y te responderemos en <span class="highlight">menos de 24 horas</span>.</p>
-          <a href="https://app.agutidesigns.io/app/soporte" class="btn">Ver mis tickets</a>
+          <a href="https://app.wasapy.io/app/soporte" class="btn">Ver mis tickets</a>
         </div>
-        <div class="footer">© 2026 Agutidesigns · Soporte</div>
+        <div class="footer">© 2026 Wasapy · Soporte</div>
       </div>
     `,
 
     ticket_reply: `
       <div class="container">
-        <div class="logo"><img src="https://app.agutidesigns.io/images/Logoverde.png" alt="Agutidesigns IA" /></div>
+        <div class="logo"><img src="https://app.wasapy.io/images/Logoverde.png" alt="Wasapy" /></div>
         <div class="card">
           <h1>💬 Nueva respuesta a tu ticket</h1>
           <p>Hola <strong>${data.name}</strong>,</p>
@@ -155,15 +155,15 @@ function getTemplate(template: string, data: Record<string, any> = {}): string {
           <div style="background: rgba(37,211,102,0.08); border: 1px solid rgba(37,211,102,0.2); border-radius: 8px; padding: 16px; margin: 16px 0;">
             <p style="font-size: 14px; color: #ddd; line-height: 1.6; margin: 0;">${data.replyPreview}</p>
           </div>
-          <a href="https://app.agutidesigns.io/app/soporte" class="btn">Ver respuesta completa</a>
+          <a href="https://app.wasapy.io/app/soporte" class="btn">Ver respuesta completa</a>
         </div>
-        <div class="footer">© 2026 Agutidesigns · Soporte</div>
+        <div class="footer">© 2026 Wasapy · Soporte</div>
       </div>
     `,
 
     trial_expiring: `
       <div class="container">
-        <div class="logo"><img src="https://app.agutidesigns.io/images/Logoverde.png" alt="Agutidesigns IA" /></div>
+        <div class="logo"><img src="https://app.wasapy.io/images/Logoverde.png" alt="Wasapy" /></div>
         <div class="card">
           <div class="alert">
             <h1 style="margin-bottom: 8px;">⏰ Tu prueba termina en ${data.daysLeft || 2} días</h1>
@@ -175,7 +175,7 @@ function getTemplate(template: string, data: Record<string, any> = {}): string {
             <div class="stat"><span class="stat-value">${data.leadsGenerated || 0}</span><span class="stat-label">Leads</span></div>
           </div>
           <p>Continúa automatizando tu atención al cliente desde <strong>solo 29€/mes</strong>.</p>
-          <a href="https://app.agutidesigns.io/app/billing" class="btn">Ver planes</a>
+          <a href="https://app.wasapy.io/app/billing" class="btn">Ver planes</a>
         </div>
         <div class="footer">© 2026 Agutidesigns</div>
       </div>
@@ -183,13 +183,13 @@ function getTemplate(template: string, data: Record<string, any> = {}): string {
 
     agent_connected: `
       <div class="container">
-        <div class="logo"><img src="https://app.agutidesigns.io/images/Logoverde.png" alt="Agutidesigns IA" /></div>
+        <div class="logo"><img src="https://app.wasapy.io/images/Logoverde.png" alt="Wasapy" /></div>
         <div class="card">
           <h1>✅ WhatsApp conectado con éxito</h1>
           <p>Hola <strong>${data.name}</strong>,</p>
           <p>Tu número de WhatsApp <span class="highlight">${data.phone}</span> se ha conectado correctamente.</p>
           <p>Tu agente IA <strong>"${data.agentName}"</strong> ya está activo y respondiendo mensajes automáticamente.</p>
-          <a href="https://app.agutidesigns.io/app/whatsapp" class="btn">Ver conversaciones</a>
+          <a href="https://app.wasapy.io/app/whatsapp" class="btn">Ver conversaciones</a>
           <p style="font-size: 13px; color: #666; margin-top: 24px;">Recibirás notificaciones cuando lleguen nuevos mensajes.</p>
         </div>
         <div class="footer">© 2026 Agutidesigns</div>
@@ -198,13 +198,13 @@ function getTemplate(template: string, data: Record<string, any> = {}): string {
 
     invoice_generated: `
       <div class="container">
-        <div class="logo"><img src="https://app.agutidesigns.io/images/Logoverde.png" alt="Agutidesigns IA" /></div>
+        <div class="logo"><img src="https://app.wasapy.io/images/Logoverde.png" alt="Wasapy" /></div>
         <div class="card">
           <h1>🧾 Nueva factura disponible</h1>
           <p>Hola <strong>${data.name}</strong>,</p>
           <p>Tu factura <span class="highlight">${data.invoiceNumber}</span> de <strong>${data.amount}€</strong> ya está disponible.</p>
           <p style="font-size: 13px; color: #888;">Concepto: ${data.description || 'Suscripción mensual'}</p>
-          <a href="${data.pdfUrl || 'https://app.agutidesigns.io/app/billing'}" class="btn">Descargar factura PDF</a>
+          <a href="${data.pdfUrl || 'https://app.wasapy.io/app/billing'}" class="btn">Descargar factura PDF</a>
         </div>
         <div class="footer">© 2026 Agutidesigns</div>
       </div>
@@ -212,7 +212,7 @@ function getTemplate(template: string, data: Record<string, any> = {}): string {
 
     payment_failed: `
       <div class="container">
-        <div class="logo"><img src="https://app.agutidesigns.io/images/Logoverde.png" alt="Agutidesigns IA" /></div>
+        <div class="logo"><img src="https://app.wasapy.io/images/Logoverde.png" alt="Wasapy" /></div>
         <div class="card">
           <div class="alert alert-error">
             <h1 style="margin-bottom: 8px; color: #ef4444;">❌ Pago rechazado</h1>
@@ -225,7 +225,7 @@ function getTemplate(template: string, data: Record<string, any> = {}): string {
             <li>Límite de gasto superado</li>
           </ul>
           <p><strong>Por favor, actualiza tu método de pago</strong> para evitar que tu agente se desactive.</p>
-          <a href="https://app.agutidesigns.io/app/billing" class="btn" style="background: #ef4444;">Actualizar tarjeta</a>
+          <a href="https://app.wasapy.io/app/billing" class="btn" style="background: #ef4444;">Actualizar tarjeta</a>
         </div>
         <div class="footer">© 2026 Agutidesigns</div>
       </div>
@@ -233,7 +233,7 @@ function getTemplate(template: string, data: Record<string, any> = {}): string {
 
     plan_expired: `
       <div class="container">
-        <div class="logo"><img src="https://app.agutidesigns.io/images/Logoverde.png" alt="Agutidesigns IA" /></div>
+        <div class="logo"><img src="https://app.wasapy.io/images/Logoverde.png" alt="Wasapy" /></div>
         <div class="card">
           <h1>Tu plan ha expirado</h1>
           <p>Hola <strong>${data.name}</strong>,</p>
@@ -244,7 +244,7 @@ function getTemplate(template: string, data: Record<string, any> = {}): string {
             <div class="stat"><span class="stat-value">79€</span><span class="stat-label">Pro</span></div>
             <div class="stat"><span class="stat-value">199€</span><span class="stat-label">Business</span></div>
           </div>
-          <a href="https://app.agutidesigns.io/app/billing" class="btn">Elegir plan</a>
+          <a href="https://app.wasapy.io/app/billing" class="btn">Elegir plan</a>
         </div>
         <div class="footer">© 2026 Agutidesigns</div>
       </div>
@@ -280,7 +280,7 @@ serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        from: 'Agutidesigns IA <soporte@agutidesigns.io>',
+        from: 'Wasapy <info@wasapy.io>',
         to: [to],
         subject,
         html,

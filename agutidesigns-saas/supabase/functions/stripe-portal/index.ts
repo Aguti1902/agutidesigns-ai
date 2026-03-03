@@ -29,7 +29,7 @@ serve(async (req) => {
 
     const params = new URLSearchParams()
     params.append('customer', customerId)
-    params.append('return_url', returnUrl || 'https://app.agutidesigns.io/app/billing')
+    params.append('return_url', returnUrl || 'https://app.wasapy.io/app/billing')
 
     const res = await fetch('https://api.stripe.com/v1/billing_portal/sessions', {
       method: 'POST',

@@ -97,9 +97,9 @@ export default function AdminLayout() {
           <footer className="dash__footer">
             <p>© 2026 Wasapy · Panel de Administración</p>
             <div className="dash__footer-links">
-              <a href="https://agutidesigns.io/privacidad.html" target="_blank" rel="noopener">Privacidad</a>
+              <a href="/privacidad" target="_blank" rel="noopener">Privacidad</a>
               <span>·</span>
-              <a href="https://agutidesigns.io/terminos.html" target="_blank" rel="noopener">Términos</a>
+              <a href="/terminos" target="_blank" rel="noopener">Términos</a>
             </div>
           </footer>
         </main>

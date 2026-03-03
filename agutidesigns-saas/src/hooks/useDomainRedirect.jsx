@@ -2,8 +2,8 @@ import { useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from './useAuth';
 
-const MAIN_DOMAIN = 'agutidesigns.io';
-const APP_DOMAIN = 'app.agutidesigns.io';
+const MAIN_DOMAIN = 'wasapy.io';
+const APP_DOMAIN = 'app.wasapy.io';
 
 export function useDomainRedirect(user) {
   const navigate = useNavigate();

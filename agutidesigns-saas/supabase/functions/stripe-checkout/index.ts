@@ -50,10 +50,10 @@ serve(async (req) => {
 
     if (embedded) {
       params.append('ui_mode', 'embedded')
-      params.append('return_url', returnUrl || 'https://app.agutidesigns.io/app/billing?success=true')
+      params.append('return_url', returnUrl || 'https://app.wasapy.io/app/billing?success=true')
     } else {
-      params.append('success_url', returnUrl || 'https://app.agutidesigns.io/app/billing?success=true')
-      params.append('cancel_url', 'https://app.agutidesigns.io/app/billing?cancelled=true')
+      params.append('success_url', returnUrl || 'https://app.wasapy.io/app/billing?success=true')
+      params.append('cancel_url', 'https://app.wasapy.io/app/billing?cancelled=true')
     }
 
     const res = await fetch('https://api.stripe.com/v1/checkout/sessions', {

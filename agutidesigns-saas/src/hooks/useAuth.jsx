@@ -99,7 +99,7 @@ export function AuthProvider({ children }) {
   async function signInWithGoogle() {
     const appOrigin = window.location.hostname === 'localhost'
       ? window.location.origin
-      : 'https://app.agutidesigns.io';
+      : 'https://app.wasapy.io';
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
