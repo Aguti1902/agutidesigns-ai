@@ -82,7 +82,7 @@
 .ob-form__head p { font-size: 0.8rem; color: var(--text-secondary, #aaa); line-height: 1.5; }
 .ob-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.85rem; }
 .ob-field { display: flex; flex-direction: column; gap: 0.3rem; }
-.ob-field--full { grid-column: 1 / -1; }
+.ob-field--full { grid-column: 1 / -1; margin-top: 0.65rem; }
 .ob-field label { font-family: var(--font-mono, monospace); font-size: 0.72rem; font-weight: 700; color: var(--text-secondary, #aaa); display: flex; align-items: center; gap: 0.3rem; }
 .ob-field input, .ob-field textarea {
   padding: 0.65rem 0.9rem; background: var(--bg-input, #0d0d0d);
