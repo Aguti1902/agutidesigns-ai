@@ -3,9 +3,9 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import {
   Rocket, Building, FileText, Bot, MessageCircle, Check, ArrowRight,
-  ArrowLeft, CheckCircle, Circle, Zap, Target, Euro, Clock, Globe, Users,
+  ArrowLeft, CheckCircle, Circle, Zap, Target, Euro, Globe, Users,
   Smile, Briefcase, TrendingUp, ShoppingCart, Wrench, Search, Pen,
-  RefreshCw, Code, QrCode, Loader2, Phone, AlertCircle
+  RefreshCw, Code, QrCode, Loader2, AlertCircle
 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { supabase } from '../../lib/supabase';
@@ -50,10 +50,7 @@ const OBJETIVOS = [
    WhatsApp mini-connector embedded in onboarding
 ───────────────────────────────────────────── */
 function OBWhatsAppConnector({ userId, onConnected }) {
-  const [method, setMethod]         = useState('qr');
   const [qrCode, setQrCode]         = useState(null);
-  const [pairingCode, setPairingCode] = useState(null);
-  const [phone, setPhone]           = useState('');
   const [connecting, setConnecting] = useState(false);
   const [connected, setConnected]   = useState(false);
   const [error, setError]           = useState('');
@@ -64,12 +61,7 @@ function OBWhatsAppConnector({ userId, onConnected }) {
   async function getOrCreateAgentId() {
     const { data } = await supabase.from('agents').select('id').eq('user_id', userId).maybeSingle();
     if (data?.id) return data.id;
-    // No existe aún → crear agente por defecto
-    const { data: created, error } = await supabase
-      .from('agents')
-      .insert({ user_id: userId, name: 'Asistente' })
-      .select('id')
-      .single();
+    const { data: created, error } = await supabase.from('agents').insert({ user_id: userId, name: 'Asistente' }).select('id').single();
     if (error) throw new Error('No se pudo preparar el agente. Inténtalo de nuevo.');
     return created?.id;
   }
@@ -87,21 +79,6 @@ function OBWhatsAppConnector({ userId, onConnected }) {
     } catch (e) { setError(e.message); setConnecting(false); }
   }
 
-  async function connectPairing() {
-    if (!phone.trim()) { setError('Introduce tu número de teléfono'); return; }
-    const clean = phone.replace(/[^0-9]/g, '');
-    if (clean.length < 11) { setError('Incluye el prefijo de país (ej: 34612345678 para España)'); return; }
-    setConnecting(true); setError(''); setPairingCode(null);
-    try {
-      const agentId = await getOrCreateAgentId();
-      const res  = await fetch(`${API_URL}/evolution-create`, { method: 'POST', headers: apiHeaders(), body: JSON.stringify({ agentId, userId, number: clean }) });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Error');
-      if (data.pairingCode) { setPairingCode(data.pairingCode); setConnecting(false); startPolling(agentId); }
-      else { setError('No se pudo obtener el código. Prueba el método QR.'); setConnecting(false); }
-    } catch (e) { setError(e.message); setConnecting(false); }
-  }
-
   function startPolling(agentId) {
     if (pollRef.current) clearInterval(pollRef.current);
     let attempts = 0;
@@ -111,7 +88,7 @@ function OBWhatsAppConnector({ userId, onConnected }) {
         const res  = await fetch(`${API_URL}/evolution-status/${agentId}`, { headers: apiHeaders() });
         const data = await res.json();
         if (data.connected) {
-          setQrCode(null); setPairingCode(null); setConnected(true);
+          setQrCode(null); setConnected(true);
           clearInterval(pollRef.current);
           onConnected?.();
         }
@@ -130,67 +107,31 @@ function OBWhatsAppConnector({ userId, onConnected }) {
 
   return (
     <div className="ob-wa-connector">
-      <div className="ob-wa-tabs">
-        <button type="button" className={`ob-wa-tab ${method === 'qr' ? 'ob-wa-tab--on' : ''}`} onClick={() => { setMethod('qr'); setError(''); setPairingCode(null); }}>
-          <QrCode size={13} /> Código QR
-        </button>
-        <button type="button" className={`ob-wa-tab ${method === 'code' ? 'ob-wa-tab--on' : ''}`} onClick={() => { setMethod('code'); setError(''); setQrCode(null); }}>
-          <Phone size={13} /> Nº de teléfono
-        </button>
-      </div>
-
-      {method === 'qr' && (
-        <div className="ob-wa-qr">
-          {!qrCode && !connecting && (
+      <div className="ob-wa-qr">
+        {!qrCode && !connecting && (
+          <>
             <button type="button" className="ob-btn ob-btn--primary ob-wa-action-btn" onClick={connectQR}>
               <QrCode size={15} /> Generar código QR
             </button>
-          )}
-          {connecting && (
-            <div className="ob-wa-loading">
-              <Loader2 size={22} className="ob-spin" />
-              <span>Generando QR...</span>
-            </div>
-          )}
-          {qrCode && (
-            <div className="ob-wa-qr-box">
-              <img
-                src={qrCode.startsWith('data:') ? qrCode : `data:image/png;base64,${qrCode}`}
-                alt="QR WhatsApp"
-                className="ob-wa-qr-img"
-              />
-              <p>Abre WhatsApp → <strong>Dispositivos vinculados</strong> → escanea</p>
-              <button type="button" className="ob-wa-refresh" onClick={connectQR}>
-                <RefreshCw size={12} /> Refrescar QR
-              </button>
-            </div>
-          )}
-        </div>
-      )}
-
-      {method === 'code' && (
-        <div className="ob-wa-pair">
-          <div className="ob-wa-pair-row">
-            <input
-              value={phone}
-              onChange={e => setPhone(e.target.value)}
-              placeholder="34612345678 (prefijo de país obligatorio)"
-              className="ob-wa-pair-input"
-            />
-            <button type="button" className="ob-btn ob-btn--primary" onClick={connectPairing} disabled={connecting}>
-              {connecting ? <><Loader2 size={13} className="ob-spin" /> Obteniendo...</> : 'Obtener código'}
+            <p className="ob-wa-mobile-hint">⚠️ Si estás en móvil, accede desde un ordenador para poder escanear el QR</p>
+          </>
+        )}
+        {connecting && (
+          <div className="ob-wa-loading">
+            <Loader2 size={22} className="ob-spin" />
+            <span>Generando QR...</span>
+          </div>
+        )}
+        {qrCode && (
+          <div className="ob-wa-qr-box">
+            <img src={qrCode.startsWith('data:') ? qrCode : `data:image/png;base64,${qrCode}`} alt="QR WhatsApp" className="ob-wa-qr-img" />
+            <p>Abre WhatsApp → <strong>Dispositivos vinculados</strong> → escanea</p>
+            <button type="button" className="ob-wa-refresh" onClick={connectQR}>
+              <RefreshCw size={12} /> Refrescar QR
             </button>
           </div>
-          {pairingCode && (
-            <div className="ob-wa-code">
-              <span className="ob-wa-code__label">Tu código de vinculación:</span>
-              <span className="ob-wa-code__val">{pairingCode}</span>
-              <span className="ob-wa-code__hint">WhatsApp → Dispositivos vinculados → Vincular con número de teléfono</span>
-            </div>
-          )}
-        </div>
-      )}
-
+        )}
+      </div>
       {error && (
         <div className="ob-wa-error">
           <AlertCircle size={13} /> {error}
