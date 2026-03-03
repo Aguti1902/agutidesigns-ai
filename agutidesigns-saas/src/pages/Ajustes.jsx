@@ -25,23 +25,26 @@ const SERVICIOS_OPS = [
 ];
 
 /* ══ EXTRAS / ADD-ONS ══ */
+// requiresAnyOf: el extra solo aparece si al menos uno de estos servicios está activo
+const SERVICIOS_WEB = ['web_corp', 'landing', 'rediseno', 'apps'];
+
 const EXTRAS_OPS = [
-  // Funcionalidades
-  { id: 'reservas',        label: 'Sistema de reservas online',       hint: 'Booking integrado en la web',           grupo: 'funcionalidades' },
-  { id: 'blog',            label: 'Blog / Noticias',                  hint: 'Sección de blog con CMS',               grupo: 'funcionalidades' },
-  { id: 'area_privada',    label: 'Área privada / login',             hint: 'Acceso restringido a usuarios',         grupo: 'funcionalidades' },
-  { id: 'pasarela_pago',   label: 'Pasarela de pago',                 hint: 'Stripe, PayPal, Redsys…',               grupo: 'funcionalidades' },
-  { id: 'multiidioma',     label: 'Web multiidioma',                  hint: 'Precio por idioma adicional',           grupo: 'funcionalidades' },
-  { id: 'chat_live',       label: 'Chat en vivo integrado',           hint: 'Tidio, Crisp, Intercom…',               grupo: 'funcionalidades' },
-  { id: 'formularios',     label: 'Formularios avanzados',            hint: 'Multi-paso, condicionales, CRM sync',   grupo: 'funcionalidades' },
-  { id: 'analytics',       label: 'Google Analytics + Tag Manager',   hint: 'Setup y configuración de eventos',      grupo: 'funcionalidades' },
-  { id: 'seo_avanzado',    label: 'SEO on-page avanzado',             hint: 'Auditoría + optimización técnica',      grupo: 'funcionalidades' },
-  { id: 'pagina_extra',    label: 'Página adicional',                 hint: 'Precio por cada página extra',          grupo: 'funcionalidades' },
-  // Ecommerce por volumen de productos
-  { id: 'prod_50',         label: 'Ecommerce: hasta 50 productos',    hint: 'Precio extra por volumen de catálogo',  grupo: 'ecommerce' },
-  { id: 'prod_200',        label: 'Ecommerce: 51 – 200 productos',    hint: '',                                      grupo: 'ecommerce' },
-  { id: 'prod_500',        label: 'Ecommerce: 201 – 500 productos',   hint: '',                                      grupo: 'ecommerce' },
-  { id: 'prod_500plus',    label: 'Ecommerce: +500 productos',        hint: '',                                      grupo: 'ecommerce' },
+  // Funcionalidades web (solo si hay algún servicio web activo)
+  { id: 'reservas',        label: 'Sistema de reservas online',       hint: 'Booking integrado en la web',           grupo: 'funcionalidades', requiresAnyOf: SERVICIOS_WEB },
+  { id: 'blog',            label: 'Blog / Noticias',                  hint: 'Sección de blog con CMS',               grupo: 'funcionalidades', requiresAnyOf: SERVICIOS_WEB },
+  { id: 'area_privada',    label: 'Área privada / login',             hint: 'Acceso restringido a usuarios',         grupo: 'funcionalidades', requiresAnyOf: SERVICIOS_WEB },
+  { id: 'pasarela_pago',   label: 'Pasarela de pago',                 hint: 'Stripe, PayPal, Redsys…',               grupo: 'funcionalidades', requiresAnyOf: SERVICIOS_WEB },
+  { id: 'multiidioma',     label: 'Web multiidioma',                  hint: 'Precio por idioma adicional',           grupo: 'funcionalidades', requiresAnyOf: SERVICIOS_WEB },
+  { id: 'chat_live',       label: 'Chat en vivo integrado',           hint: 'Tidio, Crisp, Intercom…',               grupo: 'funcionalidades', requiresAnyOf: SERVICIOS_WEB },
+  { id: 'formularios',     label: 'Formularios avanzados',            hint: 'Multi-paso, condicionales, CRM sync',   grupo: 'funcionalidades', requiresAnyOf: SERVICIOS_WEB },
+  { id: 'analytics',       label: 'Google Analytics + Tag Manager',   hint: 'Setup y configuración de eventos',      grupo: 'funcionalidades', requiresAnyOf: SERVICIOS_WEB },
+  { id: 'seo_avanzado',    label: 'SEO on-page avanzado',             hint: 'Auditoría + optimización técnica',      grupo: 'funcionalidades', requiresAnyOf: SERVICIOS_WEB },
+  { id: 'pagina_extra',    label: 'Página adicional',                 hint: 'Precio por cada página extra',          grupo: 'funcionalidades', requiresAnyOf: SERVICIOS_WEB },
+  // Ecommerce por volumen de productos (solo si ecommerce está activo)
+  { id: 'prod_50',         label: 'Hasta 50 productos',               hint: 'Precio extra por volumen de catálogo',  grupo: 'ecommerce', requiresAnyOf: ['ecommerce'] },
+  { id: 'prod_200',        label: '51 – 200 productos',               hint: '',                                      grupo: 'ecommerce', requiresAnyOf: ['ecommerce'] },
+  { id: 'prod_500',        label: '201 – 500 productos',              hint: '',                                      grupo: 'ecommerce', requiresAnyOf: ['ecommerce'] },
+  { id: 'prod_500plus',    label: '+500 productos',                   hint: '',                                      grupo: 'ecommerce', requiresAnyOf: ['ecommerce'] },
 ];
 
 const NICHOS = ['Restaurantes', 'Clínicas / Salud', 'Inmobiliarias', 'Moda / Retail', 'Consultoras', 'Educación', 'Hostelería', 'Otros'];
@@ -403,61 +406,96 @@ function WizardNegocio({ initialData, onSave }) {
             <p style={{ fontSize: '0.8rem', color: 'var(--text-tertiary)', marginBottom: '0.85rem', marginTop: '-0.25rem' }}>
               Activa los extras que ofreces y pon su precio. La IA los mencionará cuando el cliente pregunte por funcionalidades adicionales.
             </p>
-            {/* Funcionalidades */}
-            <p style={{ fontSize: '0.7rem', fontFamily: 'var(--font-mono)', color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '0.5rem' }}>Funcionalidades</p>
-            <div className="wz-extras-list">
-              {EXTRAS_OPS.filter(e => e.grupo === 'funcionalidades').map(extra => (
-                <div key={extra.id} className={`wz-extra-row ${extrasConfig[extra.id]?.active ? 'wz-extra-row--on' : ''}`}>
-                  <div className="wz-extra-row__left" onClick={() => toggleExtra(extra.id)}>
-                    <div className={`ai-toggle ${extrasConfig[extra.id]?.active ? 'ai-toggle--on' : ''}`}>
-                      <span className="ai-toggle__knob" />
+
+            {/* ── Extras de servicios web ── */}
+            {(() => {
+              const tieneWeb = SERVICIOS_WEB.some(id => servicios.includes(id));
+              const extrasWeb = EXTRAS_OPS.filter(e => e.grupo === 'funcionalidades');
+              return (
+                <>
+                  <p style={{ fontSize: '0.7rem', fontFamily: 'var(--font-mono)', color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '0.5rem' }}>
+                    Funcionalidades web
+                  </p>
+                  {!tieneWeb ? (
+                    <div style={{ padding: '0.85rem 1rem', background: 'var(--bg-secondary)', border: '1px dashed var(--border-color)', borderRadius: 'var(--radius-md)', fontSize: '0.8rem', color: 'var(--text-tertiary)', marginBottom: '0.5rem' }}>
+                      Activa un servicio web (Web corporativa, Landing page, Rediseño o Apps) para configurar sus extras.
                     </div>
-                    <div>
-                      <span className="wz-extra-row__label">{extra.label}</span>
-                      {extra.hint && <span className="wz-extra-row__hint">{extra.hint}</span>}
-                    </div>
-                  </div>
-                  {extrasConfig[extra.id]?.active && (
-                    <div className="wz-extra-row__price">
-                      <input
-                        type="text"
-                        value={extrasConfig[extra.id]?.precio || ''}
-                        onChange={e => setExtraPrice(extra.id, e.target.value)}
-                        placeholder="Ej: +300€"
-                        onClick={e => e.stopPropagation()}
-                      />
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-            {/* Ecommerce por volumen */}
-            <p style={{ fontSize: '0.7rem', fontFamily: 'var(--font-mono)', color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.06em', margin: '1rem 0 0.5rem' }}>Ecommerce por volumen de productos</p>
-            <div className="wz-extras-list">
-              {EXTRAS_OPS.filter(e => e.grupo === 'ecommerce').map(extra => (
-                <div key={extra.id} className={`wz-extra-row ${extrasConfig[extra.id]?.active ? 'wz-extra-row--on' : ''}`}>
-                  <div className="wz-extra-row__left" onClick={() => toggleExtra(extra.id)}>
-                    <div className={`ai-toggle ${extrasConfig[extra.id]?.active ? 'ai-toggle--on' : ''}`}>
-                      <span className="ai-toggle__knob" />
-                    </div>
-                    <div>
-                      <span className="wz-extra-row__label">{extra.label}</span>
-                    </div>
-                  </div>
-                  {extrasConfig[extra.id]?.active && (
-                    <div className="wz-extra-row__price">
-                      <input
-                        type="text"
-                        value={extrasConfig[extra.id]?.precio || ''}
-                        onChange={e => setExtraPrice(extra.id, e.target.value)}
-                        placeholder="Ej: +500€"
-                        onClick={e => e.stopPropagation()}
-                      />
+                  ) : (
+                    <div className="wz-extras-list">
+                      {extrasWeb.map(extra => (
+                        <div key={extra.id} className={`wz-extra-row ${extrasConfig[extra.id]?.active ? 'wz-extra-row--on' : ''}`}>
+                          <div className="wz-extra-row__left" onClick={() => toggleExtra(extra.id)}>
+                            <div className={`ai-toggle ${extrasConfig[extra.id]?.active ? 'ai-toggle--on' : ''}`}>
+                              <span className="ai-toggle__knob" />
+                            </div>
+                            <div>
+                              <span className="wz-extra-row__label">{extra.label}</span>
+                              {extra.hint && <span className="wz-extra-row__hint">{extra.hint}</span>}
+                            </div>
+                          </div>
+                          {extrasConfig[extra.id]?.active && (
+                            <div className="wz-extra-row__price">
+                              <input
+                                type="text"
+                                value={extrasConfig[extra.id]?.precio || ''}
+                                onChange={e => setExtraPrice(extra.id, e.target.value)}
+                                placeholder="Ej: +300€"
+                                onClick={e => e.stopPropagation()}
+                              />
+                            </div>
+                          )}
+                        </div>
+                      ))}
                     </div>
                   )}
-                </div>
-              ))}
-            </div>
+                </>
+              );
+            })()}
+
+            {/* ── Extras de ecommerce ── */}
+            {(() => {
+              const tieneEcommerce = servicios.includes('ecommerce');
+              const extrasEco = EXTRAS_OPS.filter(e => e.grupo === 'ecommerce');
+              return (
+                <>
+                  <p style={{ fontSize: '0.7rem', fontFamily: 'var(--font-mono)', color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.06em', margin: '1.1rem 0 0.5rem' }}>
+                    Ecommerce por volumen de productos
+                  </p>
+                  {!tieneEcommerce ? (
+                    <div style={{ padding: '0.85rem 1rem', background: 'var(--bg-secondary)', border: '1px dashed var(--border-color)', borderRadius: 'var(--radius-md)', fontSize: '0.8rem', color: 'var(--text-tertiary)' }}>
+                      Activa <strong>Ecommerce</strong> en el paso Servicios para configurar el precio por volumen de productos.
+                    </div>
+                  ) : (
+                    <div className="wz-extras-list">
+                      {extrasEco.map(extra => (
+                        <div key={extra.id} className={`wz-extra-row ${extrasConfig[extra.id]?.active ? 'wz-extra-row--on' : ''}`}>
+                          <div className="wz-extra-row__left" onClick={() => toggleExtra(extra.id)}>
+                            <div className={`ai-toggle ${extrasConfig[extra.id]?.active ? 'ai-toggle--on' : ''}`}>
+                              <span className="ai-toggle__knob" />
+                            </div>
+                            <div>
+                              <span className="wz-extra-row__label">{extra.label}</span>
+                              {extra.hint && <span className="wz-extra-row__hint">{extra.hint}</span>}
+                            </div>
+                          </div>
+                          {extrasConfig[extra.id]?.active && (
+                            <div className="wz-extra-row__price">
+                              <input
+                                type="text"
+                                value={extrasConfig[extra.id]?.precio || ''}
+                                onChange={e => setExtraPrice(extra.id, e.target.value)}
+                                placeholder="Ej: +500€"
+                                onClick={e => e.stopPropagation()}
+                              />
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </>
+              );
+            })()}
 
             <div className="wz-section-divider"><span>Impuestos por defecto en presupuestos</span></div>
             <div className="form-grid">
