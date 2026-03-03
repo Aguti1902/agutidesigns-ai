@@ -211,6 +211,21 @@ export default function DashboardLayout() {
           </footer>
         </main>
       </div>
+
+      {/* ── Mobile Bottom Navigation ── */}
+      <nav className="dash__bottom-nav">
+        {navItems.map(item => (
+          <NavLink
+            key={item.to}
+            to={item.to}
+            end={item.end}
+            className={({ isActive }) => `dash__bn-item ${isActive ? 'dash__bn-item--active' : ''}`}
+          >
+            {item.icon}
+            <span>{item.label}</span>
+          </NavLink>
+        ))}
+      </nav>
     </div>
   );
 }

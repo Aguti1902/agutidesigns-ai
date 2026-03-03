@@ -176,3 +176,8 @@
   font-size: 0.72rem;
   cursor: pointer;
 }
+
+@media (max-width: 768px) {
+  .agent-sel__current { width: 100%; }
+  .agent-sel__dropdown { min-width: auto; width: 100%; left: 0; right: 0; }
+}

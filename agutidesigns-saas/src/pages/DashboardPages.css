@@ -755,6 +755,7 @@
 
 /* ── Responsive ── */
 @media (max-width: 768px) {
+  /* Grids */
   .stats-grid { grid-template-columns: repeat(2, 1fr); }
   .actions-grid { grid-template-columns: 1fr; }
   .form-grid { grid-template-columns: 1fr; }
@@ -764,9 +765,49 @@
   .personality-grid { grid-template-columns: 1fr; }
   .capability-grid { grid-template-columns: repeat(2, 1fr); }
   .wa-connected__grid { grid-template-columns: 1fr; }
-  .msg-packs { grid-template-columns: repeat(3, 1fr); }
+  .msg-packs { grid-template-columns: repeat(2, 1fr); }
   .billing-cards-grid { grid-template-columns: 1fr; }
   .dash-cols { grid-template-columns: 1fr; }
+
+  /* Page headers */
+  .page__header { flex-direction: column; align-items: flex-start; gap: 0.75rem; }
+  .page__title { font-size: 1.25rem; }
+  .page__header-actions { width: 100%; }
+  .page__header-actions .btn { width: 100%; justify-content: center; }
+
+  /* Dashboard home KPI cards */
+  .kpi-grid { grid-template-columns: repeat(2, 1fr) !important; }
+  .msg-bar { flex-direction: column; align-items: flex-start; gap: 0.75rem; }
+  .msg-bar__actions { width: 100%; justify-content: flex-start; }
+
+  /* Billing */
+  .billing-plans-grid { grid-template-columns: 1fr !important; }
+  .billing-plan-card { padding: 1.25rem; }
+  .billing-annual-toggle { flex-wrap: wrap; justify-content: center; }
+
+  /* Presupuestos / tables */
+  .invoices-table th:nth-child(3),
+  .invoices-table td:nth-child(3),
+  .invoices-table th:nth-child(4),
+  .invoices-table td:nth-child(4) { display: none; }
+  .inv-table-wrap { overflow-x: auto; }
+
+  /* AI Config */
+  .ai-section__hd { padding: 0.85rem 1rem; }
+  .ai-section__body { padding: 0.5rem 1rem 1rem; }
+  .ai-personality-grid { grid-template-columns: repeat(3, 1fr); }
+  .ai-cap-grid { grid-template-columns: 1fr; }
+  .sticky-footer-bar { left: 0 !important; padding: 0.75rem 1rem; }
+
+  /* Wizard Ajustes */
+  .wizard__steps { overflow-x: auto; padding-bottom: 0.25rem; }
+  .wizard__step-info { font-size: 0.65rem; }
+
+  /* Checkout */
+  .checkout-layout { flex-direction: column; }
+
+  /* Support */
+  .ticket-detail { padding: 1rem; }
 }
 
 /* ── Logo Upload ── */
