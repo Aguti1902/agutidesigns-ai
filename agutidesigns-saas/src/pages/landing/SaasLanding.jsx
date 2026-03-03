@@ -778,7 +778,9 @@ export default function SaasLanding() {
           <motion.div className="hero__right" initial={{ opacity: 0, y: 16, scale: 0.97 }} animate={{ opacity: 1, y: 0, scale: 1 }} transition={{ duration: 0.65, delay: 0.18 }}>
             <div className="hero__mock-wrap">
               <DashMockup />
-              <HeroNotif />
+              <div className="h-notif-slot">
+                <HeroNotif />
+              </div>
             </div>
           </motion.div>
         </div>
