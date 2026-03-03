@@ -444,10 +444,10 @@ export default function PromptBuilder() {
     if (existing) await supabase.from('agents').update(agentData).eq('id', existing.id);
     else await supabase.from('agents').insert({ user_id: user.id, ...agentData });
 
-    setSaved(true);
-    setTimeout(() => setSaved(false), 3000);
-    setSaving(false);
-  }
+      setSaved(true);
+      setTimeout(() => setSaved(false), 3000);
+      setSaving(false);
+    }
 
   const toggleServicio = (id) => setServiciosOfrecidos(p => p.includes(id) ? p.filter(s => s !== id) : [...p, id]);
   const toggleCap = (id) => setCapabilities(p => p.includes(id) ? p.filter(c => c !== id) : [...p, id]);
@@ -461,7 +461,7 @@ export default function PromptBuilder() {
         <div>
           <h1><Bot size={22} /> Configura tu agente comercial</h1>
           <p>IA pre-entrenada para diseñadores web freelance. 3 decisiones clave.</p>
-        </div>
+      </div>
         <button className="btn btn--primary" onClick={handleSave} disabled={saving}>
           {saved ? <><Check size={14} /> Guardado</> : saving ? <><Loader2 size={14} className="spin" /> Guardando...</> : <><Check size={14} /> Guardar</>}
         </button>
@@ -516,10 +516,10 @@ export default function PromptBuilder() {
                 <span className="tone-btn__emoji"><t.icon size={20} /></span>
                 <span className="tone-btn__label">{t.label}</span>
                 <span className="tone-btn__desc">{t.desc}</span>
-              </button>
+        </button>
             ))}
           </div>
-        </div>
+      </div>
       </SimpleBlock>
 
       {/* ══ BLOQUE 2 — CÓMO QUIERES QUE VENDA ══ */}
@@ -528,7 +528,7 @@ export default function PromptBuilder() {
           <label><Euro size={13} /> Presupuesto mínimo de proyecto (€)</label>
           <input type="number" value={presupuestoMin} onChange={e => setPresupuestoMin(e.target.value)} placeholder="400" style={{ maxWidth: '200px' }} />
           <span className="form-field__hint">Si el cliente menciona menos, la IA lo gestiona con tacto</span>
-        </div>
+      </div>
 
         <div className="form-field form-field--full" style={{ marginBottom: '1.25rem' }}>
           <label>Servicios que ofreces</label>
@@ -551,9 +551,9 @@ export default function PromptBuilder() {
             <div>
               <b>¿Puede ofrecer descuento?</b>
               <span>Autoriza a la IA a negociar precio dentro de un límite</span>
-            </div>
+        </div>
             <Toggle on={puedeDescuento} onChange={setPuedeDescuento} />
-          </div>
+              </div>
           {puedeDescuento && (
             <div className="ai-sub-row">
               <div className="form-field">
@@ -562,7 +562,7 @@ export default function PromptBuilder() {
               </div>
             </div>
           )}
-        </div>
+          </div>
 
         <div className="form-field" style={{ marginTop: '1.25rem' }}>
           <label><Repeat size={13} /> ¿Cuántos seguimientos hace si no responden?</label>
@@ -570,10 +570,10 @@ export default function PromptBuilder() {
             {[0, 1, 2, 3].map(n => (
               <button key={n} type="button" className={`chip ${maxSeguimientos === n ? 'chip--active' : ''}`} onClick={() => setMaxSeguimientos(n)}>
                 {n === 0 ? 'Ninguno' : `${n} ${n === 1 ? 'seguimiento' : 'seguimientos'}`}
-              </button>
-            ))}
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
       </SimpleBlock>
 
       {/* ══ BLOQUE 3 — CÓMO AGENDA ══ */}
@@ -584,7 +584,7 @@ export default function PromptBuilder() {
             <span>La IA propone y agenda llamadas directamente en tu calendario</span>
           </div>
           <Toggle on={bookingEnabled} onChange={() => toggleBooking()} />
-        </div>
+          </div>
 
         {bookingEnabled && (
           <div className="form-field" style={{ marginBottom: '1.25rem' }}>
@@ -713,7 +713,7 @@ export default function PromptBuilder() {
                   </div>
                 );
               })}
-            </div>
+          </div>
           </AdvBlock>
 
           {/* Lógica de cierre avanzada */}
@@ -729,7 +729,7 @@ export default function PromptBuilder() {
                     <label>¿Cómo? (explícalo para que la IA lo sepa)</label>
                     <input value={comoPago} onChange={e => setComoPago(e.target.value)} placeholder="Ej: 50% al inicio, 50% a la entrega." />
                   </div>
-                </div>
+          </div>
               )}
               <div className="ai-sub-row">
                 <div className="form-field form-field--full">
