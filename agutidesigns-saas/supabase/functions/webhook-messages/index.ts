@@ -407,30 +407,32 @@ serve(async (req) => {
 
         if (scheduleNotes) calendarContext += `\nNOTAS: ${scheduleNotes}\n`
 
-        calendarContext += `\n═══ CÓMO AGENDAR — SIGUE ESTE FLUJO EXACTO ═══
+        calendarContext += `\n═══ SISTEMA DE AGENDAMIENTO ═══
 
-PASO 1 — Cuando pidan reunión:
-Propón exactamente 2 opciones libres del calendario y pregunta el tipo EN EL MISMO MENSAJE.
-Ejemplo: "¿Te va el miércoles 4 a las 10:00 o el jueves 5 a las 16:00? ¿Prefieres llamada o videollamada?"
+PASO 1 — Cliente pide reunión:
+Propón 2 opciones libres del calendario y el tipo EN EL MISMO MENSAJE.
+Ej: "¿El miércoles 4 a las 10:00 o el jueves 5 a las 16:00? ¿Llamada o videollamada?"
 
-PASO 2 — Cuando confirmen fecha/hora Y tipo (llamada o videollamada):
-Escribe la confirmación y añade LA ETIQUETA al final del mensaje.
+PASO 2 — Cliente confirma fecha/hora Y tipo:
+Escribe el mensaje de confirmación e incluye OBLIGATORIAMENTE la etiqueta al final.
 
-ETIQUETA (interna, no visible para el cliente):
+⚠️ LA ETIQUETA ES OBLIGATORIA. Sin etiqueta la cita NO se guarda en el sistema.
+Formato exacto (sin espacios extra):
 <<CITA|YYYY-MM-DD|HH:MM|HH:MM|tipo>>
 
-Ejemplos reales:
-- "el jueves a las 16, videollamada" → <<CITA|2026-03-05|16:00|17:00|videollamada>>
-- "el miércoles 4 a las 10, llamada" → <<CITA|2026-03-04|10:00|11:00|llamada>>
+Ejemplos:
+- Confirma "martes 10 a las 10, videollamada" → tu mensaje + <<CITA|2026-03-10|10:00|11:00|videollamada>>
+- Confirma "viernes a las 16, llamada" → tu mensaje + <<CITA|2026-03-07|16:00|17:00|llamada>>
 
-REGLAS CRÍTICAS:
-- Genera la etiqueta EN CUANTO tengas fecha + hora + tipo. Nada más.
-- Si confirman fecha/hora pero NO el tipo, pregunta SOLO "¿Llamada o videollamada?" (1 sola pregunta, nada más).
-- Si ya dijeron el tipo antes, NO lo vuelvas a preguntar.
-- Si eligen videollamada confirma: "Te mando el enlace 10 min antes por WhatsApp."
-- DESPUÉS de confirmar la cita (en el siguiente mensaje), pide: nombre completo, negocio, email. Una sola vez.
+CASOS ESPECIALES:
+- Si el cliente pide REAGENDAR: confirma la nueva fecha e incluye la etiqueta con la nueva fecha.
+- Si confirman fecha pero NO el tipo: pregunta solo "¿Llamada o videollamada?" sin confirmar nada más.
+- Si ya dijeron el tipo: NO lo preguntes de nuevo.
+- Videollamada: añade "Te mando el enlace 10 min antes por WhatsApp."
 - Hora de fin = hora inicio + 1h si no se especifica.
-- USA solo fechas del calendario de arriba. NUNCA inventes.`
+- USA solo fechas del calendario. NUNCA inventes fechas.
+
+RECUERDA: NUNCA escribas "he agendado" o "está confirmado" sin incluir la etiqueta <<CITA|...>>.`
 
         systemPrompt += calendarContext
         } // end if (bookingEnabled)
@@ -582,7 +584,7 @@ Esta distinción es CRUCIAL: un cliente que dice "tengo un restaurante y quiero 
                 ...historyMsgs,
               ],
               temperature: 0.4,
-              max_tokens: 350,
+              max_tokens: 500,
               presence_penalty: 0.5,
               frequency_penalty: 0.4
             })
