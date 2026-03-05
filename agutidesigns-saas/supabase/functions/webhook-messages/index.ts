@@ -546,8 +546,8 @@ Esta distinción es CRUCIAL: un cliente que dice "tengo un restaurante y quiero 
           continue
         }
 
-        // Get history
-        const { data: history } = await supabase.from('messages').select('role, content').eq('conversation_id', conv.id).order('created_at', { ascending: true }).limit(20)
+        // Get history — keep last 10 messages only to avoid repetition loops
+        const { data: history } = await supabase.from('messages').select('role, content').eq('conversation_id', conv.id).order('created_at', { ascending: true }).limit(10)
 
         // Send "composing" (typing) status
         try {
@@ -559,7 +559,7 @@ Esta distinción es CRUCIAL: un cliente que dice "tengo un restaurante y quiero 
         } catch {}
 
         // Call OpenAI — deduplicate history to avoid repetition loops
-        const rawHistory = (history || []).slice(-24)
+        const rawHistory = (history || []).slice(-10)
         const cleanHistory: { role: string; content: string }[] = []
         for (const msg of rawHistory) {
           const prev = cleanHistory[cleanHistory.length - 1]
@@ -567,7 +567,7 @@ Esta distinción es CRUCIAL: un cliente que dice "tengo un restaurante y quiero 
           if (prev && prev.role === msg.role && prev.content === msg.content) continue
           cleanHistory.push({ role: msg.role, content: msg.content })
         }
-        const historyMsgs = cleanHistory.slice(-20)
+        const historyMsgs = cleanHistory.slice(-10)
         console.log('Calling OpenAI... booking:', bookingEnabled, 'history:', historyMsgs.length, 'prompt length:', systemPrompt.length)
         
         let aiResponse = ''
