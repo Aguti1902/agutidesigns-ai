@@ -72,7 +72,7 @@ export default function AdminTickets() {
       
       // Send email notification to user
       try {
-        const API_URL = import.meta.env.VITE_API_URL || 'https://xzyhrloiwapbrqmglxeo.supabase.co/functions/v1';
+        const API_URL = import.meta.env.VITE_API_URL;
         await fetch(`${API_URL}/notify-ticket-reply`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },

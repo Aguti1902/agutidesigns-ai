@@ -23,14 +23,12 @@ export default function EmailConfirmed() {
     // If arriving WITHOUT email verification params → redirect immediately to /app
     // This catches OAuth, manual navigation, or any other case
     if (!type && !token && !error && !errorCode && !errorDescription) {
-      console.log('EmailConfirmed: No verification params, redirecting to /app');
       navigate('/app', { replace: true });
       return;
     }
 
     // If OAuth flow (access_token in hash, no email token) → skip
     if (hasHash && !token) {
-      console.log('EmailConfirmed: OAuth detected, redirecting to /app');
       navigate('/app', { replace: true });
       return;
     }

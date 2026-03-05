@@ -5,8 +5,8 @@ import { useAgents } from '../hooks/useAgents';
 import { supabase } from '../lib/supabase';
 import './DashboardPages.css';
 
-const API_URL = import.meta.env.VITE_API_URL || 'https://xzyhrloiwapbrqmglxeo.supabase.co/functions/v1';
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || 'https://xzyhrloiwapbrqmglxeo.supabase.co';
+const API_URL = import.meta.env.VITE_API_URL;
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const HOURS = Array.from({ length: 17 }, (_, i) => i + 7); // 7:00 to 23:00
 const DAY_NAMES = ['LUN', 'MAR', 'MIÉ', 'JUE', 'VIE', 'SÁB', 'DOM'];
 // Maps calendar dayIndex (0=LUN…6=DOM) to horario_semana key

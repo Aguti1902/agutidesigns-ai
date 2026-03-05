@@ -482,20 +482,103 @@ function RoiCalculator() {
 }
 
 /* ═══════════════════════════════════════════
-   FLOATING CHAT (simulación local)
+   FLOATING CHAT — Demo IA realista
 ═══════════════════════════════════════════ */
+const CHAT_FLOWS = {
+  welcome: {
+    bot: '¡Hola! Soy la IA de Wasapy 👋\nEstoy aquí para mostrarte cómo funciona un agente real. ¿Eres diseñador web freelance?',
+    quick: ['Sí, soy diseñador web', 'Tengo una agencia', 'Solo quiero verlo funcionar'],
+  },
+};
+
+const respond = (text, history) => {
+  const lower = text.toLowerCase();
+  const last = history[history.length - 2]?.text?.toLowerCase() || '';
+
+  // Greetings
+  if (/^(hola|buenas|hey|saludos|ey)/.test(lower))
+    return { text: 'Hola 👋 Soy la IA de Wasapy. Cuéntame, ¿a qué te dedicas?', quick: ['Diseño webs', 'Tengo una agencia', 'Solo quiero ver cómo funciona'] };
+
+  // Designer/agency
+  if (lower.includes('diseñ') || lower.includes('freelance') || lower.includes('wordpress') || lower.includes('elementor'))
+    return { text: 'Perfecto, esto es exactamente para ti.\n\nMientras estás maquetando, Wasapy responde a tus clientes por WhatsApp, cualifica los leads y agenda reuniones. Todo automático.\n\n¿Qué parte te interesa más?', quick: ['Cómo agenda citas', 'Qué hace con los leads', 'Ver los precios'] };
+
+  if (lower.includes('agencia'))
+    return { text: 'Para agencias tenemos el plan Agency. Múltiples agentes, CRM compartido y presupuestos PDF con tu branding. ¿Cuántos diseñadores sois en el equipo?', quick: ['Solo yo', '2–5 personas', 'Más de 5'] };
+
+  // Pricing
+  if (lower.includes('precio') || lower.includes('cuánto') || lower.includes('plan') || lower.includes('coste') || lower.includes('vale'))
+    return { text: 'Tres planes:\n\n· Starter 29€/mes — 1 agente, 500 mensajes\n· Pro 79€/mes — 3 agentes, 2.000 mensajes\n· Agency 149€/mes — agentes ilimitados\n\nTodos con 2 días gratis sin tarjeta. ¿Cuál se adapta a tu volumen?', quick: ['Empezar gratis', '¿Qué incluye Pro?', 'Tengo dudas'] };
+
+  if (lower.includes('starter'))
+    return { text: 'Starter a 29€/mes incluye 1 agente IA, 500 mensajes/mes, CRM de leads, presupuestos PDF y agendamiento automático. Ideal si eres freelance solo.\n\n¿Quieres probarlo?', quick: ['Sí, probar gratis', 'Ver plan Pro', 'Tengo una pregunta'] };
+
+  if (lower.includes('pro') || lower.includes('2.000') || lower.includes('2000'))
+    return { text: 'Pro a 79€/mes: 3 agentes, 2.000 mensajes, todo lo de Starter más pipeline de ventas y analítica avanzada. El más elegido por freelances con varios proyectos activos.', quick: ['Empezar con Pro', 'Comparar con Agency', 'Hablar con alguien'] };
+
+  // WhatsApp / setup
+  if (lower.includes('whatsapp') || lower.includes('conectar') || lower.includes('qr') || lower.includes('configurar'))
+    return { text: 'Sin API oficial. Escaneas un QR desde el panel, igual que conectar WhatsApp Web.\n\nEn menos de 5 minutos tu IA ya está respondiendo. Sin técnicos, sin contratos raros.', quick: ['¿Y si me desconecto?', 'Cómo configuro la IA', 'Ver precios'] };
+
+  // Bookings
+  if (lower.includes('agenda') || lower.includes('cita') || lower.includes('reuni') || lower.includes('calendar') || lower.includes('discovery'))
+    return { text: 'La IA propone fechas libres de tu calendario real, pregunta si el cliente prefiere llamada o videollamada, y confirma la cita sola.\n\nTú recibes una notificación y la cita aparece en el calendario del dashboard. Sin hacer nada.', quick: ['¿Se integra con Calendly?', 'Ver presupuestos PDF', 'Quiero probarlo'] };
+
+  if (lower.includes('calendly'))
+    return { text: 'Sí, Wasapy se puede sincronizar con Calendly para evitar dobles reservas. También tiene su propio calendario integrado si no usas Calendly.', quick: ['Cómo funciona la IA', 'Ver precios', 'Empezar gratis'] };
+
+  // Budget / PDF
+  if (lower.includes('presupuesto') || lower.includes('pdf') || lower.includes('factura'))
+    return { text: 'Configuras tus tarifas reales: web corporativa, landing, ecommerce, extras...\n\nLa IA detecta el interés, genera el PDF con tu logo, IVA/IRPF y lo envía por WhatsApp. El cliente lo recibe sin que hagas nada.', quick: ['¿Puedo personalizarlo?', 'Ver cómo funciona', 'Ver precios'] };
+
+  // Leads / CRM
+  if (lower.includes('lead') || lower.includes('cliente') || lower.includes('crm') || lower.includes('contact'))
+    return { text: 'Cada nuevo contacto de WhatsApp entra automáticamente en tu CRM. La IA cualifica (qué tipo de web, presupuesto, urgencia) y los organiza en un pipeline: nuevo → interesado → presupuestado → cerrado.', quick: ['Cómo agenda citas', 'Ver los precios', 'Probarlo gratis'] };
+
+  // Try / free
+  if (lower.includes('prob') || lower.includes('gratis') || lower.includes('empezar') || lower.includes('regist') || lower.includes('solo quiero'))
+    return { text: '2 días gratis, sin tarjeta. Te registras, conectas WhatsApp y en 10 minutos tu IA ya está funcionando.\n\n¿Lo probamos?', quick: ['Registrarme ahora', 'Tengo una duda antes', 'Ver demo'] };
+
+  // How it works
+  if (lower.includes('cómo funciona') || lower.includes('como funciona') || lower.includes('funciona'))
+    return { text: 'En 3 pasos:\n\n1️⃣ Conectas tu WhatsApp escaneando un QR\n2️⃣ Configuras tus servicios, precios y horarios\n3️⃣ La IA responde, cualifica, agenda y envía presupuestos\n\nTú entras solo a cerrar los proyectos.', quick: ['Qué pasa con los leads', 'Ver precios', 'Probarlo gratis'] };
+
+  // Small team
+  if (lower.includes('solo yo') || lower.includes('1 persona'))
+    return { text: 'Para freelance solo, Starter o Pro son perfectos. La mayoría empieza con Pro porque los 2.000 mensajes dan margen cuando empieza a funcionar bien.\n\n¿Empezamos con los 2 días gratis?', quick: ['Sí, empezar gratis', 'Ver qué incluye', 'Tengo una duda'] };
+
+  // Doubts / support
+  if (lower.includes('duda') || lower.includes('pregunta') || lower.includes('hablar') || lower.includes('ayuda') || lower.includes('soporte'))
+    return { text: 'Claro, pregunta lo que quieras. Estoy aquí para eso 😊', quick: ['Cómo configuro la IA', 'Ver precios', 'Cómo funciona el QR'] };
+
+  // Default
+  return { text: 'Buena pregunta. Wasapy es un agente IA para WhatsApp diseñado 100% para diseñadores web freelance: responde leads, agenda discovery calls y genera presupuestos PDF mientras tú diseñas.\n\n¿Qué te gustaría saber?', quick: ['Cómo funciona', 'Ver precios', 'Probarlo gratis'] };
+};
+
 function FloatingChat() {
   const [open, setOpen] = useState(false);
-  const [msgs, setMsgs] = useState(() => {
-    try { return JSON.parse(localStorage.getItem('wasapy_chat') || '[]'); } catch { return []; }
-  });
+  const [msgs, setMsgs] = useState([]);
   const [input, setInput] = useState('');
+  const [typing, setTyping] = useState(false);
+  const [quickReplies, setQuickReplies] = useState(CHAT_FLOWS.welcome.quick);
   const chatRef = useRef(null);
+  const inputRef = useRef(null);
+
+  // Show welcome message when opened for the first time
+  useEffect(() => {
+    if (open && msgs.length === 0) {
+      setTyping(true);
+      setTimeout(() => {
+        setTyping(false);
+        setMsgs([{ from: 'bot', text: CHAT_FLOWS.welcome.bot, ts: Date.now() }]);
+        setQuickReplies(CHAT_FLOWS.welcome.quick);
+      }, 900);
+    }
+  }, [open]);
 
   useEffect(() => {
-    localStorage.setItem('wasapy_chat', JSON.stringify(msgs));
     if (chatRef.current) chatRef.current.scrollTop = chatRef.current.scrollHeight;
-  }, [msgs]);
+  }, [msgs, typing]);
 
   useEffect(() => {
     if (!open) return;
@@ -504,71 +587,99 @@ function FloatingChat() {
     return () => window.removeEventListener('keydown', onKey);
   }, [open]);
 
-  const respond = useCallback((text) => {
-    const lower = text.toLowerCase();
-    if (lower.includes('precio') || lower.includes('cuánto') || lower.includes('coste') || lower.includes('plan'))
-      return 'Tenemos 3 planes: Starter (29€/mes), Pro (79€/mes) y Agency (149€/mes). Todos incluyen IA en WhatsApp, presupuestos PDF y CRM de clientes. ¿Cuál encaja con tu volumen?';
-    if (lower.includes('wordpress') || lower.includes('diseño') || lower.includes('diseñador') || lower.includes('freelance'))
-      return 'Wasapy está hecho específicamente para diseñadores web freelance. Mientras estás maquetando en WordPress o Elementor, la IA gestiona tus leads, agenda discovery calls y envía presupuestos. Tú diseñas, ella vende.';
-    if (lower.includes('agenda') || lower.includes('llamada') || lower.includes('cita') || lower.includes('calendar') || lower.includes('discovery'))
-      return 'La IA agenda discovery calls directamente en tu calendario. Se sincroniza con Calendly para que no tengas dobles reservas. La reunión aparece ya confirmada sin que hagas nada.';
-    if (lower.includes('presupuesto') || lower.includes('factura') || lower.includes('pdf'))
-      return 'Puedes configurar tus tarifas reales (web corporativa, landing, ecommerce…). La IA genera presupuestos PDF con tu branding, IVA/IRPF y los envía por WhatsApp automáticamente.';
-    if (lower.includes('whatsapp') || lower.includes('conectar') || lower.includes('qr'))
-      return 'Solo escaneas un QR desde la app. Sin WhatsApp Business API, sin configuración técnica. En menos de 5 minutos tu IA ya está atendiendo leads.';
-    return 'Wasapy es el CRM con IA para diseñadores web freelance. Gestiona tus leads de WhatsApp, agenda discovery calls y envía presupuestos mientras tú diseñas. ¿Qué más quieres saber?';
-  }, []);
-
-  function handleSend(text) {
+  function sendMessage(text) {
     if (!text.trim()) return;
     const userMsg = { from: 'user', text: text.trim(), ts: Date.now() };
-    setMsgs(prev => [...prev, userMsg]);
+    const newMsgs = [...msgs, userMsg];
+    setMsgs(newMsgs);
     setInput('');
-    setTimeout(() => {
-      setMsgs(prev => [...prev, { from: 'bot', text: respond(text), ts: Date.now() }]);
-    }, 600 + Math.random() * 400);
-  }
+    setQuickReplies([]);
+    setTyping(true);
 
-  const quickReplies = ['Soy diseñador web freelance', 'Quiero ver los precios', 'Cómo funciona'];
+    const delay = 700 + Math.min(text.length * 18, 1200);
+    setTimeout(() => {
+      const result = respond(text, newMsgs);
+      setTyping(false);
+      setMsgs(prev => [...prev, { from: 'bot', text: result.text, ts: Date.now() }]);
+      setQuickReplies(result.quick || []);
+    }, delay);
+  }
 
   return (
     <>
-      <button className={`fc-fab ${open ? 'fc-fab--hide' : ''}`} onClick={() => setOpen(true)} aria-label="Abrir chat">
+      <motion.button
+        className={`fc-fab ${open ? 'fc-fab--hide' : ''}`}
+        onClick={() => setOpen(true)}
+        aria-label="Abrir chat demo"
+        whileHover={{ scale: 1.08 }}
+        whileTap={{ scale: 0.95 }}
+      >
         <MessageCircle size={22} />
-      </button>
+        <span className="fc-fab__label">Demo IA</span>
+      </motion.button>
+
       <AnimatePresence>
         {open && (
-          <motion.div className="fc-panel" role="dialog" aria-label="Chat Wasapy"
-            initial={{ opacity: 0, y: 16, scale: 0.95 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 16, scale: 0.95 }} transition={{ duration: 0.2 }}>
+          <motion.div className="fc-panel" role="dialog" aria-label="Chat demo Wasapy"
+            initial={{ opacity: 0, y: 20, scale: 0.93 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 20, scale: 0.93 }}
+            transition={{ type: 'spring', stiffness: 300, damping: 28 }}>
+
             <div className="fc-panel__head">
               <div className="fc-panel__info">
-                <div className="fc-panel__av"><Bot size={16} /></div>
-                <div><b>Wasapy</b><small>IA · Siempre disponible</small></div>
-              </div>
-              <button className="fc-panel__close" onClick={() => setOpen(false)} aria-label="Cerrar chat"><X size={16} /></button>
-            </div>
-            <div className="fc-panel__msgs" ref={chatRef}>
-              {msgs.length === 0 && (
-                <div className="fc-panel__welcome">
-                  <Bot size={28} />
-                  <b>Hola, soy la IA de Wasapy</b>
-                  <span>Hecho para diseñadores web freelance. Pregunta lo que quieras.</span>
+                <div className="fc-panel__av">
+                  <Bot size={15} />
+                  <span className="fc-panel__av-dot" />
                 </div>
-              )}
-              {msgs.map((m, i) => (
-                <div key={i} className={`fc-msg fc-msg--${m.from}`}>{m.text}</div>
-              ))}
-            </div>
-            {msgs.length === 0 && (
-              <div className="fc-panel__quick">
-                {quickReplies.map(q => (
-                  <button key={q} onClick={() => handleSend(q)}>{q}</button>
-                ))}
+                <div>
+                  <b>Wasapy IA</b>
+                  <small>Demo interactiva · Responde en segundos</small>
+                </div>
               </div>
+              <button className="fc-panel__close" onClick={() => setOpen(false)} aria-label="Cerrar"><X size={16} /></button>
+            </div>
+
+            <div className="fc-panel__msgs" ref={chatRef}>
+              {msgs.map((m, i) => (
+                <motion.div
+                  key={i}
+                  className={`fc-msg fc-msg--${m.from}`}
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.18 }}
+                >
+                  {m.text.split('\n').map((line, li) => (
+                    <span key={li}>{line}{li < m.text.split('\n').length - 1 && <br />}</span>
+                  ))}
+                </motion.div>
+              ))}
+              {typing && (
+                <motion.div className="fc-msg fc-msg--bot fc-msg--typing" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                  <span /><span /><span />
+                </motion.div>
+              )}
+            </div>
+
+            {quickReplies.length > 0 && !typing && (
+              <motion.div className="fc-panel__quick" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                {quickReplies.map(q => (
+                  <button key={q} onClick={() => sendMessage(q)}>{q}</button>
+                ))}
+              </motion.div>
             )}
-            <form className="fc-panel__input" onSubmit={e => { e.preventDefault(); handleSend(input); }}>
-              <input value={input} onChange={e => setInput(e.target.value)} placeholder="Escribe tu pregunta..." autoFocus />
-              <button type="submit" disabled={!input.trim()} aria-label="Enviar"><Send size={15} /></button>
+
+            <form className="fc-panel__input" onSubmit={e => { e.preventDefault(); sendMessage(input); }}>
+              <input
+                ref={inputRef}
+                value={input}
+                onChange={e => setInput(e.target.value)}
+                placeholder="Escribe tu pregunta..."
+                autoFocus
+              />
+              <button type="submit" disabled={!input.trim() || typing} aria-label="Enviar">
+                <Send size={14} />
+              </button>
             </form>
           </motion.div>
         )}

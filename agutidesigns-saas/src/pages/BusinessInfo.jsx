@@ -302,7 +302,6 @@ export default function BusinessInfo() {
       saveData.extra_context = Object.keys(extraData).length > 0 ? JSON.stringify(extraData) : null;
       saveData.updated_at = new Date().toISOString();
 
-      console.log('[Business] Saving data:', saveData);
 
       // Check if exists
       const { data: existing, error: selectErr } = await supabase
@@ -311,7 +310,6 @@ export default function BusinessInfo() {
         .eq('user_id', user.id)
         .maybeSingle();
 
-      console.log('[Business] Existing record:', existing, 'Error:', selectErr);
 
       if (existing) {
         const { error } = await supabase.from('businesses').update(saveData).eq('id', existing.id);
@@ -320,7 +318,6 @@ export default function BusinessInfo() {
       } else {
         saveData.name = saveData.name || 'Mi Negocio'; // name is required
         const { error } = await supabase.from('businesses').insert({ user_id: user.id, ...saveData });
-        console.log('[Business] Insert error:', error);
         if (error) throw error;
       }
       setSaved(true);
