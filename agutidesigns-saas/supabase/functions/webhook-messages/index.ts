@@ -240,6 +240,10 @@ serve(async (req) => {
 
         let systemPrompt = agent.system_prompt || 'Eres un asistente virtual amable y profesional. Responde en español. Atiende al cliente, responde sus preguntas e intenta ayudarle al máximo.'
 
+        // Meeting duration & buffer settings (read later after extra_context is parsed)
+        let meetingDurationMins = 60
+        let bufferMins = 0
+
         // Build real calendar for the next 7 days
         const now = new Date()
         const dayNames = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado']
@@ -302,10 +306,21 @@ serve(async (req) => {
                   ;(extra as any).__scheduleByDow = Object.fromEntries(dowKeys.map((k, i) => [i, fmtDay(hs[k])]))
                 } catch {}
               }
+              // Parse meeting duration and buffer
+              if (extra.duracion_call) {
+                const dc = (extra.duracion_call as string).trim()
+                if (dc === '1 hora') meetingDurationMins = 60
+                else { const m = dc.match(/(\d+)/); if (m) meetingDurationMins = parseInt(m[1]) }
+              }
+              if (extra.buffer_reuniones) {
+                const bf = (extra.buffer_reuniones as string).trim()
+                const m = bf.match(/(\d+)/); if (m) bufferMins = parseInt(m[1])
+              }
+
               for (const [k, v] of Object.entries(extra)) {
                 if (v && typeof v === 'string' && (v as string).trim()) {
                   const label = labels[k] || k.toUpperCase().replace(/_/g, ' ')
-                  if (['horario_semana','rango_servicios','extras_config','plazos_servicios','servicios_toggles','servicios_precios'].includes(k)) continue
+                  if (['horario_semana','rango_servicios','extras_config','plazos_servicios','servicios_toggles','servicios_precios','duracion_call','buffer_reuniones'].includes(k)) continue
                   ctx.push(`${label}: ${v}`)
                   if (k === 'schedule_weekdays' && !scheduleWeekdays) scheduleWeekdays = v as string
                   if (k === 'schedule_saturday' && !scheduleSaturday) scheduleSaturday = v as string
@@ -407,11 +422,15 @@ serve(async (req) => {
 
         if (scheduleNotes) calendarContext += `\nNOTAS: ${scheduleNotes}\n`
 
+        const durationLabel = meetingDurationMins === 60 ? '1 hora' : `${meetingDurationMins} minutos`
         calendarContext += `\n═══ SISTEMA DE AGENDAMIENTO ═══
+
+DURACIÓN DE CADA REUNIÓN: ${durationLabel}${bufferMins > 0 ? ` + ${bufferMins} min de margen entre reuniones` : ''}
+Usa siempre esta duración al proponer horas y al calcular la hora de fin.
 
 PASO 1 — Cliente pide reunión:
 Propón 2 opciones libres del calendario y el tipo EN EL MISMO MENSAJE.
-Ej: "¿El miércoles 4 a las 10:00 o el jueves 5 a las 16:00? ¿Llamada o videollamada?"
+Ej: "¿El miércoles 4 a las 10:00 (hasta las ${(() => { const e = 10*60+meetingDurationMins; return `${String(Math.floor(e/60)).padStart(2,'0')}:${String(e%60).padStart(2,'0')}` })()}) o el jueves 5 a las 16:00? ¿Llamada o videollamada?"
 
 PASO 2 — Cliente confirma fecha/hora Y tipo:
 Escribe el mensaje de confirmación e incluye OBLIGATORIAMENTE la etiqueta al final.
@@ -608,7 +627,11 @@ Esta distinción es CRUCIAL: un cliente que dice "tengo un restaurante y quiero 
         if (bookingEnabled) {
           const citaMatch = aiResponse.match(/<<CITA\|(\d{4}-\d{2}-\d{2})\|(\d{2}:\d{2})\|(\d{2}:\d{2})\|([^>]+)>>/)
           if (citaMatch) {
-            const [fullTag, cDate, cStart, cEnd, cType] = citaMatch
+            const [fullTag, cDate, cStart, cEndRaw, cType] = citaMatch
+            // Recalculate end time using configured meeting duration (ignore AI-provided end)
+            const [sh, sm] = cStart.split(':').map(Number)
+            const endTotalMins = sh * 60 + sm + meetingDurationMins
+            const cEnd = `${String(Math.floor(endTotalMins / 60)).padStart(2, '0')}:${String(endTotalMins % 60).padStart(2, '0')}`
             console.log('📅 Booking tag detected:', cDate, cStart, '-', cEnd, cType.trim())
             try {
               const { error: apptError } = await supabase.from('appointments').insert({
