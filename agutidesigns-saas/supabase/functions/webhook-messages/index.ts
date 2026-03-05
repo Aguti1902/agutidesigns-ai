@@ -407,30 +407,30 @@ serve(async (req) => {
 
         if (scheduleNotes) calendarContext += `\nNOTAS: ${scheduleNotes}\n`
 
-        calendarContext += `\n═══ REGLAS DE AGENDAMIENTO ═══
-- Usa SOLO las fechas del calendario de arriba. NUNCA inventes fechas.
-- Propón solo días ABIERTOS y horas LIBRES.
+        calendarContext += `\n═══ CÓMO AGENDAR — SIGUE ESTE FLUJO EXACTO ═══
 
-FLUJO OBLIGATORIO PARA AGENDAR:
-PASO 1: Propón 2 opciones de fecha/hora disponibles.
-PASO 2: Cuando confirmen fecha/hora, recoge estos datos (solo los que NO tengas aún). Pídelos en UN solo mensaje:
-  - Nombre completo
-  - Nombre de su negocio
-  - ¿Tiene web actualmente? (sí/no)
-  - Email de contacto
-  - ¿Llamada telefónica o videollamada?
-PASO 3: Cuando tengas TODOS los datos, incluye esta etiqueta al FINAL de tu mensaje de confirmación:
-<<CITA|nombre_completo|email|negocio|tiene_web|tipo|YYYY-MM-DD|HH:MM|HH:MM>>
+PASO 1 — Cuando pidan reunión:
+Propón exactamente 2 opciones libres del calendario y pregunta el tipo EN EL MISMO MENSAJE.
+Ejemplo: "¿Te va el miércoles 4 a las 10:00 o el jueves 5 a las 16:00? ¿Prefieres llamada o videollamada?"
 
-Ejemplo: <<CITA|Juan López|juan@email.com|Restaurante El Sol|no|videollamada|2026-02-28|10:00|11:00>>
+PASO 2 — Cuando confirmen fecha/hora Y tipo (llamada o videollamada):
+Escribe la confirmación y añade LA ETIQUETA al final del mensaje.
 
-REGLAS:
-- "tiene_web" = "sí" o "no"
-- "tipo" = "llamada" o "videollamada"
-- Si eligen videollamada: di "Te mando el enlace 10 min antes por WhatsApp."
-- Si no hay hora de fin, suma 1 hora.
-- La etiqueta NO se muestra al cliente. Ponla al final.
-- NO incluyas la etiqueta si te falta algún dato. Primero pídelos.`
+ETIQUETA (interna, no visible para el cliente):
+<<CITA|YYYY-MM-DD|HH:MM|HH:MM|tipo>>
+
+Ejemplos reales:
+- "el jueves a las 16, videollamada" → <<CITA|2026-03-05|16:00|17:00|videollamada>>
+- "el miércoles 4 a las 10, llamada" → <<CITA|2026-03-04|10:00|11:00|llamada>>
+
+REGLAS CRÍTICAS:
+- Genera la etiqueta EN CUANTO tengas fecha + hora + tipo. Nada más.
+- Si confirman fecha/hora pero NO el tipo, pregunta SOLO "¿Llamada o videollamada?" (1 sola pregunta, nada más).
+- Si ya dijeron el tipo antes, NO lo vuelvas a preguntar.
+- Si eligen videollamada confirma: "Te mando el enlace 10 min antes por WhatsApp."
+- DESPUÉS de confirmar la cita (en el siguiente mensaje), pide: nombre completo, negocio, email. Una sola vez.
+- Hora de fin = hora inicio + 1h si no se especifica.
+- USA solo fechas del calendario de arriba. NUNCA inventes.`
 
         systemPrompt += calendarContext
         } // end if (bookingEnabled)
@@ -602,38 +602,30 @@ Esta distinción es CRUCIAL: un cliente que dice "tengo un restaurante y quiero 
           aiResponse = 'Disculpa, tengo un problema técnico temporal.'
         }
 
-        // Parse <<CITA|nombre|email|negocio|tiene_web|tipo|YYYY-MM-DD|HH:MM|HH:MM>> tag
+        // Parse <<CITA|YYYY-MM-DD|HH:MM|HH:MM|tipo>> tag from AI response
         if (bookingEnabled) {
-          const citaMatch = aiResponse.match(/<<CITA\|([^|]*)\|([^|]*)\|([^|]*)\|([^|]*)\|([^|]*)\|(\d{4}-\d{2}-\d{2})\|(\d{2}:\d{2})\|(\d{2}:\d{2})>>/)
+          const citaMatch = aiResponse.match(/<<CITA\|(\d{4}-\d{2}-\d{2})\|(\d{2}:\d{2})\|(\d{2}:\d{2})\|([^>]+)>>/)
           if (citaMatch) {
-            const [fullTag, cName, cEmail, cBusiness, cHasWeb, cType, cDate, cStart, cEnd] = citaMatch
-            const notes = [
-              `Nombre: ${cName.trim()}`,
-              `Email: ${cEmail.trim()}`,
-              `Negocio: ${cBusiness.trim()}`,
-              `Tiene web: ${cHasWeb.trim()}`,
-              `Tipo: ${cType.trim()}`,
-              `Agendada automáticamente por IA`,
-            ].join('\n')
-            console.log('📅 Booking detected:', cName, cEmail, cBusiness, cDate, cStart, '-', cEnd, cType)
+            const [fullTag, cDate, cStart, cEnd, cType] = citaMatch
+            console.log('📅 Booking tag detected:', cDate, cStart, '-', cEnd, cType.trim())
             try {
               const { error: apptError } = await supabase.from('appointments').insert({
                 user_id: agent.user_id,
                 agent_id: agentId,
-                client_name: cName.trim() || contactName,
+                client_name: contactName,
                 client_phone: contactPhone,
-                service: cType.trim() || null,
+                service: cType.trim() || 'llamada',
                 appointment_date: cDate,
                 start_time: cStart,
                 end_time: cEnd,
-                notes,
+                notes: `Agendada por IA via WhatsApp\nTipo: ${cType.trim()}\nTeléfono cliente: ${contactPhone}`,
                 status: 'confirmed',
                 created_by: 'ai',
               })
               if (apptError) {
                 console.error('Appointment insert error:', apptError)
               } else {
-                console.log('✅ Appointment created with client details')
+                console.log('✅ Appointment created:', cDate, cStart, cType)
                 try {
                   const { data: { user: ownerUser } } = await supabase.auth.admin.getUserById(agent.user_id)
                   if (ownerUser?.email) {
@@ -645,15 +637,12 @@ Esta distinción es CRUCIAL: un cliente que dice "tengo un restaurante y quiero 
                       headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${SUPABASE_KEY}` },
                       body: JSON.stringify({
                         to: ownerUser.email,
-                        subject: `📅 Nueva cita: ${cName.trim() || contactName} – ${dateFormatted} a las ${cStart}`,
+                        subject: `📅 Nueva cita: ${contactName} – ${dateFormatted} a las ${cStart}`,
                         template: 'appointment_booked',
                         data: {
                           ownerName: ownerProfile?.full_name || 'ahí',
-                          clientName: cName.trim() || contactName,
+                          clientName: contactName,
                           clientPhone: contactPhone,
-                          clientEmail: cEmail.trim(),
-                          clientBusiness: cBusiness.trim(),
-                          clientHasWeb: cHasWeb.trim(),
                           meetingType: cType.trim(),
                           date: dateFormatted,
                           startTime: cStart,
@@ -663,7 +652,7 @@ Esta distinción es CRUCIAL: un cliente que dice "tengo un restaurante y quiero 
                       }),
                     }).catch(e => console.warn('Appointment email failed:', e))
                   }
-                } catch (emailErr) { console.warn('Appointment email error (non-fatal):', emailErr) }
+                } catch (emailErr) { console.warn('Appointment email error:', emailErr) }
               }
             } catch (e) {
               console.error('Appointment creation failed:', e)
