@@ -251,10 +251,15 @@ export default function Billing() {
   const isCancelling = customerInfo?.subscription?.cancelAtPeriodEnd;
   const cancelDaysLeft = isCancelling ? daysUntil(customerInfo.subscription.currentPeriodEnd) : 0;
 
-  // Determine current plan
+  // Determine current plan and billing cycle
   const currentPlan = PLANS.find(p =>
     customerInfo?.subscription?.items?.some(item => item.priceId === p.priceId || item.priceId === p.priceIdAnnual)
   ) || (isSubscribed ? PLANS[1] : null);
+
+  // Check if current subscription is annual or monthly
+  const currentCycle = customerInfo?.subscription?.items?.some(item =>
+    PLANS.some(p => item.priceId === p.priceIdAnnual)
+  ) ? 'annual' : 'monthly';
 
   const pm = customerInfo?.paymentMethods?.[0];
 
@@ -582,9 +587,28 @@ export default function Billing() {
 
       <div className="plans-grid">
         {PLANS.map(plan => {
-          const isCurrent = isSubscribed && plan.id === currentPlan?.id;
+          const selectedCycle = annual ? 'annual' : 'monthly';
+          // isCurrent = same plan tier AND same billing cycle
+          const isCurrent = isSubscribed && plan.id === currentPlan?.id && currentCycle === selectedCycle;
+          // isSamePlanDifferentCycle = same plan but switching cycle (e.g. monthly→annual)
+          const isSamePlanDifferentCycle = isSubscribed && plan.id === currentPlan?.id && currentCycle !== selectedCycle;
           const displayPrice = annual ? plan.priceAnnual : plan.price;
           const activePriceId = annual ? plan.priceIdAnnual : plan.priceId;
+
+          let btnLabel, btnClass;
+          if (isCurrent) {
+            btnLabel = <><Check size={14} /> Tu plan actual</>;
+            btnClass = 'btn btn--primary btn--full';
+          } else if (isSamePlanDifferentCycle) {
+            btnLabel = annual
+              ? <><Sparkles size={14} /> Cambiar a anual (2 meses gratis) <ArrowRight size={14} /></>
+              : <><ArrowRight size={14} /> Cambiar a mensual</>;
+            btnClass = annual ? 'btn btn--primary btn--full' : 'btn btn--outline btn--full';
+          } else {
+            btnLabel = <>{isSubscribed ? `Cambiar a ${plan.name}` : `Elegir ${plan.name}`} <ArrowRight size={14} /></>;
+            btnClass = 'btn btn--outline btn--full';
+          }
+
           return (
             <div key={plan.id} className={`plan-card ${plan.popular && !isCurrent ? 'plan-card--popular' : ''} ${isCurrent ? 'plan-card--current' : ''}`}>
               {isCurrent && <span className="plan-card__badge plan-card__badge--current"><Check size={11} /> Plan seleccionado</span>}
@@ -599,16 +623,13 @@ export default function Billing() {
                 <div className="plan-card__highlight"><MessageCircle size={13} /><span>{plan.messages}</span></div>
               </div>
               <ul>{plan.features.map((f, i) => (<li key={i}><Check size={14} /> {f}</li>))}</ul>
-              {isCurrent ? (
-                <button className="btn btn--primary btn--full" disabled style={{ opacity: 0.55, cursor: 'default' }}>
-                  <Check size={14} /> Tu plan actual
-                </button>
-              ) : (
-                <button className="btn btn--outline btn--full"
-                  onClick={() => navigate(`/app/checkout?plan=${plan.id}&priceId=${activePriceId}&mode=subscription&cycle=${annual ? 'annual' : 'monthly'}`)}>
-                  {isSubscribed ? `Cambiar a ${plan.name}` : `Elegir ${plan.name}`} <ArrowRight size={14} />
-                </button>
-              )}
+              <button
+                className={btnClass}
+                disabled={isCurrent}
+                style={isCurrent ? { opacity: 0.55, cursor: 'default' } : {}}
+                onClick={isCurrent ? undefined : () => navigate(`/app/checkout?plan=${plan.id}&priceId=${activePriceId}&mode=subscription&cycle=${selectedCycle}`)}>
+                {btnLabel}
+              </button>
             </div>
           );
         })}
