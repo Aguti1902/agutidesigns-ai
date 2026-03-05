@@ -14,7 +14,7 @@ import { useAuth } from '../hooks/useAuth';
 import { supabase } from '../lib/supabase';
 import './DashboardPages.css';
 
-const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || '');
+const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || 'pk_live_51Otv6pFjBSJ299OpIgD3syvnakWabfiyE2F1RQCb2GpFAYtR11w8oHUuBtVEvvMdMO0myINGTvHqoCIiHniZf8dY00WYgVQwc2');
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || '';
 const API_URL = import.meta.env.VITE_API_URL || (SUPABASE_URL ? `${SUPABASE_URL.replace(/\/$/, '')}/functions/v1` : '');
 

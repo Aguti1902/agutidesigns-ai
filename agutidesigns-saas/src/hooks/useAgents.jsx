@@ -2,10 +2,12 @@ import { createContext, useContext, useState, useEffect, useCallback } from 'rea
 import { supabase } from '../lib/supabase';
 import { useAuth } from './useAuth';
 
+export const PLAN_AGENT_LIMITS = { starter: 1, pro: 3, agency: Infinity };
+
 const AgentsContext = createContext({});
 
 export function AgentsProvider({ children }) {
-  const { user } = useAuth();
+  const { user, maxAgents } = useAuth();
   const [agents, setAgents] = useState([]);
   const [activeAgent, setActiveAgent] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -45,6 +47,9 @@ export function AgentsProvider({ children }) {
 
   const createAgent = useCallback(async (name) => {
     if (!user) return null;
+    if (maxAgents !== Infinity && agents.length >= maxAgents) {
+      return { error: 'limit_reached', maxAgents };
+    }
     const { data, error } = await supabase.from('agents').insert({
       user_id: user.id,
       name: name || `Agente ${agents.length + 1}`,
@@ -55,7 +60,7 @@ export function AgentsProvider({ children }) {
     await loadAgents();
     setActiveAgent(data);
     return data;
-  }, [user, agents]);
+  }, [user, agents, maxAgents]);
 
   const refreshAgents = useCallback(() => {
     if (user) loadAgents();
@@ -63,7 +68,7 @@ export function AgentsProvider({ children }) {
 
   return (
     <AgentsContext.Provider value={{
-      agents, activeAgent, loading, switchAgent, createAgent, refreshAgents, setActiveAgent
+      agents, activeAgent, loading, switchAgent, createAgent, refreshAgents, setActiveAgent, maxAgents
     }}>
       {children}
     </AgentsContext.Provider>

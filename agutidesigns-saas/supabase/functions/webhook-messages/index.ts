@@ -240,10 +240,6 @@ serve(async (req) => {
 
         let systemPrompt = agent.system_prompt || 'Eres un asistente virtual amable y profesional. Responde en español. Atiende al cliente, responde sus preguntas e intenta ayudarle al máximo.'
 
-        // Meeting duration & buffer settings (read later after extra_context is parsed)
-        let meetingDurationMins = 60
-        let bufferMins = 0
-
         // Build real calendar for the next 7 days
         const now = new Date()
         const dayNames = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado']
@@ -268,70 +264,27 @@ serve(async (req) => {
           if (business.name) ctx.push(`NOMBRE DEL NEGOCIO: ${business.name}`)
           if (business.sector) ctx.push(`SECTOR: ${business.sector}`)
           if (business.description) ctx.push(`DESCRIPCIÓN: ${business.description}`)
+          if (business.services) ctx.push(`SERVICIOS:\n${business.services}`)
+          if (business.prices) ctx.push(`PRECIOS:\n${business.prices}`)
+          if (business.schedule) ctx.push(`HORARIOS: ${business.schedule}`)
           if (business.address) ctx.push(`DIRECCIÓN: ${business.address}`)
           if (business.phone) ctx.push(`TELÉFONO DE CONTACTO: ${business.phone}`)
           if (business.email) ctx.push(`EMAIL: ${business.email}`)
           if (business.website) ctx.push(`WEB: ${business.website}`)
           if (business.faq) ctx.push(`PREGUNTAS FRECUENTES:\n${business.faq}`)
-
           if (business.extra_context) {
             try {
               const extra = JSON.parse(business.extra_context)
-
-              // ── Active services and prices (ONLY from enabled toggles) ──
-              const activeToggles: string[] = (() => {
-                try { return extra.servicios_toggles ? JSON.parse(extra.servicios_toggles) : [] } catch { return [] }
-              })()
-              const serviceLabels: Record<string, string> = {
-                web_corp: 'Web corporativa', landing: 'Landing page', ecommerce: 'Ecommerce',
-                rediseno: 'Rediseño web', mantenimiento: 'Mantenimiento mensual',
-                seo: 'SEO', copy: 'Copy / Branding', apps: 'Apps / Web app'
+              const labels: Record<string, string> = {
+                slogan: 'ESLOGAN', schedule_weekdays: 'HORARIO LUNES A VIERNES', schedule_saturday: 'HORARIO SÁBADO',
+                schedule_sunday: 'HORARIO DOMINGO', schedule_notes: 'NOTAS SOBRE HORARIOS', google_maps: 'GOOGLE MAPS',
+                services_list: 'LISTA DE SERVICIOS', prices_list: 'LISTA DE PRECIOS', offers: 'OFERTAS Y PROMOCIONES ACTUALES',
+                faq_list: 'PREGUNTAS FRECUENTES', cancellation_policy: 'POLÍTICA DE CANCELACIÓN',
+                payment_methods: 'MÉTODOS DE PAGO', return_policy: 'POLÍTICA DE DEVOLUCIONES',
+                other_policies: 'OTRAS POLÍTICAS', team: 'EQUIPO Y PERSONAL', specialties: 'ESPECIALIDADES Y DIFERENCIADORES',
+                social_media: 'REDES SOCIALES',
               }
-              const rangoServicios: Record<string, string> = (() => {
-                try { return extra.rango_servicios ? JSON.parse(extra.rango_servicios) : {} } catch { return {} }
-              })()
-
-              if (activeToggles.length > 0) {
-                const serviceLines = activeToggles.map((id: string) => {
-                  const label = serviceLabels[id] || id
-                  const price = rangoServicios[id]
-                  return price ? `${label}: ${price}` : label
-                })
-                ctx.push(`SERVICIOS Y PRECIOS (solo estos, nada más):\n${serviceLines.join('\n')}`)
-              } else if (business.services) {
-                ctx.push(`SERVICIOS:\n${business.services}`)
-                if (business.prices) ctx.push(`PRECIOS:\n${business.prices}`)
-              }
-
-              // Description of services (free text)
-              if (extra.web_services_detail) ctx.push(`DESCRIPCIÓN DE SERVICIOS:\n${extra.web_services_detail}`)
-
-              // Extras config
-              if (extra.extras_config) {
-                try {
-                  const extrasObj = JSON.parse(extra.extras_config)
-                  const extraLines: string[] = []
-                  for (const [eId, eCfg] of Object.entries(extrasObj as Record<string, any>)) {
-                    if (eCfg?.active && eCfg?.precio) {
-                      extraLines.push(`  - ${eId}: ${eCfg.precio}`)
-                    }
-                  }
-                  if (extraLines.length) ctx.push(`EXTRAS DISPONIBLES:\n${extraLines.join('\n')}`)
-                } catch {}
-              }
-
-              // Meeting duration and buffer
-              if (extra.duracion_call) {
-                const dc = (extra.duracion_call as string).trim()
-                if (dc === '1 hora') meetingDurationMins = 60
-                else { const m = dc.match(/(\d+)/); if (m) meetingDurationMins = parseInt(m[1]) }
-              }
-              if (extra.buffer_reuniones) {
-                const bf = (extra.buffer_reuniones as string).trim()
-                const m = bf.match(/(\d+)/); if (m) bufferMins = parseInt(m[1])
-              }
-
-              // Weekly schedule
+              // Read structured weekly schedule (new format) — overrides legacy text fields
               if (extra.horario_semana) {
                 try {
                   const hs = JSON.parse(extra.horario_semana)
@@ -344,35 +297,26 @@ serve(async (req) => {
                     : `L:${fmtDay(hs.lunes)} M:${fmtDay(hs.martes)} X:${fmtDay(hs.miercoles)} J:${fmtDay(hs.jueves)} V:${fmtDay(hs.viernes)}`
                   scheduleSaturday = fmtDay(hs.sabado)
                   scheduleSunday   = fmtDay(hs.domingo)
+                  // Per-day schedule map for the calendar builder (dow: 0=dom,1=lun,...,6=sab)
                   const dowKeys = ['domingo','lunes','martes','miercoles','jueves','viernes','sabado']
                   ;(extra as any).__scheduleByDow = Object.fromEntries(dowKeys.map((k, i) => [i, fmtDay(hs[k])]))
                 } catch {}
               }
-
-              // Other allowed fields
-              const allowedKeys: Record<string, string> = {
-                slogan: 'ESLOGAN', schedule_notes: 'NOTAS SOBRE HORARIOS', google_maps: 'GOOGLE MAPS',
-                offers: 'OFERTAS Y PROMOCIONES', faq_list: 'PREGUNTAS FRECUENTES',
-                cancellation_policy: 'POLÍTICA DE CANCELACIÓN', payment_methods: 'MÉTODOS DE PAGO',
-                return_policy: 'POLÍTICA DE DEVOLUCIONES', other_policies: 'OTRAS POLÍTICAS',
-                team: 'EQUIPO', specialties: 'ESPECIALIDADES', social_media: 'REDES SOCIALES',
-                schedule_weekdays: '__schedule', schedule_saturday: '__schedule', schedule_sunday: '__schedule',
-              }
               for (const [k, v] of Object.entries(extra)) {
-                if (!v || typeof v !== 'string' || !(v as string).trim()) continue
-                if (k === 'schedule_weekdays') { if (!scheduleWeekdays) scheduleWeekdays = v as string; continue }
-                if (k === 'schedule_saturday') { if (!scheduleSaturday) scheduleSaturday = v as string; continue }
-                if (k === 'schedule_sunday')   { if (!scheduleSunday)   scheduleSunday   = v as string; continue }
-                if (k === 'schedule_notes') { scheduleNotes = v as string; ctx.push(`NOTAS SOBRE HORARIOS: ${v}`); continue }
-                if (!allowedKeys[k]) continue // skip everything not explicitly allowed (including legacy price fields)
-                if (allowedKeys[k].startsWith('__')) continue
-                ctx.push(`${allowedKeys[k]}: ${v}`)
+                if (v && typeof v === 'string' && (v as string).trim()) {
+                  const label = labels[k] || k.toUpperCase().replace(/_/g, ' ')
+                  if (['horario_semana','rango_servicios','extras_config','plazos_servicios','servicios_toggles','servicios_precios'].includes(k)) continue
+                  ctx.push(`${label}: ${v}`)
+                  if (k === 'schedule_weekdays' && !scheduleWeekdays) scheduleWeekdays = v as string
+                  if (k === 'schedule_saturday' && !scheduleSaturday) scheduleSaturday = v as string
+                  if (k === 'schedule_sunday'   && !scheduleSunday)   scheduleSunday   = v as string
+                  if (k === 'schedule_notes') scheduleNotes = v as string
+                }
               }
-
+              // Store per-day map for use in calendar builder
               if ((extra as any).__scheduleByDow) (business as any).__scheduleByDow = (extra as any).__scheduleByDow
             } catch { ctx.push(`INFORMACIÓN ADICIONAL:\n${business.extra_context}`) }
           }
-
           if (!scheduleWeekdays && business.schedule) scheduleWeekdays = business.schedule
           if (ctx.length) systemPrompt += '\n\n═══ INFORMACIÓN DEL NEGOCIO ═══\n' + ctx.join('\n\n')
         }
@@ -463,36 +407,30 @@ serve(async (req) => {
 
         if (scheduleNotes) calendarContext += `\nNOTAS: ${scheduleNotes}\n`
 
-        const durationLabel = meetingDurationMins === 60 ? '1 hora' : `${meetingDurationMins} minutos`
-        calendarContext += `\n═══ SISTEMA DE AGENDAMIENTO ═══
+        calendarContext += `\n═══ CÓMO AGENDAR — SIGUE ESTE FLUJO EXACTO ═══
 
-DURACIÓN DE CADA REUNIÓN: ${durationLabel}${bufferMins > 0 ? ` + ${bufferMins} min de margen entre reuniones` : ''}
-Usa siempre esta duración al proponer horas y al calcular la hora de fin.
+PASO 1 — Cuando pidan reunión:
+Propón exactamente 2 opciones libres del calendario y pregunta el tipo EN EL MISMO MENSAJE.
+Ejemplo: "¿Te va el miércoles 4 a las 10:00 o el jueves 5 a las 16:00? ¿Prefieres llamada o videollamada?"
 
-PASO 1 — Cliente pide reunión:
-Propón 2 opciones libres del calendario y el tipo EN EL MISMO MENSAJE.
-Ej: "¿El miércoles 4 a las 10:00 (hasta las ${(() => { const e = 10*60+meetingDurationMins; return `${String(Math.floor(e/60)).padStart(2,'0')}:${String(e%60).padStart(2,'0')}` })()}) o el jueves 5 a las 16:00? ¿Llamada o videollamada?"
+PASO 2 — Cuando confirmen fecha/hora Y tipo (llamada o videollamada):
+Escribe la confirmación y añade LA ETIQUETA al final del mensaje.
 
-PASO 2 — Cliente confirma fecha/hora Y tipo:
-Escribe el mensaje de confirmación e incluye OBLIGATORIAMENTE la etiqueta al final.
-
-⚠️ LA ETIQUETA ES OBLIGATORIA. Sin etiqueta la cita NO se guarda en el sistema.
-Formato exacto (sin espacios extra):
+ETIQUETA (interna, no visible para el cliente):
 <<CITA|YYYY-MM-DD|HH:MM|HH:MM|tipo>>
 
-Ejemplos:
-- Confirma "martes 10 a las 10, videollamada" → tu mensaje + <<CITA|2026-03-10|10:00|11:00|videollamada>>
-- Confirma "viernes a las 16, llamada" → tu mensaje + <<CITA|2026-03-07|16:00|17:00|llamada>>
+Ejemplos reales:
+- "el jueves a las 16, videollamada" → <<CITA|2026-03-05|16:00|17:00|videollamada>>
+- "el miércoles 4 a las 10, llamada" → <<CITA|2026-03-04|10:00|11:00|llamada>>
 
-CASOS ESPECIALES:
-- Si el cliente pide REAGENDAR: confirma la nueva fecha e incluye la etiqueta con la nueva fecha.
-- Si confirman fecha pero NO el tipo: pregunta solo "¿Llamada o videollamada?" sin confirmar nada más.
-- Si ya dijeron el tipo: NO lo preguntes de nuevo.
-- Videollamada: añade "Te mando el enlace 10 min antes por WhatsApp."
+REGLAS CRÍTICAS:
+- Genera la etiqueta EN CUANTO tengas fecha + hora + tipo. Nada más.
+- Si confirman fecha/hora pero NO el tipo, pregunta SOLO "¿Llamada o videollamada?" (1 sola pregunta, nada más).
+- Si ya dijeron el tipo antes, NO lo vuelvas a preguntar.
+- Si eligen videollamada confirma: "Te mando el enlace 10 min antes por WhatsApp."
+- DESPUÉS de confirmar la cita (en el siguiente mensaje), pide: nombre completo, negocio, email. Una sola vez.
 - Hora de fin = hora inicio + 1h si no se especifica.
-- USA solo fechas del calendario. NUNCA inventes fechas.
-
-RECUERDA: NUNCA escribas "he agendado" o "está confirmado" sin incluir la etiqueta <<CITA|...>>.`
+- USA solo fechas del calendario de arriba. NUNCA inventes.`
 
         systemPrompt += calendarContext
         } // end if (bookingEnabled)
@@ -501,12 +439,11 @@ RECUERDA: NUNCA escribas "he agendado" o "está confirmado" sin incluir la etiqu
 1. BREVEDAD: Máximo 2-3 líneas cortas. Esto es WhatsApp.
 2. FORMATO: Texto plano. CERO asteriscos, CERO guiones, CERO markdown, CERO emojis excesivos.
 3. MEMORIA: Lee el historial. NUNCA repitas info que ya diste. Continúa donde quedó.
-4. PRECIOS — REGLA ESTRICTA: NO menciones precios a menos que el cliente los pida explícitamente ("¿cuánto cuesta?", "¿qué precio tiene?", "¿cuánto cobras?"). Si no te los piden, NO los des.
-5. SERVICIOS: Habla ÚNICAMENTE de los servicios listados en SERVICIOS Y PRECIOS. Si alguien pide algo que no está en esa lista, dile que no es algo que ofrezcas actualmente.
-6. SIN RELLENO: Prohibido "Claro que sí", "Por supuesto", "Encantado", "¡Genial!", "¡Excelente!".
-7. UNA PREGUNTA POR MENSAJE: No hagas varias preguntas a la vez (excepto al recoger datos para cita).
-8. DATOS REALES: Solo info del negocio. Si no sabes algo, dilo.
-9. NO REPITAS: Si ya preguntaste algo y el cliente respondió, NO lo preguntes otra vez.`
+4. PRECIOS: Si piden precio, da el número directo. Sin rodeos.
+5. SIN RELLENO: Prohibido "Claro que sí", "Por supuesto", "Encantado", "¡Genial!", "¡Excelente!".
+6. UNA PREGUNTA POR MENSAJE: No hagas varias preguntas a la vez (excepto al recoger datos para cita).
+7. DATOS REALES: Solo info del negocio. Si no sabes algo, dilo.
+8. NO REPITAS: Si ya preguntaste algo y el cliente respondió, NO lo preguntes otra vez.`
 
         // ── STRICT TOPIC GUARD — always appended, cannot be disabled ──
         const businessName = business?.name || 'este negocio'
@@ -622,7 +559,7 @@ Esta distinción es CRUCIAL: un cliente que dice "tengo un restaurante y quiero 
         } catch {}
 
         // Call OpenAI — deduplicate history to avoid repetition loops
-        const rawHistory = (history || []).slice(-10)
+        const rawHistory = (history || []).slice(-24)
         const cleanHistory: { role: string; content: string }[] = []
         for (const msg of rawHistory) {
           const prev = cleanHistory[cleanHistory.length - 1]
@@ -630,7 +567,7 @@ Esta distinción es CRUCIAL: un cliente que dice "tengo un restaurante y quiero 
           if (prev && prev.role === msg.role && prev.content === msg.content) continue
           cleanHistory.push({ role: msg.role, content: msg.content })
         }
-        const historyMsgs = cleanHistory.slice(-10)
+        const historyMsgs = cleanHistory.slice(-20)
         console.log('Calling OpenAI... booking:', bookingEnabled, 'history:', historyMsgs.length, 'prompt length:', systemPrompt.length)
         
         let aiResponse = ''
@@ -645,7 +582,7 @@ Esta distinción es CRUCIAL: un cliente que dice "tengo un restaurante y quiero 
                 ...historyMsgs,
               ],
               temperature: 0.4,
-              max_tokens: 500,
+              max_tokens: 350,
               presence_penalty: 0.5,
               frequency_penalty: 0.4
             })
@@ -669,11 +606,7 @@ Esta distinción es CRUCIAL: un cliente que dice "tengo un restaurante y quiero 
         if (bookingEnabled) {
           const citaMatch = aiResponse.match(/<<CITA\|(\d{4}-\d{2}-\d{2})\|(\d{2}:\d{2})\|(\d{2}:\d{2})\|([^>]+)>>/)
           if (citaMatch) {
-            const [fullTag, cDate, cStart, cEndRaw, cType] = citaMatch
-            // Recalculate end time using configured meeting duration (ignore AI-provided end)
-            const [sh, sm] = cStart.split(':').map(Number)
-            const endTotalMins = sh * 60 + sm + meetingDurationMins
-            const cEnd = `${String(Math.floor(endTotalMins / 60)).padStart(2, '0')}:${String(endTotalMins % 60).padStart(2, '0')}`
+            const [fullTag, cDate, cStart, cEnd, cType] = citaMatch
             console.log('📅 Booking tag detected:', cDate, cStart, '-', cEnd, cType.trim())
             try {
               const { error: apptError } = await supabase.from('appointments').insert({

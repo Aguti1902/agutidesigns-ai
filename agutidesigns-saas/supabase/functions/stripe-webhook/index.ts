@@ -43,14 +43,27 @@ serve(async (req) => {
 
     // Map plan price IDs to message limits
     const PLAN_LIMITS: Record<string, number> = {
-      'price_1T1qSzFjBSJ299OpJBLCMTrn': 500,    // Starter
-      'price_1T1qTcFjBSJ299OpSxVO6ZFM': 5000,   // Pro
-      'price_1T1qU1FjBSJ299OpTOdjIRya': 20000,   // Business
+      'price_1T1qSzFjBSJ299OpJBLCMTrn': 500,    // Starter mensual
+      'price_1T6ioWFjBSJ299OpXuEpXFbj': 500,    // Starter anual
+      'price_1T1qTcFjBSJ299OpSxVO6ZFM': 5000,   // Pro mensual
+      'price_1T6ioXFjBSJ299OpDFsxfPMr': 5000,   // Pro anual
+      'price_1T1qU1FjBSJ299OpTOdjIRya': 20000,  // Agency mensual
+      'price_1T6ioXFjBSJ299OpVkAwU2Ds': 20000,  // Agency anual
     }
 
-    // Helper: get message_limit from a Stripe subscription's items
-    async function getMessageLimitFromSubscription(subscriptionId: string): Promise<number | null> {
-      if (!STRIPE_KEY || !subscriptionId) return null
+    // Map plan price IDs to agent limits (0 = unlimited)
+    const AGENT_LIMITS: Record<string, number> = {
+      'price_1T1qSzFjBSJ299OpJBLCMTrn': 1,   // Starter mensual
+      'price_1T6ioWFjBSJ299OpXuEpXFbj': 1,   // Starter anual
+      'price_1T1qTcFjBSJ299OpSxVO6ZFM': 3,   // Pro mensual
+      'price_1T6ioXFjBSJ299OpDFsxfPMr': 3,   // Pro anual
+      'price_1T1qU1FjBSJ299OpTOdjIRya': 0,   // Agency mensual (ilimitados)
+      'price_1T6ioXFjBSJ299OpVkAwU2Ds': 0,   // Agency anual (ilimitados)
+    }
+
+    // Helper: get limits from a Stripe subscription's items
+    async function getLimitsFromSubscription(subscriptionId: string): Promise<{ messageLimit: number | null, agentLimit: number | null }> {
+      if (!STRIPE_KEY || !subscriptionId) return { messageLimit: null, agentLimit: null }
       try {
         const res = await fetch(`https://api.stripe.com/v1/subscriptions/${subscriptionId}`, {
           headers: { 'Authorization': `Bearer ${STRIPE_KEY}` },
@@ -59,13 +72,16 @@ serve(async (req) => {
         for (const item of (sub.items?.data || [])) {
           const priceId = item.price?.id
           if (priceId && PLAN_LIMITS[priceId] != null) {
-            return PLAN_LIMITS[priceId]
+            return {
+              messageLimit: PLAN_LIMITS[priceId],
+              agentLimit: AGENT_LIMITS[priceId] ?? 1,
+            }
           }
         }
       } catch (err) {
         console.error('Error fetching subscription for limit:', err)
       }
-      return null
+      return { messageLimit: null, agentLimit: null }
     }
 
     // Checkout completed - subscription or one-time payment
@@ -77,7 +93,7 @@ serve(async (req) => {
       if (userId && customerId) {
         if (subscriptionId) {
           console.log('Subscription activated for user:', userId)
-          const messageLimit = await getMessageLimitFromSubscription(subscriptionId)
+          const { messageLimit, agentLimit } = await getLimitsFromSubscription(subscriptionId)
           const updates: Record<string, unknown> = {
             subscription_status: 'active',
             stripe_customer_id: customerId,
@@ -87,6 +103,10 @@ serve(async (req) => {
           if (messageLimit != null) {
             updates.message_limit = messageLimit
             console.log('Setting message_limit:', messageLimit)
+          }
+          if (agentLimit != null) {
+            updates.agent_limit = agentLimit
+            console.log('Setting agent_limit:', agentLimit)
           }
           await supabase.from('profiles').update(updates).eq('id', userId)
           
@@ -100,6 +120,8 @@ serve(async (req) => {
             const userEmail = custData.email || data.customer_email
             
             if (userEmail) {
+              const planName = messageLimit != null && messageLimit <= 500 ? 'Starter' : messageLimit != null && messageLimit <= 5000 ? 'Pro' : 'Agency'
+              const planPrice = planName === 'Starter' ? '29' : planName === 'Pro' ? '79' : '149'
               await fetch(`${SUPABASE_URL}/functions/v1/send-email`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${SUPABASE_KEY}` },
@@ -109,8 +131,8 @@ serve(async (req) => {
                   template: 'payment_success',
                   data: { 
                     name: profileData?.full_name || 'ahí',
-                    amount: messageLimit === 500 ? '29' : messageLimit === 5000 ? '79' : '199',
-                    plan: messageLimit === 500 ? 'Starter' : messageLimit === 5000 ? 'Pro' : 'Business',
+                    amount: planPrice,
+                    plan: planName,
                   }
                 })
               }).catch(e => console.warn('Email failed:', e))
@@ -142,12 +164,13 @@ serve(async (req) => {
           updated_at: new Date().toISOString(),
         }
 
-        // Check if plan changed and update message_limit
+        // Check if plan changed and update message_limit + agent_limit
         for (const item of (data.items?.data || [])) {
           const priceId = item.price?.id
           if (priceId && PLAN_LIMITS[priceId] != null) {
             updates.message_limit = PLAN_LIMITS[priceId]
-            console.log('Updating message_limit to:', PLAN_LIMITS[priceId])
+            updates.agent_limit = AGENT_LIMITS[priceId] ?? 1
+            console.log('Updating message_limit to:', PLAN_LIMITS[priceId], 'agent_limit to:', AGENT_LIMITS[priceId])
             break
           }
         }

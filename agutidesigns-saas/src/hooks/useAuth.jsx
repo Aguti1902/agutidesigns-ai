@@ -127,10 +127,19 @@ export function AuthProvider({ children }) {
   const isSubscribed = isDev || profile?.subscription_status === 'active';
   const hasAccess = isDev || isTrialActive || isSubscribed;
 
+  // Agent limit based on plan:
+  // agent_limit = 0 → Agency (unlimited), 1 → Starter, 3 → Pro
+  // Trial and unsubscribed users get 1 agent max
+  const maxAgents = isDev
+    ? Infinity
+    : isSubscribed
+      ? (profile?.agent_limit === 0 ? Infinity : (profile?.agent_limit || 1))
+      : 1;
+
   return (
     <AuthContext.Provider value={{
       user, profile, loading, signUp, signIn, signOut, signInWithGoogle, updateProfile, fetchProfile,
-      checkPhoneAvailable, registerTrialPhone, isTrialActive, isSubscribed, hasAccess
+      checkPhoneAvailable, registerTrialPhone, isTrialActive, isSubscribed, hasAccess, maxAgents
     }}>
       {children}
     </AuthContext.Provider>
