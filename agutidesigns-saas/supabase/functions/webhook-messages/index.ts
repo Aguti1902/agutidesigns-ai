@@ -268,27 +268,70 @@ serve(async (req) => {
           if (business.name) ctx.push(`NOMBRE DEL NEGOCIO: ${business.name}`)
           if (business.sector) ctx.push(`SECTOR: ${business.sector}`)
           if (business.description) ctx.push(`DESCRIPCIÓN: ${business.description}`)
-          if (business.services) ctx.push(`SERVICIOS:\n${business.services}`)
-          if (business.prices) ctx.push(`PRECIOS:\n${business.prices}`)
-          if (business.schedule) ctx.push(`HORARIOS: ${business.schedule}`)
           if (business.address) ctx.push(`DIRECCIÓN: ${business.address}`)
           if (business.phone) ctx.push(`TELÉFONO DE CONTACTO: ${business.phone}`)
           if (business.email) ctx.push(`EMAIL: ${business.email}`)
           if (business.website) ctx.push(`WEB: ${business.website}`)
           if (business.faq) ctx.push(`PREGUNTAS FRECUENTES:\n${business.faq}`)
+
           if (business.extra_context) {
             try {
               const extra = JSON.parse(business.extra_context)
-              const labels: Record<string, string> = {
-                slogan: 'ESLOGAN', schedule_weekdays: 'HORARIO LUNES A VIERNES', schedule_saturday: 'HORARIO SÁBADO',
-                schedule_sunday: 'HORARIO DOMINGO', schedule_notes: 'NOTAS SOBRE HORARIOS', google_maps: 'GOOGLE MAPS',
-                services_list: 'LISTA DE SERVICIOS', prices_list: 'LISTA DE PRECIOS', offers: 'OFERTAS Y PROMOCIONES ACTUALES',
-                faq_list: 'PREGUNTAS FRECUENTES', cancellation_policy: 'POLÍTICA DE CANCELACIÓN',
-                payment_methods: 'MÉTODOS DE PAGO', return_policy: 'POLÍTICA DE DEVOLUCIONES',
-                other_policies: 'OTRAS POLÍTICAS', team: 'EQUIPO Y PERSONAL', specialties: 'ESPECIALIDADES Y DIFERENCIADORES',
-                social_media: 'REDES SOCIALES',
+
+              // ── Active services and prices (ONLY from enabled toggles) ──
+              const activeToggles: string[] = (() => {
+                try { return extra.servicios_toggles ? JSON.parse(extra.servicios_toggles) : [] } catch { return [] }
+              })()
+              const serviceLabels: Record<string, string> = {
+                web_corp: 'Web corporativa', landing: 'Landing page', ecommerce: 'Ecommerce',
+                rediseno: 'Rediseño web', mantenimiento: 'Mantenimiento mensual',
+                seo: 'SEO', copy: 'Copy / Branding', apps: 'Apps / Web app'
               }
-              // Read structured weekly schedule (new format) — overrides legacy text fields
+              const rangoServicios: Record<string, string> = (() => {
+                try { return extra.rango_servicios ? JSON.parse(extra.rango_servicios) : {} } catch { return {} }
+              })()
+
+              if (activeToggles.length > 0) {
+                const serviceLines = activeToggles.map((id: string) => {
+                  const label = serviceLabels[id] || id
+                  const price = rangoServicios[id]
+                  return price ? `${label}: ${price}` : label
+                })
+                ctx.push(`SERVICIOS Y PRECIOS (solo estos, nada más):\n${serviceLines.join('\n')}`)
+              } else if (business.services) {
+                ctx.push(`SERVICIOS:\n${business.services}`)
+                if (business.prices) ctx.push(`PRECIOS:\n${business.prices}`)
+              }
+
+              // Description of services (free text)
+              if (extra.web_services_detail) ctx.push(`DESCRIPCIÓN DE SERVICIOS:\n${extra.web_services_detail}`)
+
+              // Extras config
+              if (extra.extras_config) {
+                try {
+                  const extrasObj = JSON.parse(extra.extras_config)
+                  const extraLines: string[] = []
+                  for (const [eId, eCfg] of Object.entries(extrasObj as Record<string, any>)) {
+                    if (eCfg?.active && eCfg?.precio) {
+                      extraLines.push(`  - ${eId}: ${eCfg.precio}`)
+                    }
+                  }
+                  if (extraLines.length) ctx.push(`EXTRAS DISPONIBLES:\n${extraLines.join('\n')}`)
+                } catch {}
+              }
+
+              // Meeting duration and buffer
+              if (extra.duracion_call) {
+                const dc = (extra.duracion_call as string).trim()
+                if (dc === '1 hora') meetingDurationMins = 60
+                else { const m = dc.match(/(\d+)/); if (m) meetingDurationMins = parseInt(m[1]) }
+              }
+              if (extra.buffer_reuniones) {
+                const bf = (extra.buffer_reuniones as string).trim()
+                const m = bf.match(/(\d+)/); if (m) bufferMins = parseInt(m[1])
+              }
+
+              // Weekly schedule
               if (extra.horario_semana) {
                 try {
                   const hs = JSON.parse(extra.horario_semana)
@@ -301,37 +344,35 @@ serve(async (req) => {
                     : `L:${fmtDay(hs.lunes)} M:${fmtDay(hs.martes)} X:${fmtDay(hs.miercoles)} J:${fmtDay(hs.jueves)} V:${fmtDay(hs.viernes)}`
                   scheduleSaturday = fmtDay(hs.sabado)
                   scheduleSunday   = fmtDay(hs.domingo)
-                  // Per-day schedule map for the calendar builder (dow: 0=dom,1=lun,...,6=sab)
                   const dowKeys = ['domingo','lunes','martes','miercoles','jueves','viernes','sabado']
                   ;(extra as any).__scheduleByDow = Object.fromEntries(dowKeys.map((k, i) => [i, fmtDay(hs[k])]))
                 } catch {}
               }
-              // Parse meeting duration and buffer
-              if (extra.duracion_call) {
-                const dc = (extra.duracion_call as string).trim()
-                if (dc === '1 hora') meetingDurationMins = 60
-                else { const m = dc.match(/(\d+)/); if (m) meetingDurationMins = parseInt(m[1]) }
+
+              // Other allowed fields
+              const allowedKeys: Record<string, string> = {
+                slogan: 'ESLOGAN', schedule_notes: 'NOTAS SOBRE HORARIOS', google_maps: 'GOOGLE MAPS',
+                offers: 'OFERTAS Y PROMOCIONES', faq_list: 'PREGUNTAS FRECUENTES',
+                cancellation_policy: 'POLÍTICA DE CANCELACIÓN', payment_methods: 'MÉTODOS DE PAGO',
+                return_policy: 'POLÍTICA DE DEVOLUCIONES', other_policies: 'OTRAS POLÍTICAS',
+                team: 'EQUIPO', specialties: 'ESPECIALIDADES', social_media: 'REDES SOCIALES',
+                schedule_weekdays: '__schedule', schedule_saturday: '__schedule', schedule_sunday: '__schedule',
               }
-              if (extra.buffer_reuniones) {
-                const bf = (extra.buffer_reuniones as string).trim()
-                const m = bf.match(/(\d+)/); if (m) bufferMins = parseInt(m[1])
+              for (const [k, v] of Object.entries(extra)) {
+                if (!v || typeof v !== 'string' || !(v as string).trim()) continue
+                if (k === 'schedule_weekdays') { if (!scheduleWeekdays) scheduleWeekdays = v as string; continue }
+                if (k === 'schedule_saturday') { if (!scheduleSaturday) scheduleSaturday = v as string; continue }
+                if (k === 'schedule_sunday')   { if (!scheduleSunday)   scheduleSunday   = v as string; continue }
+                if (k === 'schedule_notes') { scheduleNotes = v as string; ctx.push(`NOTAS SOBRE HORARIOS: ${v}`); continue }
+                if (!allowedKeys[k]) continue // skip everything not explicitly allowed (including legacy price fields)
+                if (allowedKeys[k].startsWith('__')) continue
+                ctx.push(`${allowedKeys[k]}: ${v}`)
               }
 
-              for (const [k, v] of Object.entries(extra)) {
-                if (v && typeof v === 'string' && (v as string).trim()) {
-                  const label = labels[k] || k.toUpperCase().replace(/_/g, ' ')
-                  if (['horario_semana','rango_servicios','extras_config','plazos_servicios','servicios_toggles','servicios_precios','duracion_call','buffer_reuniones'].includes(k)) continue
-                  ctx.push(`${label}: ${v}`)
-                  if (k === 'schedule_weekdays' && !scheduleWeekdays) scheduleWeekdays = v as string
-                  if (k === 'schedule_saturday' && !scheduleSaturday) scheduleSaturday = v as string
-                  if (k === 'schedule_sunday'   && !scheduleSunday)   scheduleSunday   = v as string
-                  if (k === 'schedule_notes') scheduleNotes = v as string
-                }
-              }
-              // Store per-day map for use in calendar builder
               if ((extra as any).__scheduleByDow) (business as any).__scheduleByDow = (extra as any).__scheduleByDow
             } catch { ctx.push(`INFORMACIÓN ADICIONAL:\n${business.extra_context}`) }
           }
+
           if (!scheduleWeekdays && business.schedule) scheduleWeekdays = business.schedule
           if (ctx.length) systemPrompt += '\n\n═══ INFORMACIÓN DEL NEGOCIO ═══\n' + ctx.join('\n\n')
         }
@@ -460,11 +501,12 @@ RECUERDA: NUNCA escribas "he agendado" o "está confirmado" sin incluir la etiqu
 1. BREVEDAD: Máximo 2-3 líneas cortas. Esto es WhatsApp.
 2. FORMATO: Texto plano. CERO asteriscos, CERO guiones, CERO markdown, CERO emojis excesivos.
 3. MEMORIA: Lee el historial. NUNCA repitas info que ya diste. Continúa donde quedó.
-4. PRECIOS: Si piden precio, da el número directo. Sin rodeos.
-5. SIN RELLENO: Prohibido "Claro que sí", "Por supuesto", "Encantado", "¡Genial!", "¡Excelente!".
-6. UNA PREGUNTA POR MENSAJE: No hagas varias preguntas a la vez (excepto al recoger datos para cita).
-7. DATOS REALES: Solo info del negocio. Si no sabes algo, dilo.
-8. NO REPITAS: Si ya preguntaste algo y el cliente respondió, NO lo preguntes otra vez.`
+4. PRECIOS — REGLA ESTRICTA: NO menciones precios a menos que el cliente los pida explícitamente ("¿cuánto cuesta?", "¿qué precio tiene?", "¿cuánto cobras?"). Si no te los piden, NO los des.
+5. SERVICIOS: Habla ÚNICAMENTE de los servicios listados en SERVICIOS Y PRECIOS. Si alguien pide algo que no está en esa lista, dile que no es algo que ofrezcas actualmente.
+6. SIN RELLENO: Prohibido "Claro que sí", "Por supuesto", "Encantado", "¡Genial!", "¡Excelente!".
+7. UNA PREGUNTA POR MENSAJE: No hagas varias preguntas a la vez (excepto al recoger datos para cita).
+8. DATOS REALES: Solo info del negocio. Si no sabes algo, dilo.
+9. NO REPITAS: Si ya preguntaste algo y el cliente respondió, NO lo preguntes otra vez.`
 
         // ── STRICT TOPIC GUARD — always appended, cannot be disabled ──
         const businessName = business?.name || 'este negocio'
