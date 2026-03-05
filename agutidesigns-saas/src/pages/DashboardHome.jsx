@@ -392,8 +392,24 @@ export default function DashboardHome() {
         )}
       </div>
 
-      {/* ── Bloqueo inteligente: pasos pendientes ── */}
-      {!iaActiva && !iaPausada && (
+      {/* ── Banner: WhatsApp desconectado (ya está configurado, solo falta vincular) ── */}
+      {!setupStatus.whatsapp && !iaPausada && setupStatus.prompt && (
+        <div className="dash-gate dash-gate--whatsapp">
+          <div className="dash-gate__left">
+            <MessageCircle size={20} />
+            <div>
+              <strong>WhatsApp no vinculado</strong>
+              <span>Escanea el código QR para que el agente empiece a responder</span>
+            </div>
+          </div>
+          <Link to="/app/whatsapp" className="btn btn--primary btn--sm">
+            <MessageCircle size={12} /> Vincular WhatsApp
+          </Link>
+        </div>
+      )}
+
+      {/* ── Bloqueo inteligente: pasos de configuración pendientes ── */}
+      {(!setupStatus.prompt || !setupStatus.servicios) && !iaPausada && (
         <div className="dash-gate">
           <div className="dash-gate__left">
             <AlertTriangle size={20} />
@@ -401,19 +417,15 @@ export default function DashboardHome() {
               <strong>
                 {setupDone === 0
                   ? 'Configura tu agente para empezar'
-                  : `Te ${setupSteps.length - setupDone === 1 ? 'falta 1 paso' : `faltan ${setupSteps.length - setupDone} pasos`} para activar el agente`}
+                  : `Te ${[!setupStatus.servicios, !setupStatus.prompt, !setupStatus.booking].filter(Boolean).length === 1 ? 'falta 1 paso' : `faltan ${[!setupStatus.servicios, !setupStatus.prompt, !setupStatus.booking].filter(Boolean).length} pasos`} para completar la configuración`}
               </strong>
               <span>
-                {!setupStatus.whatsapp && 'WhatsApp no conectado · '}
                 {!setupStatus.servicios && 'Servicios y precios vacíos · '}
                 {!setupStatus.prompt && 'IA no configurada'}
               </span>
             </div>
           </div>
-          <div style={{ display: 'flex', gap: '0.5rem' }}>
-            {!setupStatus.whatsapp && <Link to="/app/whatsapp" className="btn btn--outline btn--sm"><MessageCircle size={12} /> WhatsApp</Link>}
-            <Link to="/app/ajustes" className="btn btn--primary btn--sm"><Zap size={12} /> Completar ajustes</Link>
-          </div>
+          <Link to="/app/ajustes" className="btn btn--primary btn--sm"><Zap size={12} /> Completar ajustes</Link>
         </div>
       )}
 
