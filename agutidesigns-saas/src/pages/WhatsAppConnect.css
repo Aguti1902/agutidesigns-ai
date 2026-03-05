@@ -13,8 +13,11 @@
 .wa-connection__toggle:hover { background: var(--bg-tertiary); }
 .wa-connection__toggle-left { display: flex; align-items: center; gap: 0.6rem; }
 .wa-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
-.wa-dot--green { background: #25D366; box-shadow: 0 0 6px #25D36688; }
+.wa-dot--green { background: #25D366; box-shadow: 0 0 6px #25D36688; animation: wa-pulse 2s ease-in-out infinite; }
 .wa-dot--gray { background: #555; }
+.wa-dot--checking { background: #f59e0b; box-shadow: 0 0 6px #f59e0b88; animation: wa-pulse 0.8s ease-in-out infinite; }
+@keyframes wa-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+.wa-status-checking { display: inline-flex; align-items: center; margin-left: 0.4rem; opacity: 0.6; }
 .wa-connection__body { padding: 1rem 1.25rem; border-top: 1px solid var(--border-color); }
 .wa-connection__grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
 .wa-connection__card { background: var(--bg-input); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 1.25rem; }

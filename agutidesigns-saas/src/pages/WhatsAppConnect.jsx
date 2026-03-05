@@ -54,6 +54,19 @@ export default function WhatsAppConnect() {
   const [stats, setStats] = useState({ total: 0, active: 0, aiMessages: 0, totalMessages: 0 });
 
   const isConnected = activeAgent?.whatsapp_connected === true;
+  const statusCheckRef = useRef(null);
+  const [checkingStatus, setCheckingStatus] = useState(false);
+
+  async function checkConnectionStatus(agentId) {
+    if (!agentId) return;
+    setCheckingStatus(true);
+    try {
+      const res = await fetch(`${API_URL}/evolution-status/${agentId}`, { headers: getHeaders() });
+      const data = await res.json();
+      if (!data.connected) refreshAgents();
+    } catch {}
+    setCheckingStatus(false);
+  }
 
   // Load agent data
   useEffect(() => {
@@ -65,6 +78,16 @@ export default function WhatsAppConnect() {
     }
     return () => { if (pollRef.current) clearInterval(pollRef.current); };
   }, [activeAgent?.id]);
+
+  // Poll connection status every 30 s when agent shows as connected
+  useEffect(() => {
+    if (statusCheckRef.current) clearInterval(statusCheckRef.current);
+    if (isConnected && activeAgent?.id) {
+      checkConnectionStatus(activeAgent.id);
+      statusCheckRef.current = setInterval(() => checkConnectionStatus(activeAgent.id), 30000);
+    }
+    return () => { if (statusCheckRef.current) clearInterval(statusCheckRef.current); };
+  }, [isConnected, activeAgent?.id]);
 
   // Load conversations
   const loadConversations = useCallback(async () => {
@@ -324,7 +347,10 @@ export default function WhatsAppConnect() {
         <button className="wa-connection__toggle" onClick={() => setConnectionOpen(!connectionOpen)}>
           <div className="wa-connection__toggle-left">
             {isConnected ? (
-              <><div className="wa-dot wa-dot--green" /> <span>Conectado · {activeAgent?.whatsapp_number?.replace('@s.whatsapp.net', '').replace(/^34/, '+34 ') || 'Sin número'}</span></>
+              <>
+                <div className={`wa-dot ${checkingStatus ? 'wa-dot--checking' : 'wa-dot--green'}`} />
+                <span>Conectado · {activeAgent?.whatsapp_number?.replace('@s.whatsapp.net', '').replace(/^34/, '+34 ') || 'Sin número'}</span>
+              </>
             ) : (
               <><div className="wa-dot wa-dot--gray" /> <span>No conectado</span></>
             )}
@@ -339,7 +365,10 @@ export default function WhatsAppConnect() {
               <div className="wa-connection__card">
                 {isConnected && !qrCode ? (
                   <div className="wa-connected-mini">
-                    <div className="wa-connected-mini__status"><Check size={16} /> CONECTADO</div>
+                    <div className="wa-connected-mini__status">
+                      <Check size={16} /> CONECTADO
+                      {checkingStatus && <span className="wa-status-checking"><Loader2 size={12} className="spin" /></span>}
+                    </div>
                     <p className="wa-connected-mini__number">{activeAgent?.whatsapp_number?.replace('@s.whatsapp.net', '').replace(/^34/, '+34 ') || 'Detectando...'}</p>
                     {editingName ? (
                       <div className="wa-name-edit">
