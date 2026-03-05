@@ -407,59 +407,43 @@ serve(async (req) => {
 
         if (scheduleNotes) calendarContext += `\nNOTAS: ${scheduleNotes}\n`
 
-        calendarContext += `\n═══ REGLAS DE AGENDAMIENTO (OBLIGATORIAS) ═══
-- Usa SIEMPRE las fechas EXACTAS del calendario de arriba. NUNCA inventes un día de la semana.
-- Propón solo días que estén ABIERTOS y horas LIBRES.
-- Ofrece 2-3 opciones concretas (ej: "miércoles 19 a las 10:00, jueves 20 a las 16:00").
-- Si piden un horario OCUPADO, di que no está disponible y ofrece la siguiente hora libre.
+        calendarContext += `\n═══ REGLAS DE AGENDAMIENTO ═══
+- Usa SOLO las fechas del calendario de arriba. NUNCA inventes fechas.
+- Propón solo días ABIERTOS y horas LIBRES.
 
-⚠️⚠️⚠️ REGLA MÁS IMPORTANTE — CÓMO AGENDAR:
-Cuando el cliente confirme una fecha y hora (cualquier combinación como "el jueves a las 12", "mañana a las 10", "el viernes 7"), DEBES incluir INMEDIATAMENTE esta etiqueta en tu respuesta:
-<<CITA|nombre_cliente|YYYY-MM-DD|HH:MM|HH:MM|tipo>>
+FLUJO OBLIGATORIO PARA AGENDAR:
+PASO 1: Propón 2 opciones de fecha/hora disponibles.
+PASO 2: Cuando confirmen fecha/hora, recoge estos datos (solo los que NO tengas aún). Pídelos en UN solo mensaje:
+  - Nombre completo
+  - Nombre de su negocio
+  - ¿Tiene web actualmente? (sí/no)
+  - Email de contacto
+  - ¿Llamada telefónica o videollamada?
+PASO 3: Cuando tengas TODOS los datos, incluye esta etiqueta al FINAL de tu mensaje de confirmación:
+<<CITA|nombre_completo|email|negocio|tiene_web|tipo|YYYY-MM-DD|HH:MM|HH:MM>>
 
-Donde "tipo" es: "llamada" si lo dijeron, "videollamada" si lo dijeron, o "llamada" por defecto si no lo especificaron.
+Ejemplo: <<CITA|Juan López|juan@email.com|Restaurante El Sol|no|videollamada|2026-02-28|10:00|11:00>>
 
-Ejemplos:
-- "el jueves a las 14:00" → <<CITA|${contactName}|2026-02-27|14:00|15:00|llamada>>
-- "el viernes a las 10, videollamada" → <<CITA|${contactName}|2026-02-28|10:00|11:00|videollamada>>
-
-REGLAS CRÍTICAS:
-- NO esperes a saber el tipo de reunión para incluir la etiqueta. Si no lo dijeron, usa "llamada" y confirma ya.
-- Después de la etiqueta, en el mismo mensaje di: "¿La hacemos por llamada o prefieres videollamada?" (solo si no lo han dicho).
-- Si dijeron "videollamada", responde: "Te mando el enlace 10 min antes por WhatsApp."
-- Si no hay hora de fin, suma 1 hora a la de inicio.
-- La etiqueta NO se muestra al cliente, es interna. Ponla al final del mensaje.`
+REGLAS:
+- "tiene_web" = "sí" o "no"
+- "tipo" = "llamada" o "videollamada"
+- Si eligen videollamada: di "Te mando el enlace 10 min antes por WhatsApp."
+- Si no hay hora de fin, suma 1 hora.
+- La etiqueta NO se muestra al cliente. Ponla al final.
+- NO incluyas la etiqueta si te falta algún dato. Primero pídelos.`
 
         systemPrompt += calendarContext
         } // end if (bookingEnabled)
 
-        // Add enhanced behavioral instructions if the prompt doesn't already include them
-        if (!systemPrompt.includes('FLUJO DE CONVERSACIÓN') && !systemPrompt.includes('TÉCNICAS DE VENTA')) {
-          systemPrompt += `\n\n═══ CÓMO COMPORTARTE — REGLAS OBLIGATORIAS ═══
-
-MEMORIA Y CONTEXTO:
-- LEE TODO EL HISTORIAL antes de responder. Recuerdas todo lo que se ha dicho.
-- NUNCA repitas información que ya diste en mensajes anteriores. Si ya diste precios, no los vuelvas a dar a menos que te los pidan de nuevo.
-- Si el cliente ya mencionó su tipo de negocio, nombre, o necesidad → úsalo directamente, no preguntes de nuevo.
-- Continúa la conversación desde donde se quedó, como lo haría una persona real.
-
-RESPONDER A TODO LO QUE PIDEN EN UN SOLO MENSAJE:
-- Si el cliente pide precio → da el precio DIRECTAMENTE. Un número concreto, sin rodeos.
-- Si el cliente pide reunión → propón 2 fechas concretas y pregunta en el mismo mensaje: "¿Prefieres llamada o videollamada?" Ejemplo: "¿Te va el jueves 6 a las 11 o el viernes 7 a las 10? ¿Llamada o video?"
-- Si piden precio Y reunión → ambas cosas en un solo mensaje.
-- Si el cliente confirma fecha/hora → CONFIRMA LA CITA YA con el tag <<CITA>>. Si no dijo el tipo de reunión, incluye también: "¿Llamada o videollamada?" al final (solo una vez).
-- Si el cliente dice "videollamada" → responde: "Perfecto, te mando el enlace por WhatsApp 10 min antes."
-- NUNCA repitas la pregunta de llamada/video si ya la respondieron.
-
-FORMATO DE RESPUESTA:
-- Texto plano. CERO asteriscos (*), CERO guiones como viñetas, CERO markdown.
-- Máximo 2 frases o 3 líneas cortas. Esto es WhatsApp, no un email.
-- Directo y humano. Sin frases de relleno como "Claro que sí", "Por supuesto", "Encantado de ayudarte".
-
-CALIDAD:
-- Usa SOLO la información real del negocio. Nunca inventes datos.
-- Si no tienes un dato, dilo: "No tengo ese detalle, pero puedo consultarlo".`
-        }
+        systemPrompt += `\n\n═══ REGLAS OBLIGATORIAS ═══
+1. BREVEDAD: Máximo 2-3 líneas cortas. Esto es WhatsApp.
+2. FORMATO: Texto plano. CERO asteriscos, CERO guiones, CERO markdown, CERO emojis excesivos.
+3. MEMORIA: Lee el historial. NUNCA repitas info que ya diste. Continúa donde quedó.
+4. PRECIOS: Si piden precio, da el número directo. Sin rodeos.
+5. SIN RELLENO: Prohibido "Claro que sí", "Por supuesto", "Encantado", "¡Genial!", "¡Excelente!".
+6. UNA PREGUNTA POR MENSAJE: No hagas varias preguntas a la vez (excepto al recoger datos para cita).
+7. DATOS REALES: Solo info del negocio. Si no sabes algo, dilo.
+8. NO REPITAS: Si ya preguntaste algo y el cliente respondió, NO lo preguntes otra vez.`
 
         // ── STRICT TOPIC GUARD — always appended, cannot be disabled ──
         const businessName = business?.name || 'este negocio'
@@ -574,153 +558,6 @@ Esta distinción es CRUCIAL: un cliente que dice "tengo un restaurante y quiero 
           })
         } catch {}
 
-        // ── DIRECT BOOKING DETECTION ──
-        // If booking is enabled and the conversation is in a booking loop,
-        // detect date/time from the user's message and create appointment directly
-        if (bookingEnabled) {
-          const recentAssistantMsgs = (history || []).filter((m: any) => m.role === 'assistant').slice(-3).map((m: any) => m.content.toLowerCase()).join(' ')
-          const isBookingConversation = recentAssistantMsgs.includes('cita') || recentAssistantMsgs.includes('horario') || recentAssistantMsgs.includes('agendar') || recentAssistantMsgs.includes('disponib') || recentAssistantMsgs.includes('reserv')
-
-          if (isBookingConversation) {
-            const msgLower = messageText.toLowerCase()
-            // Match patterns like "19 de febrero a las 14:00", "jueves a las 10", "mañana a las 16:00", "el 20 a las 11"
-            const dateTimeMatch = msgLower.match(/(\d{1,2})\s*(?:de\s*)?(enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|octubre|noviembre|diciembre)?\s*(?:a las?\s*)(\d{1,2})(?::(\d{2}))?/)
-            const dayNameMatch = msgLower.match(/(lunes|martes|mi[eé]rcoles|jueves|viernes|s[aá]bado|domingo)\s*(?:\d{1,2})?\s*(?:de\s*\w+)?\s*(?:a las?\s*)(\d{1,2})(?::(\d{2}))?/)
-            const simpleTimeMatch = !dateTimeMatch && !dayNameMatch && msgLower.match(/(?:a las?\s*)(\d{1,2})(?::(\d{2}))?/)
-
-            let parsedDate: string | null = null
-            let parsedHour: number | null = null
-            let parsedMin = 0
-
-            const monthMap: Record<string, number> = { enero: 0, febrero: 1, marzo: 2, abril: 3, mayo: 4, junio: 5, julio: 6, agosto: 7, septiembre: 8, octubre: 9, noviembre: 10, diciembre: 11 }
-            const dayNameMap: Record<string, number> = { domingo: 0, lunes: 1, martes: 2, 'miércoles': 3, miercoles: 3, jueves: 4, viernes: 5, 'sábado': 6, sabado: 6 }
-
-            if (dateTimeMatch) {
-              const dayNum = parseInt(dateTimeMatch[1])
-              const monthStr = dateTimeMatch[2]
-              parsedHour = parseInt(dateTimeMatch[3])
-              parsedMin = parseInt(dateTimeMatch[4] || '0')
-              const d = new Date(now)
-              if (monthStr && monthMap[monthStr] !== undefined) {
-                d.setMonth(monthMap[monthStr])
-              }
-              d.setDate(dayNum)
-              if (d < now) d.setMonth(d.getMonth() + 1) // if date already passed, next month
-              parsedDate = d.toISOString().split('T')[0]
-            } else if (dayNameMatch) {
-              const targetDayName = dayNameMatch[1].replace('é', 'e').replace('á', 'a')
-              const targetDay = dayNameMap[targetDayName]
-              parsedHour = parseInt(dayNameMatch[2])
-              parsedMin = parseInt(dayNameMatch[3] || '0')
-              if (targetDay !== undefined) {
-                const d = new Date(now)
-                let diff = targetDay - d.getDay()
-                if (diff <= 0) diff += 7
-                d.setDate(d.getDate() + diff)
-                parsedDate = d.toISOString().split('T')[0]
-              }
-            } else if (simpleTimeMatch) {
-              // Just a time, look in the last AI message for the date context
-              parsedHour = parseInt(simpleTimeMatch[1])
-              parsedMin = parseInt(simpleTimeMatch[2] || '0')
-              // Default to tomorrow if no date context
-              const d = new Date(now)
-              d.setDate(d.getDate() + 1)
-              parsedDate = d.toISOString().split('T')[0]
-            }
-
-            // Also check "mañana"
-            if (!parsedDate && msgLower.includes('mañana')) {
-              const d = new Date(now)
-              d.setDate(d.getDate() + 1)
-              parsedDate = d.toISOString().split('T')[0]
-              if (!parsedHour) {
-                const timeInMsg = msgLower.match(/(\d{1,2})(?::(\d{2}))?/)
-                if (timeInMsg) {
-                  parsedHour = parseInt(timeInMsg[1])
-                  parsedMin = parseInt(timeInMsg[2] || '0')
-                }
-              }
-            }
-
-            if (parsedDate && parsedHour !== null) {
-              const startTime = `${String(parsedHour).padStart(2, '0')}:${String(parsedMin).padStart(2, '0')}`
-              const endHour = parsedHour + 1
-              const endTime = `${String(endHour).padStart(2, '0')}:${String(parsedMin).padStart(2, '0')}`
-
-              console.log('📅 DIRECT booking detected:', contactName, parsedDate, startTime, '-', endTime)
-              try {
-                await supabase.from('appointments').insert({
-                  user_id: agent.user_id,
-                  agent_id: agentId,
-                  client_name: contactName,
-                  client_phone: contactPhone,
-                  service: null,
-                  appointment_date: parsedDate,
-                  start_time: startTime,
-                  end_time: endTime,
-                  notes: 'Agendada automáticamente por IA',
-                  status: 'confirmed',
-                  created_by: 'ai',
-                })
-                console.log('✅ Direct appointment created')
-
-                // Notify owner via email
-                try {
-                  const { data: { user: ownerUser } } = await supabase.auth.admin.getUserById(agent.user_id)
-                  if (ownerUser?.email) {
-                    const _months = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre']
-                    const [_y, _m, _d] = parsedDate.split('-').map(Number)
-                    const dateFormatted = `${_d} de ${_months[_m - 1]} de ${_y}`
-                    await fetch(`${SUPABASE_URL}/functions/v1/send-email`, {
-                      method: 'POST',
-                      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${SUPABASE_KEY}` },
-                      body: JSON.stringify({
-                        to: ownerUser.email,
-                        subject: `📅 Nueva cita: ${contactName} – ${dateFormatted} a las ${startTime}`,
-                        template: 'appointment_booked',
-                        data: {
-                          ownerName: ownerProfile?.full_name || 'ahí',
-                          clientName: contactName,
-                          clientPhone: contactPhone,
-                          date: dateFormatted,
-                          startTime,
-                          endTime,
-                          source: 'IA Wasapy (detección directa)',
-                        },
-                      }),
-                    }).catch(e => console.warn('Appointment email failed:', e))
-                  }
-                } catch (emailErr) { console.warn('Appointment email error (non-fatal):', emailErr) }
-              } catch (e) {
-                console.error('Direct appointment error:', e)
-              }
-
-              // Build confirmation message and send directly (skip normal AI flow)
-              const dateObj = new Date(parsedDate + 'T12:00:00')
-              const dayLabel = dayNames[dateObj.getDay()]
-              const dayNum = dateObj.getDate()
-              const monthLabel = monthNames[dateObj.getMonth()]
-              const confirmMsg = `¡Perfecto! 🎉 Tu cita ha quedado *confirmada*:\n\n📅 *${dayLabel} ${dayNum} de ${monthLabel}*\n🕐 *${startTime} - ${endTime}*\n\nSi necesitas cambiar o cancelar la cita, avísame con antelación. ¡Te esperamos!`
-
-              // Save AI response
-              await supabase.from('messages').insert({ conversation_id: conv.id, role: 'assistant', content: confirmMsg })
-              await supabase.from('conversations').update({ messages_count: (conv.messages_count || 0) + 2, last_message_at: new Date().toISOString() }).eq('id', conv.id)
-              const newTotal = (agent.total_messages || 0) + 1
-              await supabase.from('agents').update({ total_messages: newTotal }).eq('id', agentId)
-
-              // Send via WhatsApp
-              await fetch(`${EVOLUTION_URL}/message/sendText/${instanceName}`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'apikey': EVOLUTION_KEY },
-                body: JSON.stringify({ number: remoteJid, text: confirmMsg })
-              })
-              console.log('✅ Direct booking confirmation sent')
-              continue // Skip the rest of the normal AI flow
-            }
-          }
-        }
-
         // Call OpenAI — deduplicate history to avoid repetition loops
         const rawHistory = (history || []).slice(-24)
         const cleanHistory: { role: string; content: string }[] = []
@@ -744,10 +581,10 @@ Esta distinción es CRUCIAL: un cliente que dice "tengo un restaurante y quiero 
                 { role: 'system', content: systemPrompt },
                 ...historyMsgs,
               ],
-              temperature: 0.7,
-              max_tokens: 220,
-              presence_penalty: 0.6,
-              frequency_penalty: 0.5
+              temperature: 0.4,
+              max_tokens: 350,
+              presence_penalty: 0.5,
+              frequency_penalty: 0.4
             })
           })
           const openaiData = await openaiRes.json()
@@ -765,32 +602,38 @@ Esta distinción es CRUCIAL: un cliente que dice "tengo un restaurante y quiero 
           aiResponse = 'Disculpa, tengo un problema técnico temporal.'
         }
 
-        // Parse <<CITA|name|date|start|end|service>> tag from AI response and create appointment
+        // Parse <<CITA|nombre|email|negocio|tiene_web|tipo|YYYY-MM-DD|HH:MM|HH:MM>> tag
         if (bookingEnabled) {
-          const citaMatch = aiResponse.match(/<<CITA\|([^|]*)\|(\d{4}-\d{2}-\d{2})\|(\d{2}:\d{2})\|(\d{2}:\d{2})\|([^>]*)>>/)
+          const citaMatch = aiResponse.match(/<<CITA\|([^|]*)\|([^|]*)\|([^|]*)\|([^|]*)\|([^|]*)\|(\d{4}-\d{2}-\d{2})\|(\d{2}:\d{2})\|(\d{2}:\d{2})>>/)
           if (citaMatch) {
-            const [fullTag, cName, cDate, cStart, cEnd, cService] = citaMatch
-            console.log('📅 Booking detected:', cName, cDate, cStart, '-', cEnd, cService)
+            const [fullTag, cName, cEmail, cBusiness, cHasWeb, cType, cDate, cStart, cEnd] = citaMatch
+            const notes = [
+              `Nombre: ${cName.trim()}`,
+              `Email: ${cEmail.trim()}`,
+              `Negocio: ${cBusiness.trim()}`,
+              `Tiene web: ${cHasWeb.trim()}`,
+              `Tipo: ${cType.trim()}`,
+              `Agendada automáticamente por IA`,
+            ].join('\n')
+            console.log('📅 Booking detected:', cName, cEmail, cBusiness, cDate, cStart, '-', cEnd, cType)
             try {
               const { error: apptError } = await supabase.from('appointments').insert({
                 user_id: agent.user_id,
                 agent_id: agentId,
                 client_name: cName.trim() || contactName,
                 client_phone: contactPhone,
-                service: cService.trim() || null,
+                service: cType.trim() || null,
                 appointment_date: cDate,
                 start_time: cStart,
                 end_time: cEnd,
-                notes: null,
+                notes,
                 status: 'confirmed',
                 created_by: 'ai',
               })
               if (apptError) {
                 console.error('Appointment insert error:', apptError)
               } else {
-                console.log('✅ Appointment created successfully')
-
-                // Notify owner via email
+                console.log('✅ Appointment created with client details')
                 try {
                   const { data: { user: ownerUser } } = await supabase.auth.admin.getUserById(agent.user_id)
                   if (ownerUser?.email) {
@@ -808,10 +651,13 @@ Esta distinción es CRUCIAL: un cliente que dice "tengo un restaurante y quiero 
                           ownerName: ownerProfile?.full_name || 'ahí',
                           clientName: cName.trim() || contactName,
                           clientPhone: contactPhone,
+                          clientEmail: cEmail.trim(),
+                          clientBusiness: cBusiness.trim(),
+                          clientHasWeb: cHasWeb.trim(),
+                          meetingType: cType.trim(),
                           date: dateFormatted,
                           startTime: cStart,
                           endTime: cEnd,
-                          service: cService.trim() || null,
                           source: 'IA Wasapy',
                         },
                       }),
@@ -822,7 +668,6 @@ Esta distinción es CRUCIAL: un cliente que dice "tengo un restaurante y quiero 
             } catch (e) {
               console.error('Appointment creation failed:', e)
             }
-            // Remove the tag from the message sent to the client
             aiResponse = aiResponse.replace(fullTag, '').trim()
           }
         }
