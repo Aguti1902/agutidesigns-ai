@@ -107,6 +107,12 @@ export default function CalendarIntegration() {
 
   useEffect(() => { if (user) { loadAppointments(); loadBusinessSchedule(); loadBookingLinks(); } }, [user]);
   useEffect(() => { if (user) loadAppointments(); }, [currentDate]);
+  // Auto-refresh every 30s to catch AI-booked appointments
+  useEffect(() => {
+    if (!user) return;
+    const interval = setInterval(() => loadAppointments(), 30000);
+    return () => clearInterval(interval);
+  }, [user, currentDate]);
   useEffect(() => {
     if (!activeAgent) return;
     // Si booking_enabled es null/undefined (agente antiguo), actívalo por defecto y guárdalo
