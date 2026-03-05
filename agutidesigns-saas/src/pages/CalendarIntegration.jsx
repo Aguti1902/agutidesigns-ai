@@ -7,28 +7,44 @@ import './DashboardPages.css';
 
 const API_URL = import.meta.env.VITE_API_URL || 'https://xzyhrloiwapbrqmglxeo.supabase.co/functions/v1';
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || 'https://xzyhrloiwapbrqmglxeo.supabase.co';
-const HOURS = Array.from({ length: 15 }, (_, i) => i + 7); // 7:00 to 21:00
+const HOURS = Array.from({ length: 17 }, (_, i) => i + 7); // 7:00 to 23:00
 const DAY_NAMES = ['LUN', 'MAR', 'MIÉ', 'JUE', 'VIE', 'SÁB', 'DOM'];
+// Maps calendar dayIndex (0=LUN…6=DOM) to horario_semana key
+const DI_KEY = ['lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado', 'domingo'];
 const STATUS_LABELS = { pending: 'Pendiente', confirmed: 'Confirmada', cancelled: 'Cancelada', completed: 'Completada' };
 const STATUS_COLORS = { pending: '#f59e0b', confirmed: '#25D366', cancelled: '#ef4444', completed: '#888' };
 
-function parseScheduleRange(str) {
+/** Convierte horario_semana (nuevo formato) a un array de rangos por dayIndex */
+function buildScheduleFromHorarioSemana(horarioSemana) {
+  const result = {};
+  DI_KEY.forEach((key, di) => {
+    const day = horarioSemana[key];
+    if (day?.active && day?.ranges?.length) {
+      result[di] = day.ranges.map(r => {
+        const [fromH, fromM] = r.from.split(':').map(Number);
+        const [toH, toM] = r.to.split(':').map(Number);
+        return { open: fromH, openMin: fromM || 0, close: toH, closeMin: toM || 0 };
+      });
+    }
+  });
+  return result;
+}
+
+/** Fallback: parsea texto legado "09:00–18:00" o "09:00–14:00, 18:00–20:00" */
+function parseScheduleText(str) {
   if (!str || typeof str !== 'string') return null;
   const cleaned = str.trim().toLowerCase();
   if (cleaned === 'cerrado' || cleaned === 'closed' || cleaned === '-' || cleaned === '') return null;
-  const match = cleaned.match(/(\d{1,2})[:\.]?(\d{2})?\s*[-–a]\s*(\d{1,2})[:\.]?(\d{2})?/);
-  if (!match) return null;
-  return { open: parseInt(match[1]), openMin: parseInt(match[2] || '0'), close: parseInt(match[3]), closeMin: parseInt(match[4] || '0') };
+  const matches = [...cleaned.matchAll(/(\d{1,2})[:\.]?(\d{2})?\s*[-–]\s*(\d{1,2})[:\.]?(\d{2})?/g)];
+  if (!matches.length) return null;
+  return matches.map(m => ({ open: parseInt(m[1]), openMin: parseInt(m[2] || '0'), close: parseInt(m[3]), closeMin: parseInt(m[4] || '0') }));
 }
 
 function isWithinBusinessHours(schedule, dayIndex, hour) {
   if (!schedule) return false;
-  let range = null;
-  if (dayIndex >= 0 && dayIndex <= 4) range = schedule.weekdays;
-  else if (dayIndex === 5) range = schedule.saturday;
-  else if (dayIndex === 6) range = schedule.sunday;
-  if (!range) return false;
-  return hour >= range.open && hour < range.close;
+  const ranges = schedule[dayIndex];
+  if (!ranges || !ranges.length) return false;
+  return ranges.some(r => hour >= r.open && hour < r.close);
 }
 
 function getWeekDays(date) {
@@ -242,12 +258,21 @@ export default function CalendarIntegration() {
       if (biz) {
         let extra = {};
         if (biz.extra_context) { try { extra = JSON.parse(biz.extra_context); } catch {} }
-        const schedule = {
-          weekdays: parseScheduleRange(extra.schedule_weekdays || biz.schedule),
-          saturday: parseScheduleRange(extra.schedule_saturday),
-          sunday: parseScheduleRange(extra.schedule_sunday),
-        };
-        if (schedule.weekdays || schedule.saturday || schedule.sunday) setBusinessSchedule(schedule);
+        let scheduleMap = {};
+        // Prefer new structured format
+        if (extra.horario_semana) {
+          try { scheduleMap = buildScheduleFromHorarioSemana(JSON.parse(extra.horario_semana)); } catch {}
+        }
+        // Fallback to legacy text fields
+        if (!Object.keys(scheduleMap).length) {
+          const wdRanges = parseScheduleText(extra.schedule_weekdays || biz.schedule);
+          const satRanges = parseScheduleText(extra.schedule_saturday);
+          const sunRanges = parseScheduleText(extra.schedule_sunday);
+          if (wdRanges) { [0,1,2,3,4].forEach(di => { scheduleMap[di] = wdRanges; }); }
+          if (satRanges) scheduleMap[5] = satRanges;
+          if (sunRanges) scheduleMap[6] = sunRanges;
+        }
+        if (Object.keys(scheduleMap).length) setBusinessSchedule(scheduleMap);
       }
     } catch {}
   }
@@ -704,15 +729,15 @@ export default function CalendarIntegration() {
             <span className="cal-legend__dot cal-legend__dot--closed" />
             <span>Fuera de horario</span>
           </div>
-          {businessSchedule.weekdays && (
-            <span className="cal-legend__schedule">L-V: {String(businessSchedule.weekdays.open).padStart(2,'0')}:{String(businessSchedule.weekdays.openMin).padStart(2,'0')} – {String(businessSchedule.weekdays.close).padStart(2,'0')}:{String(businessSchedule.weekdays.closeMin).padStart(2,'0')}</span>
-          )}
-          {businessSchedule.saturday && (
-            <span className="cal-legend__schedule">Sáb: {String(businessSchedule.saturday.open).padStart(2,'0')}:{String(businessSchedule.saturday.openMin).padStart(2,'0')} – {String(businessSchedule.saturday.close).padStart(2,'0')}:{String(businessSchedule.saturday.closeMin).padStart(2,'0')}</span>
-          )}
-          {businessSchedule.sunday && (
-            <span className="cal-legend__schedule">Dom: {String(businessSchedule.sunday.open).padStart(2,'0')}:{String(businessSchedule.sunday.openMin).padStart(2,'0')} – {String(businessSchedule.sunday.close).padStart(2,'0')}:{String(businessSchedule.sunday.closeMin).padStart(2,'0')}</span>
-          )}
+          {DI_KEY.map((key, di) => {
+            const ranges = businessSchedule[di];
+            if (!ranges || !ranges.length) return null;
+            const label = ['L','M','X','J','V','S','D'][di];
+            const rangesStr = ranges.map(r =>
+              `${String(r.open).padStart(2,'0')}:${String(r.openMin).padStart(2,'0')}–${String(r.close).padStart(2,'0')}:${String(r.closeMin).padStart(2,'0')}`
+            ).join(', ');
+            return <span key={di} className="cal-legend__schedule">{label}: {rangesStr}</span>;
+          })}
         </div>
       )}
 
