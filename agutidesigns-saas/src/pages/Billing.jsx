@@ -251,10 +251,12 @@ export default function Billing() {
   const isCancelling = customerInfo?.subscription?.cancelAtPeriodEnd;
   const cancelDaysLeft = isCancelling ? daysUntil(customerInfo.subscription.currentPeriodEnd) : 0;
 
-  // Determine current plan and billing cycle
+  // Determine current plan based on Stripe data, then fall back to message_limit in profile
   const currentPlan = PLANS.find(p =>
     customerInfo?.subscription?.items?.some(item => item.priceId === p.priceId || item.priceId === p.priceIdAnnual)
-  ) || (isSubscribed ? PLANS[1] : null);
+  ) || (isSubscribed
+    ? (profile?.message_limit >= 20000 ? PLANS[2] : profile?.message_limit >= 5000 ? PLANS[1] : PLANS[0])
+    : null);
 
   // Check if current subscription is annual or monthly
   const currentCycle = customerInfo?.subscription?.items?.some(item =>
